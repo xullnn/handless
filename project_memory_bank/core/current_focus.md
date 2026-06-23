@@ -11,6 +11,7 @@ Stable status:
 - The local FunASR websocket runtime is patched so a final `is_speaking=false` message flushes remaining PCM through offline ASR instead of producing only online partials.
 - The independent ASR eval harness, recording CLI, realtime streaming gate, Qwen3 MLX realtime probe, and Qwen3 MLX cumulative recompute probe are the gate for backend selection. File-level final transcription quality is tracked separately from microphone-style realtime behavior.
 - Qwen3-ASR MLX has local file/token streaming, but the loaded 0.6B and 1.7B MLX models do not expose a session-style `feed/step/close` API. Qwen3-ASR MLX 0.6B cumulative recompute has passed the in-process service prototype gate and the local HTTP process-boundary gate across smoke, `long_120_001`, and the current extended long-case subset. It is still not native realtime streaming and still needs Swift-side adapter, process supervision, formal resource thresholds, and code-switch accuracy handling before app integration. Nemotron MLX also lacks a local session API despite model-level streaming terminology. MiMo-V2.5-ASR MLX remains an offline-quality reference unless a chunked or streaming API is proven.
+- Local model cache has been pruned to the current working set: Qwen3-ASR MLX 0.6B/1.7B, MiMo-V2.5-ASR MLX plus tokenizer, and the FunASR Paraformer/VAD baseline. Non-mainline historical model caches and transfer duplicates should be re-downloaded only when rerunning old experiments.
 
 Immediate next focus:
 
@@ -29,3 +30,4 @@ Current operational caution:
 - The Qwen3 cumulative wrapper should reset service worker timing on every new session start; otherwise session-relative gate runs can inherit prior-session delay and falsely miss pre-stop partial gates.
 - The first extended Qwen3 HTTP resource run observed roughly 1.4 GB peak RSS for the Python service. Treat this as initial evidence, not a formal product threshold.
 - AMD can work as a large-model download/cache transfer host via foreground PowerShell snapshot commands and `scp`, but unattended Windows OpenSSH background downloads remain unreliable.
+- Treat `eval/asr_streaming/model_inventory.md` as the operational source of truth for local ASR model cache paths and cleanup status.

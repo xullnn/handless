@@ -25,6 +25,7 @@ Stable responsibilities:
 - The first extended Qwen3 HTTP resource run observed about 1.4 GB peak RSS and low mean CPU with bursty peaks; these are initial sizing signals, not final acceptance thresholds.
 - Nemotron 3.5 ASR Streaming 0.6B MLX exposes cache-aware `stream_generate(audio)` in the local MLX implementation, but the local runtime surface does not expose a session-style incremental PCM API; current local Chinese/technical-term quality is weak.
 - MiMo-V2.5-ASR MLX remains the offline-quality reference unless a chunked or streaming API is proven.
+- The local ASR model cache is intentionally lean after cleanup: keep Qwen3-ASR MLX 0.6B/1.7B for the current wrapper path, MiMo-V2.5-ASR MLX plus tokenizer for offline reference, and FunASR Paraformer/VAD for baseline/runtime fallback. Detailed cache paths and removed historical models live in `eval/asr_streaming/model_inventory.md`.
 - AMD model acquisition can be used as a cache/transfer path for large Hugging Face snapshots, but Mac-local inference remains the authoritative product evidence.
 - `scripts/download_fun_asr_nano.sh` and `scripts/run_fun_asr_nano_smoke.sh` provide the repeatable acquisition and smoke path for Fun-ASR-Nano-2512.
 
