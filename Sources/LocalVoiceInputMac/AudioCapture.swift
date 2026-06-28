@@ -7,24 +7,38 @@ final class AudioCapture {
     private var converter: AVAudioConverter?
     private var outputFormat: AVAudioFormat?
     private var pendingPCM = Data()
+    private var preRollPCM = Data()
     private let pendingLock = NSLock()
     private let queue = DispatchQueue(label: "localvoiceinput.audio.capture")
     private let chunkBytes = 16000 * 2 * 480 / 1000 // 480ms, 16kHz, int16 mono
+    private let preRollBytes = 16000 * 2 * 900 / 1000 // 900ms local in-memory pre-roll
     private var isRunning = false
+    private var isCapturingSession = false
 
     var onPCMChunk: ((Data) -> Void)?
     var onError: ((Error) -> Void)?
 
+    func prewarm() {
+        queue.async { [weak self] in
+            self?.startEngineIfNeeded(capturing: false)
+        }
+    }
+
     func start() {
         queue.async { [weak self] in
-            self?.startInternal()
+            guard let self else { return }
+            self.pendingLock.lock()
+            self.pendingPCM.removeAll(keepingCapacity: true)
+            self.pendingPCM.append(self.preRollPCM)
+            self.pendingLock.unlock()
+            self.startEngineIfNeeded(capturing: true)
         }
     }
 
     func cancel() {
         queue.async { [weak self] in
             guard let self else { return }
-            self.stopEngineIfNeeded()
+            self.isCapturingSession = false
             self.pendingLock.lock()
             self.pendingPCM.removeAll(keepingCapacity: true)
             self.pendingLock.unlock()
@@ -37,17 +51,16 @@ final class AudioCapture {
                 DispatchQueue.main.async { completion([]) }
                 return
             }
-            self.stopEngineIfNeeded()
+            self.isCapturingSession = false
             let remaining = self.drainPendingChunks(includePartial: true)
             DispatchQueue.main.async { completion(remaining) }
         }
     }
 
-    private func startInternal() {
+    private func startEngineIfNeeded(capturing: Bool) {
         do {
-            pendingLock.lock()
-            pendingPCM.removeAll(keepingCapacity: true)
-            pendingLock.unlock()
+            isCapturingSession = capturing
+            guard !isRunning && !engine.isRunning else { return }
 
             let input = engine.inputNode
             let inputFormat = input.outputFormat(forBus: 0)
@@ -100,7 +113,11 @@ final class AudioCapture {
             return
         }
         guard let bytes = pcmBytes(from: outBuffer) else { return }
-        appendAndFlush(bytes)
+        if isCapturingSession {
+            appendAndFlush(bytes)
+        } else {
+            appendPreRoll(bytes)
+        }
     }
 
     private func pcmBytes(from buffer: AVAudioPCMBuffer) -> Data? {
@@ -123,6 +140,15 @@ final class AudioCapture {
         for chunk in chunks {
             DispatchQueue.main.async { self.onPCMChunk?(chunk) }
         }
+    }
+
+    private func appendPreRoll(_ data: Data) {
+        pendingLock.lock()
+        preRollPCM.append(data)
+        if preRollPCM.count > preRollBytes {
+            preRollPCM.removeFirst(preRollPCM.count - preRollBytes)
+        }
+        pendingLock.unlock()
     }
 
     private func drainPendingChunks(includePartial: Bool) -> [Data] {

@@ -18,22 +18,45 @@ public struct OutputPolicy: Codable, Equatable, Sendable {
     public var downgradeToClipboardWhenFocusChanges: Bool
     public var pasteSecureFields: Bool
     public var preferClipboardForLowConfidence: Bool
+    public var forcePasteWhenFocusLowConfidenceForBundleIds: [String]
 
     public init(
         autoPasteEnabled: Bool = true,
-        restoreClipboardAfterPaste: Bool = true,
+        restoreClipboardAfterPaste: Bool = false,
         downgradeToClipboardWhenFocusChanges: Bool = true,
         pasteSecureFields: Bool = false,
-        preferClipboardForLowConfidence: Bool = true
+        preferClipboardForLowConfidence: Bool = true,
+        forcePasteWhenFocusLowConfidenceForBundleIds: [String] = []
     ) {
         self.autoPasteEnabled = autoPasteEnabled
         self.restoreClipboardAfterPaste = restoreClipboardAfterPaste
         self.downgradeToClipboardWhenFocusChanges = downgradeToClipboardWhenFocusChanges
         self.pasteSecureFields = pasteSecureFields
         self.preferClipboardForLowConfidence = preferClipboardForLowConfidence
+        self.forcePasteWhenFocusLowConfidenceForBundleIds = forcePasteWhenFocusLowConfidenceForBundleIds
     }
 
     public static let `default` = OutputPolicy()
+
+    enum CodingKeys: String, CodingKey {
+        case autoPasteEnabled
+        case restoreClipboardAfterPaste
+        case downgradeToClipboardWhenFocusChanges
+        case pasteSecureFields
+        case preferClipboardForLowConfidence
+        case forcePasteWhenFocusLowConfidenceForBundleIds
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = OutputPolicy.default
+        autoPasteEnabled = try values.decodeIfPresent(Bool.self, forKey: .autoPasteEnabled) ?? defaults.autoPasteEnabled
+        restoreClipboardAfterPaste = try values.decodeIfPresent(Bool.self, forKey: .restoreClipboardAfterPaste) ?? defaults.restoreClipboardAfterPaste
+        downgradeToClipboardWhenFocusChanges = try values.decodeIfPresent(Bool.self, forKey: .downgradeToClipboardWhenFocusChanges) ?? defaults.downgradeToClipboardWhenFocusChanges
+        pasteSecureFields = try values.decodeIfPresent(Bool.self, forKey: .pasteSecureFields) ?? defaults.pasteSecureFields
+        preferClipboardForLowConfidence = try values.decodeIfPresent(Bool.self, forKey: .preferClipboardForLowConfidence) ?? defaults.preferClipboardForLowConfidence
+        forcePasteWhenFocusLowConfidenceForBundleIds = try values.decodeIfPresent([String].self, forKey: .forcePasteWhenFocusLowConfidenceForBundleIds) ?? defaults.forcePasteWhenFocusLowConfidenceForBundleIds
+    }
 }
 
 public enum OutputModeRouter {
@@ -57,6 +80,12 @@ public enum OutputModeRouter {
 
         guard policy.autoPasteEnabled else {
             return .clipboardDraft
+        }
+
+        if snapshot.confidence == .low,
+           let bundleId = snapshot.frontmostAppBundleId,
+           policy.forcePasteWhenFocusLowConfidenceForBundleIds.contains(bundleId) {
+            return .cursorPaste
         }
 
         if snapshot.isEditable && snapshot.canPaste {

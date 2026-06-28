@@ -2,6 +2,17 @@ import XCTest
 @testable import LocalVoiceInputCore
 
 final class PasteRoutePlannerTests: XCTestCase {
+    func testConfirmedPasteKeepsResultOnClipboardByDefault() {
+        let decision = PasteRoutePlanner.decisionAfterCursorPaste(
+            verification: .confirmed,
+            policy: .default
+        )
+
+        XCTAssertEqual(decision.status, .pasted)
+        XCTAssertFalse(decision.shouldRestoreClipboard)
+        XCTAssertTrue(decision.shouldKeepResultOnClipboard)
+    }
+
     func testConfirmedPasteRestoresClipboardWhenPolicyAllows() {
         let decision = PasteRoutePlanner.decisionAfterCursorPaste(
             verification: .confirmed,

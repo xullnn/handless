@@ -6,15 +6,25 @@ import LocalVoiceInputCore
 final class FloatingPanelController {
     private var panel: NSPanel?
     private let titleLabel = NSTextField(labelWithString: "")
-    private let transcriptLabel = NSTextField(labelWithString: "")
+    private let transcriptScrollView = NSScrollView(frame: .zero)
+    private let transcriptTextView = NSTextView(frame: .zero)
     private let detailLabel = NSTextField(labelWithString: "")
+    private let finishButton = NSButton(title: "完成", target: nil, action: nil)
     private let cancelButton = NSButton(title: "取消", target: nil, action: nil)
     private let copyButton = NSButton(title: "复制", target: nil, action: nil)
     private let restoreButton = NSButton(title: "恢复剪切板", target: nil, action: nil)
     private let quitButton = NSButton(title: "退出 App", target: nil, action: nil)
     private var diagnosticText = ""
+    private var presentationGeneration = 0
+    private var pendingHideWorkItem: DispatchWorkItem?
+    private var fadeTimer: DispatchSourceTimer?
+    private var isMouseInsidePanel = false
+    private var autoDismissEnabled = false
+    private let autoDismissHoldSeconds: TimeInterval = 2.0
+    private let fadeOutSeconds: TimeInterval = 4.0
 
     var onCancel: (() -> Void)?
+    var onFinish: (() -> Void)?
     var onCopy: (() -> Void)?
     var onRestoreClipboard: (() -> Void)?
     var onQuit: (() -> Void)?
@@ -25,9 +35,9 @@ final class FloatingPanelController {
 
     func show(mode: OutputMode) {
         DispatchQueue.main.async {
-            if self.panel == nil { self.createPanel() }
+            self.startNewPresentation()
+            self.ensureVisible()
             self.updateMode(mode)
-            self.panel?.orderFrontRegardless()
         }
     }
 
@@ -54,20 +64,23 @@ final class FloatingPanelController {
 
     func updatePartial(_ text: String) {
         DispatchQueue.main.async {
-            self.transcriptLabel.stringValue = text.isEmpty ? "正在等待语音…" : text
+            self.ensureVisible()
+            self.setTranscriptText(text.isEmpty ? "正在等待语音…" : text)
             self.detailLabel.stringValue = self.withDiagnostics("实时转写中…")
         }
     }
 
     func updateFinalizing() {
         DispatchQueue.main.async {
+            self.ensureVisible()
             self.detailLabel.stringValue = self.withDiagnostics("🧠 正在修正文字和标点…")
         }
     }
 
     func updateDone(status: PasteRouteStatus, text: String, restoredClipboard: Bool) {
         DispatchQueue.main.async {
-            self.transcriptLabel.stringValue = text
+            self.ensureVisible()
+            self.setTranscriptText(text)
             switch status {
             case .pasted:
                 self.titleLabel.stringValue = "✅ 已粘贴"
@@ -82,19 +95,18 @@ final class FloatingPanelController {
                 self.titleLabel.stringValue = "已取消"
                 self.detailLabel.stringValue = self.withDiagnostics("本次内容未复制、未粘贴。")
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak self] in
-                self?.hide()
-            }
+            self.autoDismissEnabled = true
+            self.scheduleAutoHide(after: self.autoDismissHoldSeconds)
         }
     }
 
     func updateError(_ message: String) {
         DispatchQueue.main.async {
-            if self.panel == nil { self.createPanel() }
+            self.startNewPresentation()
+            self.ensureVisible()
             self.titleLabel.stringValue = "错误"
-            self.transcriptLabel.stringValue = ""
+            self.setTranscriptText("")
             self.detailLabel.stringValue = self.withDiagnostics(message)
-            self.panel?.orderFrontRegardless()
         }
     }
 
@@ -109,20 +121,47 @@ final class FloatingPanelController {
     }
 
     func hide() {
-        DispatchQueue.main.async { self.panel?.orderOut(nil) }
+        DispatchQueue.main.async {
+            self.cancelPendingHide()
+            self.autoDismissEnabled = false
+            self.presentationGeneration += 1
+            self.panel?.orderOut(nil)
+            self.panel?.alphaValue = 1.0
+        }
     }
 
     private func setupControls() {
         titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         titleLabel.textColor = .labelColor
-        transcriptLabel.font = .systemFont(ofSize: 18, weight: .regular)
-        transcriptLabel.textColor = .labelColor
-        transcriptLabel.lineBreakMode = .byTruncatingTail
-        transcriptLabel.maximumNumberOfLines = 3
+        transcriptTextView.font = .systemFont(ofSize: 18, weight: .regular)
+        transcriptTextView.textColor = .labelColor
+        transcriptTextView.drawsBackground = false
+        transcriptTextView.isEditable = false
+        transcriptTextView.isSelectable = false
+        transcriptTextView.isRichText = false
+        transcriptTextView.importsGraphics = false
+        transcriptTextView.textContainerInset = NSSize(width: 0, height: 0)
+        transcriptTextView.textContainer?.lineFragmentPadding = 0
+        transcriptTextView.textContainer?.widthTracksTextView = true
+        transcriptTextView.textContainer?.containerSize = NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
+        transcriptTextView.isHorizontallyResizable = false
+        transcriptTextView.isVerticallyResizable = true
+        transcriptTextView.autoresizingMask = [.width]
+        transcriptScrollView.drawsBackground = false
+        transcriptScrollView.borderType = .noBorder
+        transcriptScrollView.hasVerticalScroller = true
+        transcriptScrollView.hasHorizontalScroller = false
+        transcriptScrollView.autohidesScrollers = true
+        transcriptScrollView.verticalScrollElasticity = .allowed
+        transcriptScrollView.horizontalScrollElasticity = .none
+        transcriptScrollView.contentView.drawsBackground = false
+        transcriptScrollView.documentView = transcriptTextView
         detailLabel.font = .systemFont(ofSize: 12, weight: .regular)
         detailLabel.textColor = .secondaryLabelColor
         detailLabel.lineBreakMode = .byTruncatingTail
         detailLabel.maximumNumberOfLines = 2
+        finishButton.target = self
+        finishButton.action = #selector(finishTapped)
         cancelButton.target = self
         cancelButton.action = #selector(cancelTapped)
         copyButton.target = self
@@ -134,8 +173,8 @@ final class FloatingPanelController {
     }
 
     private func createPanel() {
-        let width: CGFloat = 720
-        let height: CGFloat = 180
+        let width: CGFloat = 760
+        let height: CGFloat = 220
         let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         let rect = NSRect(x: screen.midX - width / 2, y: screen.maxY - height - 30, width: width, height: height)
         let panel = NSPanel(contentRect: rect, styleMask: [.nonactivatingPanel, .hudWindow], backing: .buffered, defer: false)
@@ -147,20 +186,22 @@ final class FloatingPanelController {
         panel.titlebarAppearsTransparent = true
         panel.becomesKeyOnlyIfNeeded = false
 
-        let content = NSView(frame: NSRect(x: 0, y: 0, width: width, height: height))
+        let content = FloatingPanelContentView(frame: NSRect(x: 0, y: 0, width: width, height: height))
+        content.onMouseEnteredPanel = { [weak self] in self?.pauseAutoDismissForHover() }
+        content.onMouseExitedPanel = { [weak self] in self?.resumeAutoDismissAfterHover() }
         let stack = NSStackView()
         stack.orientation = .vertical
         stack.spacing = 10
         stack.alignment = .leading
         stack.translatesAutoresizingMaskIntoConstraints = false
 
-        let buttonStack = NSStackView(views: [copyButton, restoreButton, cancelButton, quitButton])
+        let buttonStack = NSStackView(views: [copyButton, restoreButton, finishButton, cancelButton, quitButton])
         buttonStack.orientation = .horizontal
         buttonStack.spacing = 8
         buttonStack.alignment = .centerY
 
         stack.addArrangedSubview(titleLabel)
-        stack.addArrangedSubview(transcriptLabel)
+        stack.addArrangedSubview(transcriptScrollView)
         stack.addArrangedSubview(detailLabel)
         stack.addArrangedSubview(buttonStack)
         content.addSubview(stack)
@@ -169,21 +210,119 @@ final class FloatingPanelController {
             stack.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -18),
             stack.topAnchor.constraint(equalTo: content.topAnchor, constant: 16),
             stack.bottomAnchor.constraint(lessThanOrEqualTo: content.bottomAnchor, constant: -16),
-            transcriptLabel.widthAnchor.constraint(equalTo: stack.widthAnchor)
+            transcriptScrollView.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            transcriptScrollView.heightAnchor.constraint(equalToConstant: 104)
         ])
         panel.contentView = content
         self.panel = panel
+    }
+
+    private func startNewPresentation() {
+        cancelPendingHide()
+        autoDismissEnabled = false
+        presentationGeneration += 1
+        panel?.alphaValue = 1.0
+    }
+
+    private func cancelPendingHide() {
+        pendingHideWorkItem?.cancel()
+        pendingHideWorkItem = nil
+        fadeTimer?.cancel()
+        fadeTimer = nil
+    }
+
+    private func ensureVisible() {
+        if panel == nil { createPanel() }
+        panel?.alphaValue = 1.0
+        panel?.orderFrontRegardless()
+    }
+
+    private func scheduleAutoHide(after delay: TimeInterval) {
+        cancelPendingHide()
+        guard autoDismissEnabled, !isMouseInsidePanel else { return }
+        let generation = presentationGeneration
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self, self.presentationGeneration == generation else { return }
+            self.beginFadeOut(generation: generation)
+        }
+        pendingHideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+    }
+
+    private func beginFadeOut(generation: Int) {
+        guard autoDismissEnabled, !isMouseInsidePanel, presentationGeneration == generation, let panel else {
+            return
+        }
+        pendingHideWorkItem = nil
+        fadeTimer?.cancel()
+
+        let startedAt = Date()
+        var timer: DispatchSourceTimer!
+        timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now(), repeating: .milliseconds(33))
+        timer.setEventHandler { [weak self, weak panel] in
+            guard let self,
+                  let panel,
+                  self.presentationGeneration == generation,
+                  self.autoDismissEnabled,
+                  !self.isMouseInsidePanel else {
+                timer.cancel()
+                return
+            }
+            let progress = min(1.0, Date().timeIntervalSince(startedAt) / self.fadeOutSeconds)
+            let easedProgress = progress * progress * (3.0 - 2.0 * progress)
+            panel.alphaValue = max(0.0, 1.0 - easedProgress)
+
+            if progress >= 1.0 {
+                timer.cancel()
+                self.fadeTimer = nil
+                panel.orderOut(nil)
+                panel.alphaValue = 1.0
+                self.autoDismissEnabled = false
+            }
+        }
+        fadeTimer = timer
+        timer.resume()
+    }
+
+    private func pauseAutoDismissForHover() {
+        guard panel?.isVisible == true else { return }
+        isMouseInsidePanel = true
+        cancelPendingHide()
+        presentationGeneration += 1
+        panel?.alphaValue = 1.0
+    }
+
+    private func resumeAutoDismissAfterHover() {
+        isMouseInsidePanel = false
+        guard autoDismissEnabled else { return }
+        presentationGeneration += 1
+        panel?.alphaValue = 1.0
+        scheduleAutoHide(after: autoDismissHoldSeconds)
+    }
+
+    private func refreshAutoDismissAfterUserAction() {
+        guard autoDismissEnabled else { return }
+        presentationGeneration += 1
+        panel?.alphaValue = 1.0
+        scheduleAutoHide(after: autoDismissHoldSeconds)
     }
 
     @objc private func cancelTapped() {
         onCancel?()
     }
 
+    @objc private func finishTapped() {
+        onFinish?()
+    }
+
     @objc private func copyTapped() {
+        refreshAutoDismissAfterUserAction()
         onCopy?()
     }
 
     @objc private func restoreTapped() {
+        refreshAutoDismissAfterUserAction()
         onRestoreClipboard?()
     }
 
@@ -194,6 +333,43 @@ final class FloatingPanelController {
     private func withDiagnostics(_ message: String) -> String {
         guard !diagnosticText.isEmpty else { return message }
         return "\(message)\n\(diagnosticText)"
+    }
+
+    private func setTranscriptText(_ text: String) {
+        transcriptTextView.string = text
+        transcriptTextView.layoutManager?.ensureLayout(for: transcriptTextView.textContainer!)
+        transcriptTextView.scrollRangeToVisible(NSRange(location: (text as NSString).length, length: 0))
+    }
+}
+
+private final class FloatingPanelContentView: NSView {
+    var onMouseEnteredPanel: (() -> Void)?
+    var onMouseExitedPanel: (() -> Void)?
+    private var trackingArea: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea {
+            removeTrackingArea(trackingArea)
+        }
+        let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeAlways, .inVisibleRect]
+        let area = NSTrackingArea(rect: .zero, options: options, owner: self, userInfo: nil)
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        onMouseEnteredPanel?()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        onMouseExitedPanel?()
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
     }
 }
 #endif

@@ -7,10 +7,7 @@ import LocalVoiceInputCore
 final class FocusDetector {
     func snapshot() -> FocusSnapshot {
         let app = NSWorkspace.shared.frontmostApplication
-        let systemWide = AXUIElementCreateSystemWide()
-        var focusedRef: CFTypeRef?
-        let error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute as CFString, &focusedRef)
-        guard error == .success, let focused = focusedRef else {
+        guard let element = focusedElement(frontmostApplication: app) else {
             return FocusSnapshot(
                 frontmostAppBundleId: app?.bundleIdentifier,
                 frontmostAppPid: app?.processIdentifier,
@@ -18,14 +15,6 @@ final class FocusDetector {
             )
         }
 
-        guard CFGetTypeID(focused) == AXUIElementGetTypeID() else {
-            return FocusSnapshot(
-                frontmostAppBundleId: app?.bundleIdentifier,
-                frontmostAppPid: app?.processIdentifier,
-                confidence: .low
-            )
-        }
-        let element = focused as! AXUIElement
         let role = copyStringAttribute(element, kAXRoleAttribute as CFString)
         let subrole = copyStringAttribute(element, kAXSubroleAttribute as CFString)
         let editable = copyBoolAttribute(element, "AXEditable" as CFString)
@@ -83,7 +72,9 @@ final class FocusDetector {
     private func copyBoolAttribute(_ element: AXUIElement, _ attr: CFString) -> Bool? {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, attr, &value) == .success else { return nil }
-        return value as? Bool
+        if let bool = value as? Bool { return bool }
+        if let number = value as? NSNumber { return number.boolValue }
+        return nil
     }
 
     private func copyElementAttribute(_ element: AXUIElement, _ attr: CFString) -> AXUIElement? {
@@ -94,6 +85,60 @@ final class FocusDetector {
             return nil
         }
         return (value as! AXUIElement)
+    }
+
+    private func focusedElement(frontmostApplication app: NSRunningApplication?) -> AXUIElement? {
+        let systemWide = AXUIElementCreateSystemWide()
+        if let focused = copyElementAttribute(systemWide, kAXFocusedUIElementAttribute as CFString) {
+            return deepestFocusedElement(from: focused)
+        }
+
+        guard let pid = app?.processIdentifier else { return nil }
+        let appElement = AXUIElementCreateApplication(pid)
+        if isChromiumBrowser(app?.bundleIdentifier) {
+            requestEnhancedAccessibility(for: appElement)
+        }
+        if let focused = copyElementAttribute(appElement, kAXFocusedUIElementAttribute as CFString) {
+            return deepestFocusedElement(from: focused)
+        }
+
+        if let focusedWindow = copyElementAttribute(appElement, kAXFocusedWindowAttribute as CFString) {
+            if isChromiumBrowser(app?.bundleIdentifier) {
+                requestEnhancedAccessibility(for: focusedWindow)
+            }
+            if let focused = copyElementAttribute(focusedWindow, kAXFocusedUIElementAttribute as CFString) {
+                return deepestFocusedElement(from: focused)
+            }
+        }
+
+        return nil
+    }
+
+    private func requestEnhancedAccessibility(for element: AXUIElement) {
+        _ = AXUIElementSetAttributeValue(element, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+    }
+
+    private func isChromiumBrowser(_ bundleIdentifier: String?) -> Bool {
+        guard let bundleIdentifier else { return false }
+        return [
+            "com.google.Chrome",
+            "com.google.Chrome.canary",
+            "com.microsoft.edgemac",
+            "com.brave.Browser",
+            "com.vivaldi.Vivaldi",
+            "com.operasoftware.Opera"
+        ].contains(bundleIdentifier)
+    }
+
+    private func deepestFocusedElement(from element: AXUIElement) -> AXUIElement {
+        var current = element
+        for _ in 0..<4 {
+            guard let nested = copyElementAttribute(current, kAXFocusedUIElementAttribute as CFString) else {
+                break
+            }
+            current = nested
+        }
+        return current
     }
 
     private func focusedWindowTitle(for element: AXUIElement) -> String? {

@@ -5,21 +5,20 @@ final class HotkeyStateMachineTests: XCTestCase {
     func testRightOptionPushToTalkLifecycle() {
         var machine = HotkeyStateMachine()
 
-        XCTAssertEqual(machine.send(.rightOptionDown), [.armPushToTalk, .consumeEvent])
-        XCTAssertEqual(machine.mode, .pendingPushToTalk)
-        XCTAssertEqual(machine.send(.pushToTalkDebounceFired), [.startPushToTalk])
+        XCTAssertEqual(machine.send(.rightOptionDown), [.startPushToTalk, .consumeEvent])
         XCTAssertEqual(machine.mode, .pushToTalk)
         XCTAssertEqual(machine.send(.rightOptionUp), [.stopPushToTalk, .consumeEvent])
         XCTAssertEqual(machine.mode, .idle)
     }
 
-    func testOptionSpaceCancelsPendingPushToTalkAndStartsLongDraft() {
+    func testOptionSpaceConvertsActivePushToTalkToLongDraft() {
         var machine = HotkeyStateMachine()
 
         _ = machine.send(.rightOptionDown)
-        XCTAssertEqual(machine.send(.optionSpace), [.cancelPendingPushToTalk, .toggleLongDraft, .consumeEvent])
+        XCTAssertEqual(machine.send(.optionSpace), [.convertPushToTalkToLongDraft, .consumeEvent])
         XCTAssertEqual(machine.mode, .longDraft)
-        XCTAssertEqual(machine.send(.pushToTalkDebounceFired), [])
+        XCTAssertEqual(machine.send(.rightOptionUp), [.consumeEvent])
+        XCTAssertEqual(machine.mode, .longDraft)
     }
 
     func testLongDraftIgnoresRightOptionRelease() {
@@ -41,8 +40,8 @@ final class HotkeyStateMachineTests: XCTestCase {
     func testOptionSpaceDoesNotInterruptActivePushToTalk() {
         var machine = HotkeyStateMachine(mode: .pushToTalk, isRightOptionDown: true)
 
-        XCTAssertEqual(machine.send(.optionSpace), [.consumeEvent])
-        XCTAssertEqual(machine.mode, .pushToTalk)
+        XCTAssertEqual(machine.send(.optionSpace), [.convertPushToTalkToLongDraft, .consumeEvent])
+        XCTAssertEqual(machine.mode, .longDraft)
     }
 
     func testEscCancelsActiveSessionAndConsumesEvent() {

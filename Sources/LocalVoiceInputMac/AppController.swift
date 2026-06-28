@@ -29,6 +29,7 @@ final class AppController {
     private var focusTracker: FocusChangeTracker?
     private var focusMonitorTimer: Timer?
     private var activeASRClientId: ObjectIdentifier?
+    private var activeSessionAudioMs = 0.0
 
     init(config: AppConfig) {
         self.config = config
@@ -44,6 +45,7 @@ final class AppController {
             PermissionManager.requestInputMonitoringIfNeeded()
         }
         setupCallbacks()
+        audio.prewarm()
         hotkeys.start()
         menu.setStatus("🎙")
     }
@@ -74,6 +76,7 @@ final class AppController {
             }
         }
         panel.onRestoreClipboard = { [weak self] in self?.clipboard.restoreLastSavedSnapshot() }
+        panel.onFinish = { [weak self] in self?.finishSession() }
         panel.onQuit = {
             NSApplication.shared.terminate(nil)
         }
@@ -81,6 +84,7 @@ final class AppController {
         hotkeys.onPushToTalkStart = { [weak self] in self?.beginSession(type: .pushToTalk, forceMock: false) }
         hotkeys.onPushToTalkStop = { [weak self] in self?.finishSession() }
         hotkeys.onToggleLongDraft = { [weak self] in self?.toggleLongDraft() }
+        hotkeys.onConvertPushToTalkToLongDraft = { [weak self] in self?.convertActivePushToTalkToLongDraft() }
         hotkeys.onCancel = { [weak self] in self?.cancelSession() }
         hotkeys.onError = { [weak self] message in self?.panel.updateError(message) }
 
@@ -102,6 +106,7 @@ final class AppController {
             self.didFinalize = false
             self.userRequestedFinish = false
             self.lastFinalText = ""
+            self.activeSessionAudioMs = 0
             self.initialFocus = self.focusDetector.snapshot()
             self.focusTracker = FocusChangeTracker(initial: self.initialFocus)
             self.activeOutputMode = OutputModeRouter.decide(
@@ -132,7 +137,12 @@ final class AppController {
         if config.mockASR || forceMock {
             client = MockASRClient(transcript: config.mockTranscript)
         } else {
-            client = FunASRClient(urlString: config.asrURL)
+            switch config.asrBackend {
+            case .funASRWebSocket:
+                client = FunASRClient(urlString: config.asrURL)
+            case .localHTTP:
+                client = LocalHTTPASRClient(serviceURLString: config.asrHTTPURL)
+            }
         }
         let clientId = ObjectIdentifier(client)
         client.onEvent = { [weak self, sessionId, clientId] event in
@@ -170,10 +180,10 @@ final class AppController {
                 guard let self else { return }
                 guard self.activeSessionId == sessionId, self.userRequestedFinish else { return }
                 for chunk in remainingChunks {
-                    self.activeASR?.sendPCM(chunk)
+                    self.sendPCMToActiveASR(chunk)
                 }
                 self.activeASR?.finish()
-                self.scheduleFinalizeTimeout(seconds: 3.5, sessionId: sessionId)
+                self.scheduleFinalizeTimeout(seconds: self.finalizeTimeoutSeconds(), sessionId: sessionId)
             }
         }
     }
@@ -197,6 +207,7 @@ final class AppController {
             self.didFinalize = false
             self.userRequestedFinish = false
             self.forceMockForCurrentSession = false
+            self.activeSessionAudioMs = 0
             self.focusTracker = nil
             self.stopFocusMonitoring()
             self.hotkeys.noteSessionEnded()
@@ -210,6 +221,22 @@ final class AppController {
             beginSession(type: .longDraft, forceMock: false)
         } else if activeSessionType == .longDraft {
             finishSession()
+        }
+    }
+
+    private func convertActivePushToTalkToLongDraft() {
+        DispatchQueue.main.async {
+            guard self.activeSessionId != nil, self.activeSessionType == .pushToTalk else { return }
+            self.activeSessionType = .longDraft
+            self.activeOutputMode = OutputModeRouter.decide(
+                snapshot: self.initialFocus,
+                sessionType: .longDraft,
+                focusChangedDuringRecording: self.focusTracker?.didChange ?? false,
+                policy: self.config.outputPolicy
+            )
+            self.hotkeys.noteSessionStarted(type: .longDraft)
+            self.panel.show(mode: self.activeOutputMode)
+            self.panel.updateDiagnostics(self.focusDiagnostic(self.initialFocus, mode: self.activeOutputMode, changed: self.focusTracker?.didChange ?? false))
         }
     }
 
@@ -327,6 +354,7 @@ final class AppController {
         didFinalize = false
         userRequestedFinish = false
         forceMockForCurrentSession = false
+        activeSessionAudioMs = 0
         focusTracker = nil
         stopFocusMonitoring()
         hotkeys.noteSessionEnded()
@@ -343,7 +371,19 @@ final class AppController {
 
     private func sendPCMToActiveASR(_ data: Data) {
         guard activeSessionId != nil else { return }
+        activeSessionAudioMs += Double(data.count) / 2.0 / 16_000.0 * 1000.0
         activeASR?.sendPCM(data)
+    }
+
+    private func finalizeTimeoutSeconds() -> TimeInterval {
+        guard !config.mockASR, !forceMockForCurrentSession else { return 2.0 }
+        switch config.asrBackend {
+        case .funASRWebSocket:
+            return 3.5
+        case .localHTTP:
+            let audioSeconds = activeSessionAudioMs / 1000.0
+            return min(120.0, max(12.0, audioSeconds * 0.75 + 10.0))
+        }
     }
 
     private func isCurrentASR(sessionId: String, clientId: ObjectIdentifier) -> Bool {

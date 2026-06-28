@@ -7,6 +7,7 @@ final class HotkeyController {
     var onPushToTalkStart: (() -> Void)?
     var onPushToTalkStop: (() -> Void)?
     var onToggleLongDraft: (() -> Void)?
+    var onConvertPushToTalkToLongDraft: (() -> Void)?
     var onCancel: (() -> Void)?
     var onError: ((String) -> Void)?
 
@@ -32,6 +33,8 @@ final class HotkeyController {
 
         let mask = (1 << CGEventType.flagsChanged.rawValue)
             | (1 << CGEventType.keyDown.rawValue)
+            | (1 << CGEventType.tapDisabledByTimeout.rawValue)
+            | (1 << CGEventType.tapDisabledByUserInput.rawValue)
         let refcon = Unmanaged.passUnretained(self).toOpaque()
         guard let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
@@ -85,6 +88,13 @@ final class HotkeyController {
     }
 
     private func process(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let eventTap {
+                CGEvent.tapEnable(tap: eventTap, enable: true)
+            }
+            return Unmanaged.passUnretained(event)
+        }
+
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
 
         if type == .flagsChanged, keyCode == 61 { // right Option on Apple keyboards
@@ -98,7 +108,17 @@ final class HotkeyController {
             let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
             if keyCode == 49 && event.flags.contains(.maskAlternate) { // Option + Space
                 if !isRepeat {
-                    if appSessionActive && appSessionType != .longDraft {
+                    if appSessionActive && appSessionType == .longDraft {
+                        stateMachine = HotkeyStateMachine()
+                        onToggleLongDraft?()
+                        return nil
+                    }
+                    if appSessionActive && appSessionType == .pushToTalk {
+                        stateMachine = HotkeyStateMachine(mode: .longDraft, isRightOptionDown: true)
+                        onConvertPushToTalkToLongDraft?()
+                        return nil
+                    }
+                    if appSessionActive {
                         return nil
                     }
                     perform(stateMachine.send(.optionSpace))
@@ -148,6 +168,8 @@ final class HotkeyController {
                 onPushToTalkStop?()
             case .toggleLongDraft:
                 onToggleLongDraft?()
+            case .convertPushToTalkToLongDraft:
+                onConvertPushToTalkToLongDraft?()
             case .cancelActiveSession:
                 onCancel?()
             case .consumeEvent:

@@ -15,6 +15,7 @@ public enum HotkeyAction: Equatable, Sendable {
     case startPushToTalk
     case stopPushToTalk
     case toggleLongDraft
+    case convertPushToTalkToLongDraft
     case cancelActiveSession
     case consumeEvent
 }
@@ -42,8 +43,8 @@ public struct HotkeyStateMachine: Equatable, Sendable {
             guard !isRightOptionDown else { return [.consumeEvent] }
             isRightOptionDown = true
             guard mode == .idle else { return [.consumeEvent] }
-            mode = .pendingPushToTalk
-            return [.armPushToTalk, .consumeEvent]
+            mode = .pushToTalk
+            return [.startPushToTalk, .consumeEvent]
 
         case .rightOptionUp:
             guard isRightOptionDown else { return [.consumeEvent] }
@@ -76,7 +77,8 @@ public struct HotkeyStateMachine: Equatable, Sendable {
                 mode = .idle
                 return [.toggleLongDraft, .consumeEvent]
             case .pushToTalk:
-                return [.consumeEvent]
+                mode = .longDraft
+                return [.convertPushToTalkToLongDraft, .consumeEvent]
             }
 
         case .escape:
