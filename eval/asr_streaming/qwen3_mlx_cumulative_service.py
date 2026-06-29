@@ -153,15 +153,48 @@ class CumulativeRecomputeService:
         prefix_step_sec: float,
         min_prefix_sec: float,
         max_prefixes: int,
+        event_retention: int = 5000,
+        release_sessions_on_terminal: bool = True,
     ):
         self.backend = backend
         self.prefix_step_sec = max(0.1, prefix_step_sec)
         self.min_prefix_sec = max(0.1, min_prefix_sec)
         self.max_prefixes = max(1, max_prefixes)
+        self.event_retention = max(1, event_retention)
+        self.release_sessions_on_terminal = release_sessions_on_terminal
         self.sessions: dict[str, SessionState] = {}
         self.events: list[dict[str, Any]] = []
         self.worker_available_ms = 0.0
         self._token_counter = 0
+        self._event_counter = 0
+        self.released_session_count = 0
+        self.finalized_session_count = 0
+        self.canceled_session_count = 0
+
+    def event_cursor(self) -> int:
+        return self._event_counter
+
+    def events_after(self, cursor: int) -> list[dict[str, Any]]:
+        return [
+            event
+            for event in self.events
+            if int(event.get("service_event_index", 0)) > cursor
+        ]
+
+    def status(self) -> dict[str, Any]:
+        return {
+            "schema_version": SERVICE_SCHEMA_VERSION,
+            "active_session_count": len(self.sessions),
+            "active_session_ids": sorted(self.sessions.keys()),
+            "retained_event_count": len(self.events),
+            "event_retention": self.event_retention,
+            "total_event_count": self._event_counter,
+            "released_session_count": self.released_session_count,
+            "finalized_session_count": self.finalized_session_count,
+            "canceled_session_count": self.canceled_session_count,
+            "worker_available_ms": self.worker_available_ms,
+            "release_sessions_on_terminal": self.release_sessions_on_terminal,
+        }
 
     def start(self, session_id: str, *, simulated_now_ms: float = 0.0, session_token: int | None = None) -> int:
         if session_token is None:
@@ -278,13 +311,14 @@ class CumulativeRecomputeService:
         )
 
         start_ms = max(simulated_now_ms, self.worker_available_ms)
-        result = self.backend.final(session.audio)
+        audio = session.audio
+        result = self.backend.final(audio)
         emit_ms = start_ms + result.wall_ms
         self.worker_available_ms = emit_ms
         session.status = "finalized"
         session.revision += 1
         session.final_text = result.text
-        return self._append_event(
+        event = self._append_event(
             {
                 "kind": "final",
                 "session_id": session_id,
@@ -298,12 +332,16 @@ class CumulativeRecomputeService:
                 "is_final": True,
             }
         )
+        self.finalized_session_count += 1
+        self._release_session(session_id)
+        return event
 
     def cancel(self, session_id: str, *, simulated_now_ms: float) -> None:
         session = self.sessions.get(session_id)
         if session is not None:
             session.status = "canceled"
             token = session.token
+            self.canceled_session_count += 1
         else:
             token = None
         self._append_event(
@@ -315,6 +353,7 @@ class CumulativeRecomputeService:
                 "is_final": False,
             }
         )
+        self._release_session(session_id)
 
     def deliver_partial_result(
         self,
@@ -413,9 +452,19 @@ class CumulativeRecomputeService:
         return self._append_event(event)
 
     def _append_event(self, event: dict[str, Any]) -> dict[str, Any]:
+        self._event_counter += 1
+        event.setdefault("service_event_index", self._event_counter)
         event.setdefault("recv_epoch_ms", now_ms())
         self.events.append(event)
+        if len(self.events) > self.event_retention:
+            del self.events[: len(self.events) - self.event_retention]
         return event
+
+    def _release_session(self, session_id: str) -> None:
+        if not self.release_sessions_on_terminal:
+            return
+        if self.sessions.pop(session_id, None) is not None:
+            self.released_session_count += 1
 
 
 def mean_number(values: list[Any]) -> float | None:
@@ -735,6 +784,11 @@ def command_self_test(args: argparse.Namespace) -> int:
     )
     token = finish_service.start("finish", simulated_now_ms=0.0)
     finish_service.finish("finish", simulated_now_ms=1000.0)
+    if "finish" in finish_service.sessions:
+        raise AssertionError("finished session audio state must be released")
+    finish_status = finish_service.status()
+    if finish_status["active_session_count"] != 0 or finish_status["released_session_count"] != 1:
+        raise AssertionError(f"finished session status did not reflect release: {finish_status}")
     accepted_late = finish_service.deliver_partial_result(
         session_id="finish",
         session_token=token,
@@ -758,7 +812,17 @@ def command_self_test(args: argparse.Namespace) -> int:
         max_prefixes=2,
     )
     cancel_token = cancel_service.start("cancel", simulated_now_ms=0.0)
+    cancel_service.push_pcm(
+        "cancel",
+        np.ones((SAMPLE_RATE,), dtype=np.float32),
+        simulated_now_ms=1000.0,
+        audio_start_ms=0.0,
+        audio_end_ms=1000.0,
+        chunk_index=0,
+    )
     cancel_service.cancel("cancel", simulated_now_ms=100.0)
+    if "cancel" in cancel_service.sessions:
+        raise AssertionError("canceled session audio state must be released")
     cancel_service.finish("cancel", simulated_now_ms=200.0)
     accepted_cancel = cancel_service.deliver_partial_result(
         session_id="cancel",
@@ -773,6 +837,29 @@ def command_self_test(args: argparse.Namespace) -> int:
         raise AssertionError("partial after cancel must be ignored")
     if any(e.get("kind") == "final" for e in cancel_service.events):
         raise AssertionError(f"cancel must not produce final: {cancel_service.events}")
+
+    retention_service = CumulativeRecomputeService(
+        backend=FakeBackend(),
+        prefix_step_sec=1.0,
+        min_prefix_sec=1.0,
+        max_prefixes=1,
+        event_retention=3,
+    )
+    cursor = retention_service.event_cursor()
+    retention_service.start("retain", simulated_now_ms=0.0)
+    retention_service.push_pcm(
+        "retain",
+        np.zeros((SAMPLE_RATE,), dtype=np.float32),
+        simulated_now_ms=1000.0,
+        audio_start_ms=0.0,
+        audio_end_ms=1000.0,
+        chunk_index=0,
+    )
+    retention_service.finish("retain", simulated_now_ms=1200.0)
+    if len(retention_service.events) > 3:
+        raise AssertionError(f"event retention limit was not enforced: {retention_service.events}")
+    if not any(e.get("kind") == "final" for e in retention_service.events_after(cursor)):
+        raise AssertionError(f"events_after cursor missed current final event: {retention_service.events}")
 
     fake_case_events = [
         {"kind": "partial", "recv_offset_ms": 500.0, "text": "你好", "meaningful_text": True},

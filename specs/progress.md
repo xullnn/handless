@@ -3504,3 +3504,48 @@ bash scripts/run_qwen3_mlx_segmented_app_smoke.sh
 
 - Run `bash scripts/run_qwen3_mlx_segmented_app_smoke.sh` and perform the manual smoke checklist from `specs/2026-06-26-qwen3-mlx-segmented-app-smoke/validation.md`.
 - After manual smoke, decide whether the next feature should be App-managed service supervision or segment boundary/dedup tuning.
+## 2026-06-28 — 2026-06-28-asr-resource-cache-governance
+
+### Summary
+- Added bounded resource behavior for the Qwen3 cumulative HTTP service without changing Swift App hotkeys, focus routing, paste behavior, or default backend selection.
+- `CumulativeRecomputeService` now releases finalized/canceled session audio state and keeps only a configurable number of recent service events.
+- `qwen3_mlx_http_service.py` now exposes `/status` with process, uptime, model metadata, and service-state diagnostics.
+- Added explicit local cache cleanup tooling with dry-run default, model-cache protection, optional eval-audio inclusion, and apply-mode self-test coverage.
+
+### Files changed
+- `eval/asr_streaming/qwen3_mlx_cumulative_service.py`
+- `eval/asr_streaming/qwen3_mlx_http_service.py`
+- `eval/asr_streaming/cleanup_localvoiceinput_cache.py`
+- `eval/asr_streaming/README.md`
+- `scripts/cleanup_localvoiceinput_cache.sh`
+- `specs/2026-06-28-asr-resource-cache-governance/*`
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+
+### Validation
+- Command: `python3 eval/asr_streaming/qwen3_mlx_cumulative_service.py self-test`
+  Result: pass
+  Notes: Verified stale-session rejection, final/cancel cleanup, event retention, gate evaluation, and new-session worker timing reset.
+- Command: `python3 eval/asr_streaming/qwen3_mlx_http_service.py self-test`
+  Result: pass
+  Notes: Verified fake HTTP service partial/final behavior, session release after finish, event retention, and `/status` payload.
+- Command: `python3 eval/asr_streaming/cleanup_localvoiceinput_cache.py self-test`
+  Result: pass
+  Notes: Verified dry-run safety, apply deletion inside a temporary root, optional eval-audio handling, and model-cache protection.
+- Command: `bash scripts/cleanup_localvoiceinput_cache.sh --dry-run --max-bytes 1048576`
+  Result: pass
+  Notes: Dry-run only; selected 3 cleanup candidates totaling 3,224,389 bytes, deleted 0 files, and reported `model_cache_protected=true`.
+- Command: `swift build`
+  Result: pass
+  Notes: Build complete.
+- Command: `swift test`
+  Result: pass
+  Notes: 57 tests, 0 failures.
+
+### Blockers / open questions
+- No blockers for this feature.
+- Real model load and manual app smoke were not required by `validation.md` for this feature because the implementation is service-resource governance plus Swift regression safety.
+- Product RSS/CPU thresholds and user-facing recovery UX remain separate follow-up work.
+
+### Next recommended action
+- Run a longer Qwen3 HTTP soak with `/status` polling after this change to measure retained event count, active session count, and RSS after many short sessions.

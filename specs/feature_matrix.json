@@ -341,6 +341,19 @@
       ],
       "passes": true,
       "updated_at": "2026-06-26"
+    },
+    {
+      "id": "2026-06-28-asr-resource-cache-governance",
+      "title": "ASR resource and cache governance",
+      "status": "validated",
+      "spec_path": "specs/2026-06-28-asr-resource-cache-governance",
+      "depends_on": [
+        "2026-06-23-qwen3-mlx-http-service-boundary",
+        "2026-06-23-qwen3-mlx-http-resource-validation",
+        "2026-06-26-qwen3-mlx-segmented-cache-service"
+      ],
+      "passes": true,
+      "updated_at": "2026-06-28"
     }
   ]
 }

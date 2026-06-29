@@ -192,6 +192,16 @@ swift run LocalVoiceInputMac --local-http-asr --asr-http-url http://127.0.0.1:18
 
 It writes `service.log`, `app.log`, run metadata, and segmented audio cache files under `eval/asr_streaming/results/qwen3-mlx-segmented-app-smoke-*`. This is a manual App smoke path only: the default App backend remains FunASR WebSocket, and service supervision/restart behavior is still a separate feature.
 
+Inspect and clean local ASR runtime artifacts:
+
+```bash
+bash scripts/cleanup_localvoiceinput_cache.sh --dry-run
+bash scripts/cleanup_localvoiceinput_cache.sh --dry-run --max-bytes 1048576
+bash scripts/cleanup_localvoiceinput_cache.sh --apply --max-age-hours 24
+```
+
+The cleanup tool is dry-run by default and never deletes `.external/models`. Eval audio under `eval/asr_streaming/audio` is opt-in via `--include-eval-audio`; segmented-cache spool directories, manual smoke runtime directories, and Python cache directories are normal cleanup candidates.
+
 Run a local file-level Fun-ASR-Nano candidate smoke test:
 
 ```bash

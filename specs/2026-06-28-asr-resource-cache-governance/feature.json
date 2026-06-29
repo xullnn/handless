@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-06-28-asr-resource-cache-governance",
+  "title": "ASR resource and cache governance",
+  "kind": "feature",
+  "parent_id": "2026-06-23-qwen3-mlx-http-resource-validation",
+  "created_from": "Follow-up from local Qwen3 HTTP resource observations and segmented-cache spool risk",
+  "created_at": "2026-06-28",
+  "updated_at": "2026-06-28",
+  "follow_ups": [
+    {
+      "id": "FUP-001",
+      "title": "Expose ASR resource health in the macOS app",
+      "kind": "integration",
+      "reason": "This feature adds service-side status but does not add a user-facing resource monitor or menu item.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    },
+    {
+      "id": "FUP-002",
+      "title": "Formalize crash recovery UX for durable segmented-cache audio",
+      "kind": "product",
+      "reason": "This feature can clean old cache files but does not design a user-visible recovery flow for interrupted long dictation.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    }
+  ]
+}

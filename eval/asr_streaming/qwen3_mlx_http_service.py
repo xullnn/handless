@@ -11,6 +11,8 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
+import subprocess
 import sys
 import threading
 import time
@@ -107,10 +109,12 @@ class Qwen3HttpState:
         prefix_step_sec: float,
         min_prefix_sec: float,
         max_prefixes: int,
+        event_retention: int,
         fake_backend: bool,
         model_load_wall_ms: float,
     ):
         self.lock = threading.RLock()
+        self.started_monotonic = time.monotonic()
         self.fake_expected_backend = backend if isinstance(backend, ExpectedTextFakeBackend) else None
         self.expected_text_by_session: dict[str, str] = {}
         self.service = CumulativeRecomputeService(
@@ -118,6 +122,7 @@ class Qwen3HttpState:
             prefix_step_sec=prefix_step_sec,
             min_prefix_sec=min_prefix_sec,
             max_prefixes=max_prefixes,
+            event_retention=event_retention,
         )
         self.model_info = model_info
         self.model_surface = model_surface
@@ -138,6 +143,19 @@ class Qwen3HttpState:
             "contract": ["start", "chunk", "finish", "cancel"],
         }
 
+    def status(self) -> dict[str, Any]:
+        with self.lock:
+            return {
+                "ok": True,
+                **self.metadata(),
+                "uptime_seconds": round(time.monotonic() - self.started_monotonic, 3),
+                "process": {
+                    "pid": os.getpid(),
+                    "rss_mb": current_rss_mb(),
+                },
+                "service_state": self.service.status(),
+            }
+
     def start(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
         with self.lock:
             session_id = str(payload["session_id"])
@@ -145,19 +163,19 @@ class Qwen3HttpState:
             if expected_text:
                 self.expected_text_by_session[session_id] = expected_text
             self._select_fake_expected_text(session_id)
-            before = len(self.service.events)
+            before = self.service.event_cursor()
             self.service.start(
                 session_id,
                 simulated_now_ms=float(payload.get("recv_offset_ms", 0.0)),
                 session_token=int(payload["session_token"]),
             )
-            return public_events(self.service.events[before:])
+            return public_events(self.service.events_after(before))
 
     def chunk(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
         with self.lock:
             session_id = str(payload["session_id"])
             self._select_fake_expected_text(session_id)
-            before = len(self.service.events)
+            before = self.service.event_cursor()
             pcm = pcm16_base64_to_float32(payload)
             self.service.push_pcm(
                 session_id,
@@ -167,28 +185,30 @@ class Qwen3HttpState:
                 audio_end_ms=float(payload.get("audio_end_ms", 0.0)),
                 chunk_index=int(payload.get("chunk_index", 0)),
             )
-            return public_events(self.service.events[before:])
+            return public_events(self.service.events_after(before))
 
     def finish(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
         with self.lock:
             session_id = str(payload["session_id"])
             self._select_fake_expected_text(session_id)
-            before = len(self.service.events)
+            before = self.service.event_cursor()
             self.service.finish(
                 session_id,
                 simulated_now_ms=float(payload.get("recv_offset_ms", 0.0)),
             )
-            return public_events(self.service.events[before:])
+            self.expected_text_by_session.pop(session_id, None)
+            return public_events(self.service.events_after(before))
 
     def cancel(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
         with self.lock:
             session_id = str(payload["session_id"])
-            before = len(self.service.events)
+            before = self.service.event_cursor()
             self.service.cancel(
                 session_id,
                 simulated_now_ms=float(payload.get("recv_offset_ms", 0.0)),
             )
-            return public_events(self.service.events[before:])
+            self.expected_text_by_session.pop(session_id, None)
+            return public_events(self.service.events_after(before))
 
     def _select_fake_expected_text(self, session_id: str) -> None:
         if self.fake_expected_backend is None:
@@ -202,6 +222,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         if self.path in {"/health", "/metadata"}:
             self._write_json({"ok": True, **self.state.metadata()})
+            return
+        if self.path == "/status":
+            self._write_json(self.state.status())
             return
         self._write_json({"error": f"unsupported path: {self.path}"}, status=404)
 
@@ -267,12 +290,102 @@ def build_state(args: argparse.Namespace) -> Qwen3HttpState:
         prefix_step_sec=args.prefix_step_sec,
         min_prefix_sec=args.min_prefix_sec,
         max_prefixes=args.max_prefixes,
+        event_retention=args.event_retention,
         fake_backend=args.fake_backend,
         model_load_wall_ms=load_wall_ms,
     )
 
 
-def main() -> int:
+def current_rss_mb() -> float | None:
+    try:
+        raw = subprocess.check_output(
+            ["ps", "-o", "rss=", "-p", str(os.getpid())],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        if not raw:
+            return None
+        return round(float(raw) / 1024.0, 3)
+    except Exception:
+        return None
+
+
+def command_self_test() -> int:
+    args = argparse.Namespace(
+        fake_backend=True,
+        registry="eval/asr_streaming/model_registry.json",
+        model_id="qwen3-asr-0.6b-mlx-8bit",
+        model=".external/models/mlx-community__Qwen3-ASR-0.6B-8bit",
+        mlx_audio_source=".external/repos/mlx-audio",
+        language="Chinese",
+        min_prefix_sec=1.0,
+        prefix_step_sec=1.0,
+        max_prefixes=2,
+        max_tokens=128,
+        event_retention=6,
+    )
+    state = build_state(args)
+    session_payload = {
+        "session_id": "http-self-test",
+        "session_token": 123,
+        "expected_text": "你好世界",
+        "recv_offset_ms": 0.0,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "channels": 1,
+    }
+    state.start(session_payload)
+    pcm = (np.zeros((SAMPLE_RATE,), dtype="<i2")).tobytes()
+    chunk_events = state.chunk(
+        {
+            **session_payload,
+            "chunk_index": 0,
+            "audio_start_ms": 0.0,
+            "audio_end_ms": 1000.0,
+            "recv_offset_ms": 1000.0,
+            "pcm_base64": base64.b64encode(pcm).decode("ascii"),
+        }
+    )
+    if not any(event.get("kind") == "partial" for event in chunk_events):
+        raise AssertionError(f"HTTP chunk did not emit partial: {chunk_events}")
+    finish_events = state.finish({**session_payload, "recv_offset_ms": 1200.0})
+    if not any(event.get("kind") == "final" for event in finish_events):
+        raise AssertionError(f"HTTP finish did not emit final: {finish_events}")
+    status = state.status()
+    service_state = status["service_state"]
+    if service_state["active_session_count"] != 0:
+        raise AssertionError(f"finished HTTP session was not released: {status}")
+    if service_state["retained_event_count"] > 6:
+        raise AssertionError(f"event retention was not enforced: {status}")
+    if "process" not in status or "uptime_seconds" not in status:
+        raise AssertionError(f"status payload missing process/uptime: {status}")
+
+    Handler.state = state
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        import urllib.request
+
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/status", timeout=2) as response:
+            http_status = json.loads(response.read().decode("utf-8"))
+        if http_status["service_state"]["active_session_count"] != 0:
+            raise AssertionError(f"/status returned malformed service state: {http_status}")
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+    print("Qwen3 MLX HTTP service self-test passed.")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "self-test":
+        return command_self_test()
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=18105)
@@ -286,7 +399,8 @@ def main() -> int:
     parser.add_argument("--prefix-step-sec", type=float, default=1.0)
     parser.add_argument("--max-prefixes", type=int, default=8)
     parser.add_argument("--max-tokens", type=int, default=256)
-    args = parser.parse_args()
+    parser.add_argument("--event-retention", type=int, default=5000)
+    args = parser.parse_args(argv)
 
     Handler.state = build_state(args)
     server = HTTPServer((args.host, args.port), Handler)
