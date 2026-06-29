@@ -7,7 +7,7 @@ LocalVoiceInput is a local-first macOS voice input assistant designed around the
 - If an editable input field is focused, the final text is pasted automatically.
 - If no input field is focused, the final text is copied to the clipboard.
 - If paste is unsafe or fails, the final text remains on the clipboard.
-- Auto-paste restores the previous clipboard; clipboard-draft mode intentionally keeps the dictated text on the clipboard.
+- Auto-paste keeps the dictated text as the newest clipboard item by default; restoring the previous clipboard is an optional policy.
 - `Option + Space` starts/stops long draft mode.
 - `Esc` cancels the current session.
 
@@ -115,7 +115,7 @@ bash scripts/run_qwen3_mlx_app_smoke.sh
 PYTHON_BIN=/path/to/python bash scripts/run_qwen3_mlx_app_smoke.sh
 ```
 
-Manual smoke must verify Right Option, Option+Space, Esc cancel, focused-input paste, no-input clipboard draft, secure-field clipboard fallback, focus-change downgrade, clipboard restore after confirmed paste, and that partial text appears only in the floating panel.
+Manual smoke must verify Right Option, Option+Space, Esc cancel, focused-input paste, no-input clipboard draft, secure-field clipboard fallback, focus-change downgrade, the configured clipboard policy after confirmed paste, and that partial text appears only in the floating panel.
 
 Quickly inspect the current local App and ASR service state:
 
@@ -196,7 +196,7 @@ macOS menu bar app
 
 | Situation | Output mode | Clipboard behavior |
 |---|---|---|
-| Editable text field focused | Cursor Mode | Temporarily write result, Cmd+V, restore original clipboard |
+| Editable text field focused | Cursor Mode | Temporarily write result, Cmd+V, keep result by default; optionally restore original clipboard after verified paste |
 | No input focused | Clipboard Draft Mode | Keep result on clipboard |
 | Secure text field | Clipboard Draft Mode | Never auto-paste |
 | Focus changes while recording | Clipboard Draft Mode | Downgrade to copy |
@@ -238,7 +238,7 @@ eval/asr_cases.md
 
 - It is not yet an InputMethodKit input method, so realtime partial text appears in the floating panel, not directly inside the target input field.
 - Right Option detection uses a global event tap. Some keyboard layouts, remapped keys, or permission states may require changing the shortcut implementation.
-- Paste success detection is intentionally conservative. The app restores the previous clipboard only when Accessibility verification can confirm that the target text changed; otherwise it keeps the dictated text on the clipboard to avoid losing content.
+- Paste success detection is intentionally conservative. By default the app keeps the dictated text on the clipboard even after verified paste. If clipboard restoration is enabled, the app restores the previous clipboard only when Accessibility verification can confirm that the target text changed; otherwise it keeps the dictated text to avoid losing content.
 - The correction layer is rule-based in this MVP. A local LLM refiner can be added behind `CorrectionPipeline` later.
 - The FunASR runtime is local, but first setup still needs to download Python packages and model files. Keep the server running in a user terminal or a LaunchAgent for manual app testing.
 
@@ -248,7 +248,7 @@ This reviewed build fixes several MVP-level issues found during a full implement
 
 - FunASR offline segment results no longer prematurely finish a session while the user is still holding the shortcut.
 - Pending audio is flushed before sending `is_speaking=false`, reducing the chance of losing the final chunk.
-- Clipboard restoration is safer: previous clipboard content is restored only after paste verification; otherwise the dictated text remains available for manual `⌘V`.
+- Clipboard handling is safer: dictated text remains available for manual `⌘V` by default, and optional previous-clipboard restoration only happens after paste verification.
 - Clipboard snapshots now preserve multiple pasteboard items instead of flattening all types into one item.
 - Stale ASR events from old sessions are ignored.
 - Right Option push-to-talk is debounced so `Option + Space` can be used for long draft mode without accidentally starting a push-to-talk session.

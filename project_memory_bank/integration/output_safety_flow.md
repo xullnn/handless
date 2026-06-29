@@ -11,14 +11,15 @@ Start:
 
 Final routing:
 
-- Cursor paste: allowed only for non-secure, editable, pasteable, high/medium-confidence initial focus with no sticky focus change.
-- Clipboard draft: used for no input focus, low confidence, secure fields, focus changes, disabled auto-paste, and long-draft output.
+- Cursor paste: allowed only for non-secure, editable, pasteable, high/medium-confidence initial focus with no sticky focus change, plus explicit low-confidence app allowlist exceptions.
+- Clipboard draft: used for no input focus, low confidence without allowlist, secure fields, focus changes, disabled auto-paste, and long-draft output.
 - Fallback copy: used when paste was attempted but insertion could not be confirmed.
 - Cancelled: used for Esc cancellation; no copy and no paste.
 
 Clipboard policy:
 
-- Cursor paste temporarily writes final text to the pasteboard, sends Cmd+V, verifies insertion, and restores the original clipboard only after confirmation.
+- Cursor paste temporarily writes final text to the pasteboard, sends Cmd+V, and verifies insertion.
+- Confirmed cursor paste keeps the dictated result as the newest clipboard item by default. If `restoreClipboardAfterPaste` is enabled, the original clipboard is restored only after confirmation.
 - Clipboard draft intentionally keeps the dictated text on the clipboard for the user's next manual Cmd+V.
 - Fallback copy keeps the dictated text on the clipboard because paste failed or could not be proven.
 - Secure fields never auto-paste by default.

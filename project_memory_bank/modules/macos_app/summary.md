@@ -8,7 +8,7 @@ Stable responsibilities:
 - `AppConfig` can explicitly select the ASR backend. FunASR WebSocket remains the default; `LocalHTTPASRClient` is available only when selected through config or CLI flags.
 - `HotkeyController` uses a global event tap and requires Accessibility plus Input Monitoring permissions.
 - `FocusDetector` uses Accessibility APIs to identify editable targets, secure fields, and focus identity.
-- `FloatingPanelController` shows non-key, non-activating realtime UI and includes controls to copy, restore clipboard, cancel, and quit the app.
+- `FloatingPanelController` shows rounded, non-key, non-activating realtime UI and includes controls to copy, restore clipboard, cancel, and quit the app. Completed output holds briefly, fades out over time, and pauses dismissal while the pointer is over the panel.
 - `MenuBarController` provides a status-item menu and quit path.
 - `PermissionManager` prompts for microphone, Accessibility, and Input Monitoring permissions.
 

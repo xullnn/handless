@@ -14,4 +14,6 @@ Non-goals for the current MVP:
 - Do not auto-send messages.
 - Do not write partial text into the active app.
 
-The ASR backbone is intended to be local FunASR WebSocket 2-pass: online results drive floating-panel partials, and offline results refine final segments. Offline segment events must not finalize a user session before the user releases the shortcut or stops long-draft mode.
+The app keeps ASR local-only. FunASR WebSocket 2-pass remains the baseline path: online results drive floating-panel partials, and offline results refine final segments. Offline segment events must not finalize a user session before the user releases the shortcut or stops long-draft mode.
+
+Qwen3-ASR MLX behind a loopback HTTP service is the current optional actual-use backend candidate. It must be selected explicitly through config or CLI flags, remains local to the machine, and is not treated as native realtime streaming unless the service contract proves timed chunk input, pre-stop partials, post-stop final output, cancellation, and stale-session isolation.
