@@ -354,6 +354,28 @@
       ],
       "passes": true,
       "updated_at": "2026-06-28"
+    },
+    {
+      "id": "2026-06-29-input-trigger-abstraction",
+      "title": "Input trigger abstraction for mouse and external devices",
+      "status": "not_started",
+      "spec_path": "specs/2026-06-29-input-trigger-abstraction",
+      "depends_on": [],
+      "passes": false,
+      "updated_at": "2026-06-29"
+    },
+    {
+      "id": "2026-06-29-asr-model-profile-management",
+      "title": "ASR model profile management",
+      "status": "not_started",
+      "spec_path": "specs/2026-06-29-asr-model-profile-management",
+      "depends_on": [
+        "2026-06-23-qwen3-mlx-http-service-boundary",
+        "2026-06-23-qwen3-mlx-swift-http-adapter",
+        "2026-06-28-asr-resource-cache-governance"
+      ],
+      "passes": false,
+      "updated_at": "2026-06-29"
     }
   ]
 }

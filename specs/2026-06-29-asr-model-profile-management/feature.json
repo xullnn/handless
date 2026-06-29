@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-06-29-asr-model-profile-management",
+  "title": "ASR model profile management",
+  "kind": "feature",
+  "parent_id": "2026-06-22-asr-backend-selection-roadmap",
+  "created_from": "User request to support different local ASR models for lower or higher hardware configurations",
+  "created_at": "2026-06-29",
+  "updated_at": "2026-06-29",
+  "follow_ups": [
+    {
+      "id": "FUP-001",
+      "title": "User-facing model selection UI",
+      "kind": "architecture",
+      "reason": "The profile layer should work before adding a full app settings surface.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    },
+    {
+      "id": "FUP-002",
+      "title": "Automated hardware benchmark for model recommendation",
+      "kind": "performance",
+      "reason": "Static RAM and disk thresholds may be too coarse for choosing between local ASR models.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    },
+    {
+      "id": "FUP-003",
+      "title": "Local model acquisition and cache manager",
+      "kind": "architecture",
+      "reason": "Model download, verification, and cleanup should remain explicit and local-only, but this contract does not implement a full installer.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    }
+  ]
+}
