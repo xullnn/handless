@@ -224,8 +224,27 @@ def print_case_header(index: int, total: int, case: RecordingCase, output_path: 
     print(f"[{index}/{total}] {case.case_id}  lang={case.lang}  scenario={case.scenario}")
     print(f"Output: {output_path}")
     print("-" * 72)
+    print("请朗读这一行 / Read this text:")
     print(case.text)
+    preferred = str(case.raw.get("preferred_text", "")).strip()
+    if preferred and preferred != case.text:
+        print("-" * 72)
+        print("评测目标输出，不要朗读这一行 / Preferred output, do not read:")
+        print(preferred)
     print("=" * 72)
+
+
+def filter_cases(cases: list[RecordingCase], selected_ids: list[str]) -> list[RecordingCase]:
+    if not selected_ids:
+        return cases
+    wanted: set[str] = set()
+    for raw in selected_ids:
+        wanted.update(part.strip() for part in raw.split(",") if part.strip())
+    filtered = [case for case in cases if case.case_id in wanted]
+    missing = sorted(wanted - {case.case_id for case in filtered})
+    if missing:
+        raise ValueError(f"case ids not found: {', '.join(missing)}")
+    return filtered
 
 
 def run_interactive(args: argparse.Namespace) -> int:
@@ -235,7 +254,7 @@ def run_interactive(args: argparse.Namespace) -> int:
     ensure_cases_file(Path(args.cases), Path(args.template), args.pilot_count, args.reset_cases)
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    cases = load_cases(Path(args.cases))
+    cases = filter_cases(load_cases(Path(args.cases)), args.case_id)
     if args.dry_run:
         print(f"ffmpeg: {ffmpeg}")
         print(f"audio device: {args.audio_device}")
@@ -252,6 +271,7 @@ def run_interactive(args: argparse.Namespace) -> int:
     print("Controls: Enter=start/stop, s=skip, r=rerecord existing, l=list devices, q=quit")
 
     recorded = 0
+    kept_existing = 0
     skipped = 0
     for index, case in enumerate(cases, start=1):
         output_path = out_dir / f"{case.case_id}.wav"
@@ -260,17 +280,27 @@ def run_interactive(args: argparse.Namespace) -> int:
         if exists:
             ok, message = validate_wav(output_path)
             print(f"Existing recording: {'valid' if ok else 'invalid'} ({message})")
-            choice = prompt_choice("[Enter] keep/skip, r rerecord, l list devices, q quit: ", {"", "r", "l", "q"}, "")
-            if choice == "q":
-                break
-            if choice == "l":
-                list_devices(ffmpeg)
-                choice = prompt_choice("[Enter] keep/skip, r rerecord, q quit: ", {"", "r", "q"}, "")
+            if args.rerecord_existing:
+                choice = prompt_choice("[Enter] start rerecording, l list devices, q quit: ", {"", "l", "q"}, "")
                 if choice == "q":
                     break
-            if choice != "r":
-                skipped += 1
-                continue
+                if choice == "l":
+                    list_devices(ffmpeg)
+                    choice = prompt_choice("[Enter] start rerecording, q quit: ", {"", "q"}, "")
+                    if choice == "q":
+                        break
+            else:
+                choice = prompt_choice("[Enter] keep/skip, r rerecord, l list devices, q quit: ", {"", "r", "l", "q"}, "")
+                if choice == "q":
+                    break
+                if choice == "l":
+                    list_devices(ffmpeg)
+                    choice = prompt_choice("[Enter] keep/skip, r rerecord, q quit: ", {"", "r", "q"}, "")
+                if choice == "q":
+                    break
+                if choice != "r":
+                    kept_existing += 1
+                    continue
         else:
             choice = prompt_choice("[Enter] start recording, s skip, l list devices, q quit: ", {"", "s", "l", "q"}, "")
             if choice == "q":
@@ -297,7 +327,7 @@ def run_interactive(args: argparse.Namespace) -> int:
             else:
                 skipped += 1
     print()
-    print(f"Done. recorded={recorded}, skipped={skipped}")
+    print(f"Done. recorded={recorded}, kept_existing={kept_existing}, skipped={skipped}")
     print("Next validation command:")
     print(f"python3 eval/asr_streaming/run_eval.py validate-cases --cases {Path(args.cases)}")
     return 0
@@ -314,6 +344,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--list-devices", action="store_true", help="List avfoundation capture devices and exit.")
     parser.add_argument("--dry-run", action="store_true", help="Prepare files and print planned recordings without recording.")
     parser.add_argument("--reset-cases", action="store_true", help="Regenerate cases file from the template pilot set.")
+    parser.add_argument("--case-id", action="append", default=[], help="Record only selected case id(s); can be repeated or comma-separated.")
+    parser.add_argument("--rerecord-existing", action="store_true", help="Record selected cases even when a WAV already exists.")
     return parser
 
 

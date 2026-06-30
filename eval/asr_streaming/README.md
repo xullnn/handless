@@ -22,10 +22,31 @@ bash scripts/record_asr_cases.sh
 
 The tool creates `eval/asr_streaming/cases.local.jsonl` from the first 10 template cases when missing, displays one text at a time, and records directly to `eval/asr_streaming/audio/<case_id>.wav`.
 
+Record the dedicated numeric-format preference cases:
+
+```bash
+bash scripts/record_numeric_asr_cases.sh
+```
+
+This creates `eval/asr_streaming/cases.numeric.local.jsonl` from `cases.numeric.template.jsonl` when missing, then records WAV files under `eval/asr_streaming/audio/numeric/`. Each numeric case shows the spoken text to read and, when present, a preferred output line for later evaluation. Read only the spoken text, not the preferred output line. Light pauses are useful; rerecord only when a number, unit, or keyword is clearly misread or masked by noise.
+
 List microphone devices:
 
 ```bash
 bash scripts/record_asr_cases.sh --list-devices
+```
+
+The same device flags work for numeric recording:
+
+```bash
+bash scripts/record_numeric_asr_cases.sh --list-devices
+bash scripts/record_numeric_asr_cases.sh --dry-run
+```
+
+Rerecord only selected numeric cases:
+
+```bash
+bash scripts/record_numeric_asr_cases.sh --rerecord-existing --case-id numeric_digits_001,numeric_index_002,numeric_negative_006
 ```
 
 Dry-run setup without recording:
