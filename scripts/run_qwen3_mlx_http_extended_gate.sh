@@ -16,6 +16,9 @@ MAX_FINAL_LATENCY_MS="${MAX_FINAL_LATENCY_MS:-3000}"
 REQUEST_TIMEOUT_SEC="${REQUEST_TIMEOUT_SEC:-180}"
 MAX_TOKENS="${MAX_TOKENS:-512}"
 RESOURCE_INTERVAL_SEC="${RESOURCE_INTERVAL_SEC:-1.0}"
+SYSTEM_PROMPT="${SYSTEM_PROMPT:-}"
+SYSTEM_PROMPT_FILE="${SYSTEM_PROMPT_FILE:-}"
+export SYSTEM_PROMPT SYSTEM_PROMPT_FILE
 
 SERVICE_PID=""
 MONITOR_PID=""
@@ -70,7 +73,7 @@ print(int(time.time() * 1000))
 PY
 )"
 
-PYTHONPATH="$MLX_AUDIO_SOURCE${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN" \
+SERVICE_ARGS=(
   eval/asr_streaming/qwen3_mlx_http_service.py \
   --host "$HOST" \
   --port "$PORT" \
@@ -78,7 +81,16 @@ PYTHONPATH="$MLX_AUDIO_SOURCE${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN" \
   --model "$MODEL" \
   --mlx-audio-source "$MLX_AUDIO_SOURCE" \
   --language "$LANGUAGE" \
-  --max-tokens "$MAX_TOKENS" \
+  --max-tokens "$MAX_TOKENS"
+)
+if [ -n "$SYSTEM_PROMPT" ]; then
+  SERVICE_ARGS+=(--system-prompt "$SYSTEM_PROMPT")
+fi
+if [ -n "$SYSTEM_PROMPT_FILE" ]; then
+  SERVICE_ARGS+=(--system-prompt-file "$SYSTEM_PROMPT_FILE")
+fi
+
+PYTHONPATH="$MLX_AUDIO_SOURCE${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN" "${SERVICE_ARGS[@]}" \
   >"$SERVICE_LOG" 2>&1 &
 SERVICE_PID=$!
 
@@ -172,6 +184,8 @@ metadata = {
     "mlx_audio_source": "$MLX_AUDIO_SOURCE",
     "cases": "$CASES",
     "out_dir": "$OUT_DIR",
+    "system_prompt_enabled": bool(os.environ.get("SYSTEM_PROMPT", "") or os.environ.get("SYSTEM_PROMPT_FILE", "")),
+    "system_prompt_file": os.environ.get("SYSTEM_PROMPT_FILE", ""),
     "paths": {
         "gate_summary": "$GATE_SUMMARY",
         "resource_samples": "$RESOURCE_SAMPLES",

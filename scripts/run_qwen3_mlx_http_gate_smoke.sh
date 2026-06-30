@@ -15,6 +15,8 @@ MAX_FIRST_PARTIAL_MS="${MAX_FIRST_PARTIAL_MS:-3000}"
 MAX_FINAL_LATENCY_MS="${MAX_FINAL_LATENCY_MS:-3000}"
 REQUEST_TIMEOUT_SEC="${REQUEST_TIMEOUT_SEC:-120}"
 MAX_TOKENS="${MAX_TOKENS:-256}"
+SYSTEM_PROMPT="${SYSTEM_PROMPT:-}"
+SYSTEM_PROMPT_FILE="${SYSTEM_PROMPT_FILE:-}"
 
 if [ ! -x "$PYTHON_BIN" ]; then
   echo "Missing Python runtime: $PYTHON_BIN" >&2
@@ -37,7 +39,7 @@ mkdir -p "$OUT_DIR"
 SERVICE_LOG="$OUT_DIR/service.log"
 SERVICE_URL="http://$HOST:$PORT"
 
-PYTHONPATH="$MLX_AUDIO_SOURCE${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN" \
+SERVICE_ARGS=(
   eval/asr_streaming/qwen3_mlx_http_service.py \
   --host "$HOST" \
   --port "$PORT" \
@@ -45,7 +47,16 @@ PYTHONPATH="$MLX_AUDIO_SOURCE${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN" \
   --model "$MODEL" \
   --mlx-audio-source "$MLX_AUDIO_SOURCE" \
   --language "$LANGUAGE" \
-  --max-tokens "$MAX_TOKENS" \
+  --max-tokens "$MAX_TOKENS"
+)
+if [ -n "$SYSTEM_PROMPT" ]; then
+  SERVICE_ARGS+=(--system-prompt "$SYSTEM_PROMPT")
+fi
+if [ -n "$SYSTEM_PROMPT_FILE" ]; then
+  SERVICE_ARGS+=(--system-prompt-file "$SYSTEM_PROMPT_FILE")
+fi
+
+PYTHONPATH="$MLX_AUDIO_SOURCE${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN" "${SERVICE_ARGS[@]}" \
   >"$SERVICE_LOG" 2>&1 &
 SERVICE_PID=$!
 

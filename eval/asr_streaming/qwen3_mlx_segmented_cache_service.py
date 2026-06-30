@@ -34,6 +34,10 @@ from qwen3_mlx_cumulative_service import (  # noqa: E402
     ServiceResult,
     evaluate_service_gate,
 )
+from qwen3_mlx_cumulative_probe import (  # noqa: E402
+    resolve_system_prompt,
+    system_prompt_metadata,
+)
 from qwen3_mlx_realtime_probe import classify_model_surface, load_mlx_model  # noqa: E402
 from run_eval import (  # noqa: E402
     append_jsonl,
@@ -626,6 +630,7 @@ class SegmentedHttpState:
         model_surface: dict[str, Any],
         fake_backend: bool,
         model_load_wall_ms: float,
+        asr_context: dict[str, Any],
     ) -> None:
         self.lock = threading.RLock()
         self.service = service
@@ -635,6 +640,7 @@ class SegmentedHttpState:
         self.model_info = model_info
         self.model_surface = model_surface
         self.model_load_wall_ms = model_load_wall_ms
+        self.asr_context = asr_context
         self.started_epoch_ms = now_ms()
 
     def metadata(self) -> dict[str, Any]:
@@ -645,6 +651,7 @@ class SegmentedHttpState:
             "native_realtime_gate_eligible": False,
             "model_info": self.model_info,
             "model_surface": self.model_surface,
+            "asr_context": self.asr_context,
             "model_load_wall_ms": self.model_load_wall_ms,
             "started_epoch_ms": self.started_epoch_ms,
             "contract": ["start", "chunk", "finish", "cancel"],
@@ -904,6 +911,10 @@ def command_run(args: argparse.Namespace) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     model_info = load_model_metadata(Path(args.registry), args.model_id)
     policy = policy_from_args(args)
+    system_prompt = resolve_system_prompt(
+        system_prompt=args.system_prompt,
+        system_prompt_file=args.system_prompt_file,
+    )
 
     load_started = time.perf_counter()
     if args.fake_backend:
@@ -911,7 +922,12 @@ def command_run(args: argparse.Namespace) -> int:
         model_surface = {"fake_backend": True}
     else:
         model = load_mlx_model(args.model, args.mlx_audio_source)
-        backend = MLXBackend(model, language=args.language.strip() or None, max_tokens=args.max_tokens)
+        backend = MLXBackend(
+            model,
+            language=args.language.strip() or None,
+            max_tokens=args.max_tokens,
+            system_prompt=system_prompt,
+        )
         model_surface = classify_model_surface(model)
     load_wall_ms = (time.perf_counter() - load_started) * 1000.0
 
@@ -943,6 +959,7 @@ def command_run(args: argparse.Namespace) -> int:
         "model_info": model_info,
         "metric_explanations_zh": METRIC_EXPLANATIONS_ZH,
         "api_surface": model_surface,
+        "asr_context": system_prompt_metadata(system_prompt),
         "model_load_wall_ms": load_wall_ms,
         "fake_backend": args.fake_backend,
         "segment_policy": policy_dict(policy),
@@ -1076,13 +1093,22 @@ def command_serve(args: argparse.Namespace) -> int:
 
 def build_http_state(args: argparse.Namespace) -> SegmentedHttpState:
     model_info = load_model_metadata(Path(args.registry), args.model_id)
+    system_prompt = resolve_system_prompt(
+        system_prompt=args.system_prompt,
+        system_prompt_file=args.system_prompt_file,
+    )
     load_started = time.perf_counter()
     if args.fake_backend:
         backend = ExpectedTextFakeBackend()
         model_surface = {"fake_backend": True}
     else:
         model = load_mlx_model(args.model, args.mlx_audio_source)
-        backend = MLXBackend(model, language=args.language.strip() or None, max_tokens=args.max_tokens)
+        backend = MLXBackend(
+            model,
+            language=args.language.strip() or None,
+            max_tokens=args.max_tokens,
+            system_prompt=system_prompt,
+        )
         model_surface = classify_model_surface(model)
     load_wall_ms = (time.perf_counter() - load_started) * 1000.0
     service = SegmentedCacheService(
@@ -1097,6 +1123,7 @@ def build_http_state(args: argparse.Namespace) -> SegmentedHttpState:
         model_surface=model_surface,
         fake_backend=args.fake_backend,
         model_load_wall_ms=load_wall_ms,
+        asr_context=system_prompt_metadata(system_prompt),
     )
 
 
@@ -1159,6 +1186,8 @@ def add_common_runtime_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--registry", default="eval/asr_streaming/model_registry.json")
     parser.add_argument("--language", default="Chinese")
     parser.add_argument("--max-tokens", type=int, default=256)
+    parser.add_argument("--system-prompt", default="")
+    parser.add_argument("--system-prompt-file", default="")
     parser.add_argument("--fake-backend", action="store_true")
     parser.add_argument("--spool-dir", default=str(DEFAULT_SPOOL_DIR))
     parser.add_argument("--max-segment-sec", type=float, default=30.0)

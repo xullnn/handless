@@ -31,6 +31,10 @@ from qwen3_mlx_cumulative_service import (  # noqa: E402
     MLXBackend,
     SAMPLE_RATE,
 )
+from qwen3_mlx_cumulative_probe import (  # noqa: E402
+    resolve_system_prompt,
+    system_prompt_metadata,
+)
 from qwen3_mlx_realtime_probe import classify_model_surface, load_mlx_model  # noqa: E402
 from run_eval import load_model_metadata, now_ms  # noqa: E402
 
@@ -112,6 +116,7 @@ class Qwen3HttpState:
         event_retention: int,
         fake_backend: bool,
         model_load_wall_ms: float,
+        asr_context: dict[str, Any],
     ):
         self.lock = threading.RLock()
         self.started_monotonic = time.monotonic()
@@ -128,6 +133,7 @@ class Qwen3HttpState:
         self.model_surface = model_surface
         self.fake_backend = fake_backend
         self.model_load_wall_ms = model_load_wall_ms
+        self.asr_context = asr_context
         self.started_epoch_ms = now_ms()
 
     def metadata(self) -> dict[str, Any]:
@@ -138,6 +144,7 @@ class Qwen3HttpState:
             "native_realtime_gate_eligible": False,
             "model_info": self.model_info,
             "model_surface": self.model_surface,
+            "asr_context": self.asr_context,
             "model_load_wall_ms": self.model_load_wall_ms,
             "started_epoch_ms": self.started_epoch_ms,
             "contract": ["start", "chunk", "finish", "cancel"],
@@ -269,6 +276,10 @@ class Handler(BaseHTTPRequestHandler):
 
 def build_state(args: argparse.Namespace) -> Qwen3HttpState:
     model_info = load_model_metadata(Path(args.registry), args.model_id)
+    system_prompt = resolve_system_prompt(
+        system_prompt=args.system_prompt,
+        system_prompt_file=args.system_prompt_file,
+    )
     load_started = time.perf_counter()
     if args.fake_backend:
         backend = ExpectedTextFakeBackend()
@@ -281,6 +292,7 @@ def build_state(args: argparse.Namespace) -> Qwen3HttpState:
             model,
             language=args.language.strip() or None,
             max_tokens=args.max_tokens,
+            system_prompt=system_prompt,
         )
         model_surface = classify_model_surface(model)
     return Qwen3HttpState(
@@ -293,6 +305,7 @@ def build_state(args: argparse.Namespace) -> Qwen3HttpState:
         event_retention=args.event_retention,
         fake_backend=args.fake_backend,
         model_load_wall_ms=load_wall_ms,
+        asr_context=system_prompt_metadata(system_prompt),
     )
 
 
@@ -323,8 +336,15 @@ def command_self_test() -> int:
         max_prefixes=2,
         max_tokens=128,
         event_retention=6,
+        system_prompt="数字优先使用阿拉伯数字。",
+        system_prompt_file="",
     )
     state = build_state(args)
+    metadata = state.metadata()
+    if not metadata["asr_context"]["system_prompt_enabled"]:
+        raise AssertionError(f"HTTP metadata did not record enabled system prompt: {metadata}")
+    if metadata["asr_context"]["system_prompt_chars"] <= 0:
+        raise AssertionError(f"HTTP metadata did not record prompt length: {metadata}")
     session_payload = {
         "session_id": "http-self-test",
         "session_token": 123,
@@ -395,6 +415,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--mlx-audio-source", default=".external/repos/mlx-audio")
     parser.add_argument("--registry", default="eval/asr_streaming/model_registry.json")
     parser.add_argument("--language", default="Chinese")
+    parser.add_argument("--system-prompt", default="")
+    parser.add_argument("--system-prompt-file", default="")
     parser.add_argument("--min-prefix-sec", type=float, default=1.0)
     parser.add_argument("--prefix-step-sec", type=float, default=1.0)
     parser.add_argument("--max-prefixes", type=int, default=8)
@@ -411,6 +433,7 @@ def main(argv: list[str] | None = None) -> int:
                 "fake_backend": args.fake_backend,
                 "model_id": args.model_id,
                 "model_load_wall_ms": Handler.state.model_load_wall_ms,
+                "asr_context": Handler.state.asr_context,
             },
             ensure_ascii=False,
         ),

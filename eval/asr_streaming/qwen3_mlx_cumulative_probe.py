@@ -16,6 +16,7 @@ persistent feed/step/close decoder state is used.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import time
@@ -80,6 +81,38 @@ def wav_to_float32(audio_path: Path) -> tuple[np.ndarray, float]:
     return pcm, wav.duration_seconds
 
 
+def resolve_system_prompt(
+    *,
+    system_prompt: str | None = None,
+    system_prompt_file: str | None = None,
+) -> str | None:
+    parts: list[str] = []
+    prompt_file = (system_prompt_file or "").strip()
+    if prompt_file:
+        path = Path(prompt_file)
+        if not path.is_file():
+            raise FileNotFoundError(f"system prompt file not found: {prompt_file}")
+        file_text = path.read_text(encoding="utf-8").strip()
+        if file_text:
+            parts.append(file_text)
+
+    inline_prompt = (system_prompt or "").strip()
+    if inline_prompt:
+        parts.append(inline_prompt)
+
+    merged = "\n".join(parts).strip()
+    return merged or None
+
+
+def system_prompt_metadata(system_prompt: str | None) -> dict[str, Any]:
+    text = (system_prompt or "").strip()
+    return {
+        "system_prompt_enabled": bool(text),
+        "system_prompt_chars": len(text),
+        "system_prompt_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest() if text else None,
+    }
+
+
 def prefix_seconds_for_duration(
     *,
     duration_seconds: float,
@@ -112,6 +145,7 @@ def call_stream_or_generate(
     audio: np.ndarray,
     language: str | None,
     max_tokens: int,
+    system_prompt: str | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     first_token_ms: float | None = None
@@ -120,7 +154,12 @@ def call_stream_or_generate(
     mode = "stream_transcribe" if hasattr(model, "stream_transcribe") else "generate"
 
     if mode == "stream_transcribe":
-        for item in model.stream_transcribe(audio, language=language, max_tokens=max_tokens):
+        for item in model.stream_transcribe(
+            audio,
+            language=language,
+            max_tokens=max_tokens,
+            system_prompt=system_prompt,
+        ):
             text = extract_text(item)
             if not text:
                 continue
@@ -138,7 +177,12 @@ def call_stream_or_generate(
             )
         text = merge_partial_texts(text_parts)
     else:
-        result = model.generate(audio, language=language, max_tokens=max_tokens)
+        result = model.generate(
+            audio,
+            language=language,
+            max_tokens=max_tokens,
+            system_prompt=system_prompt,
+        )
         text = extract_text(result).strip()
         if text:
             first_token_ms = (time.perf_counter() - started) * 1000.0
@@ -167,9 +211,15 @@ def call_final_generate(
     audio: np.ndarray,
     language: str | None,
     max_tokens: int,
+    system_prompt: str | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
-    result = model.generate(audio, language=language, max_tokens=max_tokens)
+    result = model.generate(
+        audio,
+        language=language,
+        max_tokens=max_tokens,
+        system_prompt=system_prompt,
+    )
     finished = time.perf_counter()
     return {
         "text": extract_text(result).strip(),
@@ -283,6 +333,7 @@ def run_case(
     max_final_wall_ms: float,
     max_final_cer: float,
     max_serial_recompute_rtf: float,
+    system_prompt: str | None = None,
 ) -> dict[str, Any]:
     case_out = out_dir / case.case_id
     events_path = case_out / "prefix_events.jsonl"
@@ -307,6 +358,7 @@ def run_case(
             audio=prefix_audio,
             language=language,
             max_tokens=max_tokens,
+            system_prompt=system_prompt,
         )
         prefix_wall_ms = float(result["wall_ms"])
         prefix_summary = {
@@ -342,6 +394,7 @@ def run_case(
         audio=full_audio,
         language=language,
         max_tokens=max_tokens,
+        system_prompt=system_prompt,
     )
     prefix_texts = [str(p.get("text", "")) for p in prefixes if bool(p.get("meaningful_text"))]
     last_prefix_sec = float(prefixes[-1]["prefix_seconds"]) if prefixes else 0.0
@@ -362,6 +415,7 @@ def run_case(
             "prefix_step_sec": prefix_step_sec,
             "max_prefixes": max_prefixes,
             "max_tokens": max_tokens,
+            **system_prompt_metadata(system_prompt),
         },
         "prefixes": prefixes,
         "prefix_rewrite_rate": partial_rewrite_rate(prefix_texts),
@@ -418,6 +472,10 @@ def command_run(args: argparse.Namespace) -> int:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     model_info = load_model_metadata(Path(args.registry), args.model_id)
+    system_prompt = resolve_system_prompt(
+        system_prompt=args.system_prompt,
+        system_prompt_file=args.system_prompt_file,
+    )
 
     started = time.perf_counter()
     model = load_mlx_model(args.model, args.mlx_audio_source)
@@ -441,6 +499,7 @@ def command_run(args: argparse.Namespace) -> int:
             max_final_wall_ms=args.max_final_wall_ms,
             max_final_cer=args.max_final_cer,
             max_serial_recompute_rtf=args.max_serial_recompute_rtf,
+            system_prompt=system_prompt,
         )
         for case in cases
     ]
@@ -453,6 +512,7 @@ def command_run(args: argparse.Namespace) -> int:
         "metric_explanations_zh": CUMULATIVE_EXPLANATIONS_ZH,
         "model_load_wall_ms": load_wall_ms,
         "api_surface": surface,
+        "asr_context": system_prompt_metadata(system_prompt),
         "case_count": len(case_summaries),
         "case_ids": [case["case_id"] for case in case_summaries],
         "aggregate_status": aggregate_status(case_summaries),
@@ -473,6 +533,70 @@ def command_run(args: argparse.Namespace) -> int:
 
 
 def command_self_test(args: argparse.Namespace) -> int:
+    class PromptSpyModel:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        def stream_transcribe(
+            self,
+            audio: np.ndarray,
+            *,
+            language: str | None,
+            max_tokens: int,
+            system_prompt: str | None = None,
+        ):
+            self.calls.append(
+                {
+                    "method": "stream_transcribe",
+                    "language": language,
+                    "max_tokens": max_tokens,
+                    "system_prompt": system_prompt,
+                }
+            )
+            yield {"text": "你"}
+            yield {"text": "好", "is_final": True}
+
+        def generate(
+            self,
+            audio: np.ndarray,
+            *,
+            language: str | None,
+            max_tokens: int,
+            system_prompt: str | None = None,
+        ) -> dict[str, str]:
+            self.calls.append(
+                {
+                    "method": "generate",
+                    "language": language,
+                    "max_tokens": max_tokens,
+                    "system_prompt": system_prompt,
+                }
+            )
+            return {"text": "你好"}
+
+    spy = PromptSpyModel()
+    prompt = "数字优先使用阿拉伯数字。"
+    stream_result = call_stream_or_generate(
+        model=spy,
+        audio=np.zeros((16000,), dtype=np.float32),
+        language="Chinese",
+        max_tokens=16,
+        system_prompt=prompt,
+    )
+    final_result = call_final_generate(
+        model=spy,
+        audio=np.zeros((16000,), dtype=np.float32),
+        language="Chinese",
+        max_tokens=16,
+        system_prompt=prompt,
+    )
+    if stream_result["text"] != "你好" or final_result["text"] != "你好":
+        raise AssertionError(f"prompt spy returned unexpected text: {stream_result}, {final_result}")
+    if [call["method"] for call in spy.calls] != ["stream_transcribe", "generate"]:
+        raise AssertionError(f"prompt spy did not exercise stream and final paths: {spy.calls}")
+    if any(call["system_prompt"] != prompt for call in spy.calls):
+        raise AssertionError(f"system prompt was not forwarded to Qwen3 calls: {spy.calls}")
+
     fast_case = {
         "case_id": "fake_short",
         "scenario": "short_dictation",
@@ -569,6 +693,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--case-id", action="append", default=[], help="Case id to run; can be repeated or comma-separated.")
     run.add_argument("--registry", default="eval/asr_streaming/model_registry.json")
     run.add_argument("--language", default="Chinese")
+    run.add_argument("--system-prompt", default="")
+    run.add_argument("--system-prompt-file", default="")
     run.add_argument("--min-prefix-sec", type=float, default=1.0)
     run.add_argument("--prefix-step-sec", type=float, default=1.0)
     run.add_argument("--max-prefixes", type=int, default=6)

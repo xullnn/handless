@@ -29,6 +29,8 @@ from qwen3_mlx_cumulative_probe import (  # noqa: E402
     call_final_generate,
     call_stream_or_generate,
     has_meaningful_text,
+    resolve_system_prompt,
+    system_prompt_metadata,
 )
 from qwen3_mlx_realtime_probe import (  # noqa: E402
     classify_model_surface,
@@ -76,10 +78,18 @@ class ServiceResult:
 
 
 class MLXBackend:
-    def __init__(self, model: Any, *, language: str | None, max_tokens: int):
+    def __init__(
+        self,
+        model: Any,
+        *,
+        language: str | None,
+        max_tokens: int,
+        system_prompt: str | None = None,
+    ):
         self.model = model
         self.language = language
         self.max_tokens = max_tokens
+        self.system_prompt = (system_prompt or "").strip() or None
 
     def partial(self, audio: np.ndarray) -> ServiceResult:
         result = call_stream_or_generate(
@@ -87,6 +97,7 @@ class MLXBackend:
             audio=audio,
             language=self.language,
             max_tokens=self.max_tokens,
+            system_prompt=self.system_prompt,
         )
         return ServiceResult(
             text=str(result["text"]).strip(),
@@ -100,6 +111,7 @@ class MLXBackend:
             audio=audio,
             language=self.language,
             max_tokens=self.max_tokens,
+            system_prompt=self.system_prompt,
         )
         return ServiceResult(
             text=str(result["text"]).strip(),
@@ -680,6 +692,10 @@ def command_run(args: argparse.Namespace) -> int:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     model_info = load_model_metadata(Path(args.registry), args.model_id)
+    system_prompt = resolve_system_prompt(
+        system_prompt=args.system_prompt,
+        system_prompt_file=args.system_prompt_file,
+    )
 
     load_started = time.perf_counter()
     model = load_mlx_model(args.model, args.mlx_audio_source)
@@ -688,6 +704,7 @@ def command_run(args: argparse.Namespace) -> int:
         model,
         language=args.language.strip() or None,
         max_tokens=args.max_tokens,
+        system_prompt=system_prompt,
     )
     service = CumulativeRecomputeService(
         backend=backend,
@@ -717,6 +734,7 @@ def command_run(args: argparse.Namespace) -> int:
         "model_info": model_info,
         "metric_explanations_zh": SERVICE_EXPLANATIONS_ZH,
         "api_surface": classify_model_surface(model),
+        "asr_context": system_prompt_metadata(system_prompt),
         "model_load_wall_ms": load_wall_ms,
         "case_count": len(case_summaries),
         "case_ids": [s["case_id"] for s in case_summaries],
@@ -743,6 +761,64 @@ def command_run(args: argparse.Namespace) -> int:
 
 
 def command_self_test(args: argparse.Namespace) -> int:
+    class PromptSpyModel:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        def stream_transcribe(
+            self,
+            audio: np.ndarray,
+            *,
+            language: str | None,
+            max_tokens: int,
+            system_prompt: str | None = None,
+        ):
+            self.calls.append(
+                {
+                    "method": "stream_transcribe",
+                    "language": language,
+                    "max_tokens": max_tokens,
+                    "system_prompt": system_prompt,
+                }
+            )
+            yield {"text": "一"}
+            yield {"text": "二三"}
+
+        def generate(
+            self,
+            audio: np.ndarray,
+            *,
+            language: str | None,
+            max_tokens: int,
+            system_prompt: str | None = None,
+        ) -> dict[str, str]:
+            self.calls.append(
+                {
+                    "method": "generate",
+                    "language": language,
+                    "max_tokens": max_tokens,
+                    "system_prompt": system_prompt,
+                }
+            )
+            return {"text": "123"}
+
+    prompt = "数字优先使用阿拉伯数字。"
+    spy_model = PromptSpyModel()
+    spy_backend = MLXBackend(
+        spy_model,
+        language="Chinese",
+        max_tokens=32,
+        system_prompt=prompt,
+    )
+    partial = spy_backend.partial(np.zeros((SAMPLE_RATE,), dtype=np.float32))
+    final = spy_backend.final(np.zeros((SAMPLE_RATE,), dtype=np.float32))
+    if partial.text != "一二三" or final.text != "123":
+        raise AssertionError(f"prompt spy backend returned unexpected text: {partial}, {final}")
+    if [call["method"] for call in spy_model.calls] != ["stream_transcribe", "generate"]:
+        raise AssertionError(f"prompt spy backend did not call both paths: {spy_model.calls}")
+    if any(call["system_prompt"] != prompt for call in spy_model.calls):
+        raise AssertionError(f"MLXBackend did not forward system prompt: {spy_model.calls}")
+
     service = CumulativeRecomputeService(
         backend=FakeBackend(),
         prefix_step_sec=1.0,
@@ -920,6 +996,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--case-id", action="append", default=[], help="Case id to run; can be repeated or comma-separated.")
     run.add_argument("--registry", default="eval/asr_streaming/model_registry.json")
     run.add_argument("--language", default="Chinese")
+    run.add_argument("--system-prompt", default="")
+    run.add_argument("--system-prompt-file", default="")
     run.add_argument("--chunk-ms", type=int, default=100)
     run.add_argument("--min-prefix-sec", type=float, default=1.0)
     run.add_argument("--prefix-step-sec", type=float, default=1.0)
