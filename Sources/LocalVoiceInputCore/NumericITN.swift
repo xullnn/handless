@@ -20,8 +20,10 @@ public struct NumericITN: Sendable {
         var text = input
 
         text = rewriteVersionLikeExpressions(text, changes: &changes)
+        text = rewritePercentExpressions(text, changes: &changes)
         text = rewriteDecimalExpressions(text, changes: &changes)
         text = rewriteUnitNumbers(text, changes: &changes)
+        text = rewriteOrdinalAndDocumentNumbers(text, changes: &changes)
         text = rewriteContextDigitSequences(text, changes: &changes)
         text = compactTechnicalUnitSpacing(text, changes: &changes)
 
@@ -36,6 +38,44 @@ public struct NumericITN: Sendable {
             guard normalizedParts.count == parts.count else { return nil }
             return normalizedParts.joined(separator: ".")
         }
+    }
+
+    private func rewritePercentExpressions(_ text: String, changes: inout [NumericITNChange]) -> String {
+        let chars = Array(text)
+        let prefix = Array("百分之")
+        var result = ""
+        var index = 0
+
+        while index < chars.count {
+            guard matches(prefix, in: chars, at: index) else {
+                result.append(chars[index])
+                index += 1
+                continue
+            }
+
+            let bodyStart = index + prefix.count
+            var bodyEnd = bodyStart
+            while bodyEnd < chars.count, isPercentNumberCharacter(chars[bodyEnd]) {
+                bodyEnd += 1
+            }
+
+            if bodyEnd > bodyStart,
+               !hasApproximateNumericSuffix(chars: chars, at: bodyEnd),
+               !matches(Array("个百分点"), in: chars, at: bodyEnd),
+               !matches(Array("百分点"), in: chars, at: bodyEnd),
+               let normalized = normalizePercentNumber(String(chars[bodyStart..<bodyEnd])) {
+                let original = String(chars[index..<bodyEnd])
+                let replacement = "\(normalized)%"
+                result += replacement
+                changes.append(NumericITNChange(rule: "numeric_itn_percent", original: original, normalized: replacement))
+                index = bodyEnd
+            } else {
+                result.append(chars[index])
+                index += 1
+            }
+        }
+
+        return result
     }
 
     private func rewriteDecimalExpressions(_ text: String, changes: inout [NumericITNChange]) -> String {
@@ -59,23 +99,18 @@ public struct NumericITN: Sendable {
         var index = 0
 
         while index < chars.count {
-            guard isChineseNumberCharacter(chars[index]) else {
+            guard isChineseIntegerTokenCharacter(chars[index]) else {
                 result.append(chars[index])
                 index += 1
                 continue
             }
 
             let start = index
-            while index < chars.count, isChineseNumberCharacter(chars[index]) {
+            while index < chars.count, isChineseIntegerTokenCharacter(chars[index]) {
                 index += 1
             }
 
             let numberSpan = String(chars[start..<index])
-            if isInsideUnsupportedMagnitudeNumber(chars: chars, start: start, end: index) {
-                result += numberSpan
-                continue
-            }
-
             var lookahead = index
             while lookahead < chars.count, chars[lookahead].isWhitespace {
                 lookahead += 1
@@ -95,6 +130,53 @@ public struct NumericITN: Sendable {
             } else {
                 result += numberSpan
             }
+        }
+
+        return result
+    }
+
+    private func rewriteOrdinalAndDocumentNumbers(_ text: String, changes: inout [NumericITNChange]) -> String {
+        let chars = Array(text)
+        var result = ""
+        var index = 0
+
+        while index < chars.count {
+            if chars[index] == "第" {
+                let numberStart = index + 1
+                let numberEnd = scanIntegerTokenEnd(in: chars, from: numberStart)
+                if numberEnd > numberStart,
+                   let suffix = readOrdinalSuffix(from: chars, at: numberEnd),
+                   let normalized = normalizeContextInteger(String(chars[numberStart..<numberEnd])) {
+                    let end = numberEnd + suffix.count
+                    let original = String(chars[index..<end])
+                    let replacement = "第\(normalized)\(suffix)"
+                    result += replacement
+                    changes.append(NumericITNChange(rule: "numeric_itn_ordinal", original: original, normalized: replacement))
+                    index = end
+                    continue
+                }
+            }
+
+            if isChineseIntegerTokenCharacter(chars[index]) {
+                let start = index
+                let end = scanIntegerTokenEnd(in: chars, from: start)
+                if end > start,
+                   let suffix = readBareDocumentSuffix(from: chars, at: end),
+                   let normalized = normalizeContextInteger(String(chars[start..<end])),
+                   let value = Int(normalized),
+                   value >= 10 {
+                    let replacementEnd = end + suffix.count
+                    let original = String(chars[start..<replacementEnd])
+                    let replacement = "\(normalized)\(suffix)"
+                    result += replacement
+                    changes.append(NumericITNChange(rule: "numeric_itn_document_number", original: original, normalized: replacement))
+                    index = replacementEnd
+                    continue
+                }
+            }
+
+            result.append(chars[index])
+            index += 1
         }
 
         return result
@@ -222,10 +304,31 @@ public struct NumericITN: Sendable {
     }
 
     private func normalizeUnitNumber(_ text: String) -> String? {
+        normalizeContextInteger(text)
+    }
+
+    private func normalizePercentNumber(_ text: String) -> String? {
+        guard text.filter({ $0 == "点" }).count <= 1 else { return nil }
+        if text.contains("点") {
+            let parts = text.split(separator: "点", omittingEmptySubsequences: false)
+            guard parts.count == 2, let left = parts.first, let right = parts.last else { return nil }
+            guard !left.isEmpty, !right.isEmpty else { return nil }
+            guard right.allSatisfy({ Self.chineseDigitValue($0) != nil }) else { return nil }
+            guard let leftValue = normalizeContextInteger(String(left)) else { return nil }
+            let rightDigits = right.compactMap { Self.chineseDigitValue($0).map(String.init) }.joined()
+            guard rightDigits.count == right.count else { return nil }
+            return "\(leftValue).\(rightDigits)"
+        }
+        return normalizeContextInteger(text)
+    }
+
+    private func normalizeContextInteger(_ text: String) -> String? {
+        guard !text.isEmpty else { return nil }
+        guard !text.contains(where: { $0 == "万" || $0 == "亿" }) else { return nil }
         if text.allSatisfy({ Self.chineseDigitValue($0) != nil }) {
             return text.compactMap { Self.chineseDigitValue($0).map(String.init) }.joined()
         }
-        guard let value = parseSimpleInteger(text), value < 100 else { return nil }
+        guard let value = parseBoundedChineseInteger(text), value >= 0, value <= 9999 else { return nil }
         return String(value)
     }
 
@@ -256,6 +359,102 @@ public struct NumericITN: Sendable {
         return nil
     }
 
+    private func parseBoundedChineseInteger(_ text: String) -> Int? {
+        guard !text.isEmpty else { return nil }
+        guard !text.contains(where: { $0 == "万" || $0 == "亿" || $0 == "点" }) else { return nil }
+        guard text.allSatisfy({ isChineseIntegerTokenCharacter($0) }) else { return nil }
+        return parseBelow10000(text)
+    }
+
+    private func parseBelow10000(_ text: String) -> Int? {
+        if text.contains("千") {
+            guard let split = splitOnce(text, on: "千") else { return nil }
+            guard let thousands = singleNonZeroDigit(split.left) else { return nil }
+            if split.right.isEmpty {
+                return thousands * 1000
+            }
+            if let tail = dropLeadingZeroes(split.right) {
+                guard !tail.contains("百"), let value = parseBelow1000(tail), value < 100 else { return nil }
+                return thousands * 1000 + value
+            }
+            guard split.right.contains("百"), let value = parseBelow1000(split.right), value >= 100 else { return nil }
+            return thousands * 1000 + value
+        }
+        return parseBelow1000(text)
+    }
+
+    private func parseBelow1000(_ text: String) -> Int? {
+        if text.contains("百") {
+            guard let split = splitOnce(text, on: "百") else { return nil }
+            guard let hundreds = singleNonZeroDigit(split.left) else { return nil }
+            if split.right.isEmpty {
+                return hundreds * 100
+            }
+            if let tail = dropLeadingZeroes(split.right) {
+                guard let value = parseBelow100(tail), value < 10 else { return nil }
+                return hundreds * 100 + value
+            }
+            guard split.right.contains("十"), let value = parseBelow100(split.right), value >= 10 else { return nil }
+            return hundreds * 100 + value
+        }
+        guard !text.contains("千") else { return nil }
+        return parseBelow100(text)
+    }
+
+    private func parseBelow100(_ text: String) -> Int? {
+        let chars = Array(text)
+        guard !chars.isEmpty else { return nil }
+
+        if chars.count == 1, let digit = Self.chineseDigitValue(chars[0]) {
+            return digit
+        }
+
+        guard !text.contains("百"), !text.contains("千") else { return nil }
+
+        if text.contains("十") {
+            guard let split = splitOnce(text, on: "十") else { return nil }
+            let tens: Int
+            if split.left.isEmpty {
+                tens = 1
+            } else {
+                guard let value = singleNonZeroDigit(split.left) else { return nil }
+                tens = value
+            }
+
+            if split.right.isEmpty {
+                return tens * 10
+            }
+
+            guard let ones = singleNonZeroDigit(split.right) else { return nil }
+            return tens * 10 + ones
+        }
+
+        return nil
+    }
+
+    private func splitOnce(_ text: String, on unit: Character) -> (left: String, right: String)? {
+        let chars = Array(text)
+        guard let index = chars.firstIndex(of: unit) else { return nil }
+        guard !chars[(index + 1)..<chars.count].contains(unit) else { return nil }
+        return (String(chars[0..<index]), String(chars[(index + 1)..<chars.count]))
+    }
+
+    private func singleNonZeroDigit(_ text: String) -> Int? {
+        let chars = Array(text)
+        guard chars.count == 1, let value = Self.chineseDigitValue(chars[0]), value > 0 else { return nil }
+        return value
+    }
+
+    private func dropLeadingZeroes(_ text: String) -> String? {
+        let chars = Array(text)
+        var index = 0
+        while index < chars.count, Self.chineseDigitValue(chars[index]) == 0 {
+            index += 1
+        }
+        guard index > 0, index < chars.count else { return nil }
+        return String(chars[index..<chars.count])
+    }
+
     private func hasStrongDigitSequenceContext(chars: [Character], start: Int, end: Int) -> Bool {
         let beforeStart = max(0, start - 10)
         let afterEnd = min(chars.count, end + 6)
@@ -274,15 +473,41 @@ public struct NumericITN: Sendable {
         return Array(chars[(start - prefixChars.count)..<start]) == prefixChars
     }
 
-    private func isInsideUnsupportedMagnitudeNumber(chars: [Character], start: Int, end: Int) -> Bool {
-        let magnitudes = Set<Character>(["百", "千", "万", "亿"])
-        if start > 0, magnitudes.contains(chars[start - 1]) {
-            return true
+    private func hasApproximateNumericSuffix(chars: [Character], at index: Int) -> Bool {
+        guard index < chars.count else { return false }
+        return ["几", "多", "来", "余"].contains(chars[index])
+    }
+
+    private func matches(_ pattern: [Character], in chars: [Character], at index: Int) -> Bool {
+        guard !pattern.isEmpty, index + pattern.count <= chars.count else { return false }
+        return Array(chars[index..<(index + pattern.count)]) == pattern
+    }
+
+    private func scanIntegerTokenEnd(in chars: [Character], from start: Int) -> Int {
+        var index = start
+        while index < chars.count, isChineseIntegerTokenCharacter(chars[index]) {
+            index += 1
         }
-        if end < chars.count, magnitudes.contains(chars[end]) {
-            return true
+        return index
+    }
+
+    private func readOrdinalSuffix(from chars: [Character], at index: Int) -> String? {
+        readSuffix(["页", "号", "行", "题", "章", "节", "段", "条", "个", "次"], from: chars, at: index)
+    }
+
+    private func readBareDocumentSuffix(from chars: [Character], at index: Int) -> String? {
+        readSuffix(["页", "号", "行", "题", "章", "节", "段"], from: chars, at: index)
+    }
+
+    private func readSuffix(_ suffixes: [String], from chars: [Character], at index: Int) -> String? {
+        for suffix in suffixes {
+            let suffixChars = Array(suffix)
+            guard index + suffixChars.count <= chars.count else { continue }
+            if Array(chars[index..<(index + suffixChars.count)]) == suffixChars {
+                return suffix
+            }
         }
-        return false
+        return nil
     }
 
     private func isASCIIDigit(_ character: Character) -> Bool {
@@ -303,6 +528,14 @@ public struct NumericITN: Sendable {
 
     private func isNumericTokenCharacter(_ character: Character) -> Bool {
         character == "点" || isChineseNumberCharacter(character)
+    }
+
+    private func isPercentNumberCharacter(_ character: Character) -> Bool {
+        character == "点" || isChineseIntegerTokenCharacter(character)
+    }
+
+    private func isChineseIntegerTokenCharacter(_ character: Character) -> Bool {
+        isChineseNumberCharacter(character) || character == "百" || character == "千" || character == "万" || character == "亿"
     }
 
     private func isChineseNumberCharacter(_ character: Character) -> Bool {
