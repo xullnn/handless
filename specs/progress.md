@@ -4185,3 +4185,69 @@ Latency and base regression guard:
 ### Next recommended action
 
 - No further action is required for the first conservative final-output numeric ITN feature. Track broader numeric domains and partial/floating-panel ITN only through separate follow-up features.
+
+## 2026-07-02 - 2026-07-02-contextual-numeric-itn-expansion validation closeout
+
+### Summary
+
+- Expanded the validated final-output `NumericITN` rule inventory with conservative strong-context handling:
+  - complete percent expressions such as `百分之三点五` -> `3.5%`
+  - bounded `十/百/千` technical-unit integers such as `九百六十四 MB` -> `964MB`
+  - narrow ordinal/document contexts such as `第十六页` -> `第16页` and `十六号` -> `16号`
+- Kept broad bare integers and ordinary prose quantities unchanged:
+  - `十六`
+  - `十六个样本`
+  - `十六条建议`
+  - `一百个理由`
+  - `九百六十四个样本`
+- Recorded deferred/abandoned candidates in `decisions.md` rather than widening the parser into dates, times, money, `万/亿`, approximate percentages, or colloquial omitted-place numbers.
+- App integration was not changed; this remains the existing configurable final-output-only numeric ITN path.
+
+### Files changed
+
+- `Sources/LocalVoiceInputCore/NumericITN.swift`
+- `Tests/LocalVoiceInputCoreTests/NumericITNTests.swift`
+- `specs/2026-07-02-contextual-numeric-itn-expansion/`
+- `specs/feature_matrix.json`
+- `project_memory_bank/core/current_focus.md`
+- `project_memory_bank/modules/core_logic/summary.md`
+
+### Validation
+
+- Command: `swift test --filter NumericITN`
+  Result: pass after implementation
+  Notes: the pre-implementation test-first run failed on the 14 new positive assertions as expected; the post-implementation run executed the focused NumericITN/AppConfig/CorrectionPipeline selection with `0` failures.
+- Command: `swift test --filter CorrectionPipelineTests`
+  Result: pass
+  Notes: executed `6` correction pipeline tests with `0` failures.
+- Command: `swift test`
+  Result: pass
+  Notes: executed `73` tests with `0` failures.
+- Command: `BASE_SUMMARY=eval/asr_streaming/results/simple-numeric-itn-segmented-numeric-20260702-1724/summary.json OUT_DIR=eval/asr_streaming/results/contextual-numeric-itn-report-20260702-181133 bash scripts/run_numeric_itn_report.sh`
+  Result: pass
+  Report: `eval/asr_streaming/results/contextual-numeric-itn-report-20260702-181133/comparison.md`
+  Notes: numeric-format pass rate improved from `8/37` (`21.6%`) raw to `23/37` (`62.2%`) after ITN; delta `+15` cases / `+40.5` points; worsened cases `0`.
+- Command: `.build/numeric-itn-tools/apply_numeric_itn_to_summary --summary eval/asr_streaming/results/simple-numeric-itn-segmented-base-20260702-1718/summary.json --out eval/asr_streaming/results/contextual-numeric-itn-base-20260702-181133/itn_summary.json`
+  Result: pass
+  Notes: base summary had `10` cases and `1` ITN change, the existing decimal rule `二点五` -> `2.5`; no added percent/unit/ordinal expansion changed base cases.
+- Command: `bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: release build succeeded, rebuilt `dist/LocalVoiceInput.app`, and signed with `Apple Development: 290016537@qq.com (HVFY7KCG8C)`.
+- Command: `open /Users/xulelong/2025/projects/LocalVoiceInput/dist/LocalVoiceInput.app --args --local-http-asr --asr-http-url http://127.0.0.1:18096 --numeric-itn`
+  Result: pass
+  Notes: relaunched the packaged App with local HTTP ASR and numeric ITN enabled; existing Qwen3 segmented service was not restarted.
+- Command: `bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: status output reports App PID `95655`, `App numericITN override: enabled (--numeric-itn)`, Qwen3 segmented service PID `82353`, and healthy `/metadata`.
+- Command: `python3 -m json.tool specs/feature_matrix.json >/dev/null && git diff --check`
+  Result: pass
+  Notes: feature matrix JSON is valid and no whitespace errors were detected.
+
+### Blockers / open questions
+
+- None for the contextual NumericITN expansion.
+- Dates, times, money, `万/亿`, partial/floating-panel ITN, and colloquial omitted-place numbers remain separate follow-up candidates only if daily use proves they are worth the false-positive risk.
+
+### Next recommended action
+
+- Use the current final-output ITN in daily dictation and collect concrete misses. Expand only when a missed form has a narrow local syntax/context rule and a clear negative fixture.

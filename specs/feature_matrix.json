@@ -446,6 +446,17 @@
       ],
       "passes": true,
       "updated_at": "2026-07-02"
+    },
+    {
+      "id": "2026-07-02-contextual-numeric-itn-expansion",
+      "title": "Contextual numeric ITN expansion",
+      "status": "validated",
+      "spec_path": "specs/2026-07-02-contextual-numeric-itn-expansion",
+      "depends_on": [
+        "2026-07-02-simple-numeric-itn"
+      ],
+      "passes": true,
+      "updated_at": "2026-07-02"
     }
   ]
 }

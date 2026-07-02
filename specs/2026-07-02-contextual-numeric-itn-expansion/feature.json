@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-07-02-contextual-numeric-itn-expansion",
+  "title": "Contextual numeric ITN expansion",
+  "kind": "feature",
+  "parent_id": "2026-07-02-simple-numeric-itn",
+  "created_from": "Follow-up review of conservative NumericITN exclusions such as percent expressions, larger unit-context integers, and narrow ordinal/document contexts",
+  "created_at": "2026-07-02",
+  "updated_at": "2026-07-02",
+  "follow_ups": []
+}
