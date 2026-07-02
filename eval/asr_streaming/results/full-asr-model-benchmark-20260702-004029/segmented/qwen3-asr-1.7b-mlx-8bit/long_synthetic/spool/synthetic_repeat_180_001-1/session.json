@@ -1,0 +1,133 @@
+{
+  "active_duration_seconds": 0.0,
+  "active_segment_index": 10,
+  "cache_bytes": 15609852,
+  "cache_dir": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/long_synthetic/spool/synthetic_repeat_180_001-1",
+  "committed_segments": [
+    {
+      "audio_end_ms": 30048.0,
+      "audio_start_ms": 0.0,
+      "cache_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/long_synthetic/spool/synthetic_repeat_180_001-1/segment_001.f32le",
+      "committed_offset_ms": 35829.733,
+      "compute_wall_ms": 1047.471,
+      "duration_ms": 30048.0,
+      "final_text": "我想完整描述一下这个项目的目标和测试思路。Local Voice Input 是一个本地优先的 Mac OS 语音输入工具，它不是云端听写服务，也不是当前阶段的 Input Method Kit 输入法。用户在任意应用里按住右 Option 开始说话，松开后停止录音，系统把最终文本粘贴到当前光标位置。如果没有可用的输入控",
+      "index": 1,
+      "mode": "generate",
+      "sample_count": 480768
+    },
+    {
+      "audio_end_ms": 60096.0,
+      "audio_start_ms": 30048.0,
+      "cache_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/long_synthetic/spool/synthetic_repeat_180_001-1/segment_002.f32le",
+      "committed_offset_ms": 71987.783,
+      "compute_wall_ms": 1000.6,
+      "duration_ms": 30048.0,
+      "final_text": "就复制到剪切板。为了选择更好的语音识别模型，我们不能只看公开榜单，也不能每次都靠人工随便念几句。我们需要固定的录音脚本、标准答案、可重复的音频文件和统一的测评指标。测评测时，要关注中文准确率、中英混合、技术名词、长文本稳定性、首个partial。",
+      "index": 2,
+      "mode": "generate",
+      "sample_count": 480768
+    },
+    {
+      "audio_end_ms": 90144.0,
+      "audio_start_ms": 60096.0,
+      "cache_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/long_synthetic/spool/synthetic_repeat_180_001-1/segment_003.f32le",
+      "committed_offset_ms": 107940.623,
+      "compute_wall_ms": 965.755,
+      "duration_ms": 30048.0,
+      "final_text": "延迟、最终延迟、实时因子、内存占用，以及模型在本机离线运行时是否稳定。只有当新的后端在这些方面明显优于当前 Parformer 基线时，我们才考虑把它接入真实应用。我想完整描述一下这个项目的目标和测试思路。Local voice input 是一个本地",
+      "index": 3,
+      "mode": "generate",
+      "sample_count": 480768
+    },
+    {
+      "audio_end_ms": 120192.0,
+      "audio_start_ms": 90144.0,
+      "cache_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/long_synthetic/spool/synthetic_repeat_180_001-1/segment_004.f32le",
+      "committed_offset_ms": 144466.106,
+      "compute_wall_ms": 1099.743,
+      "duration_ms": 30048.0,
+      "final_text": "优先的macOS语音输入工具，它不是云端听写服务，也不是当前阶段的Input Method Kit输入法。用户在任意应用里按住右Option开始说话，松开后停止录音，系统把最终文本粘贴到当前光标位置。如果没有可用的输入框，就复制到剪切板。为了选择更好的语音识别模型，我们不能只看公开榜单，也不。",
+      "index": 4,
+      "mode": "generate",
+      "sample_count": 480768
+    },
+    {
+      "audio_end_ms": 150240.0,
+      "audio_start_ms": 120192.0,
+      "cache_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/long_synthetic/spool/synthetic_repeat_180_001-1/segment_005.f32le",
+      "committed_offset_ms": 180746.698,
+      "compute_wall_ms": 979.726,
+      "duration_ms": 30048.0,
+      "final_text": "不能每次都靠人工随便念几句，我们需要固定的录音脚本、标准答案、可重复的音频文件和统一的测评指标。测评测时要关注中文准确率、中英混合、技术名词、长文本稳定性、首个partial延迟、最终延迟、实时因子、内存占用，以及模型在本机离线运。",
+      "index": 5,
+      "mode": "generate",
+      "sample_count": 480768
+    },
+    {
+      "audio_end_ms": 180288.0,
+      "audio_start_ms": 150240.0,
+      "cache_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/long_synthetic/spool/synthetic_repeat_180_001-1/segment_006.f32le",
+      "committed_offset_ms": 217126.296,
+      "compute_wall_ms": 1012.076,
+      "duration_ms": 30048.0,
+      "final_text": "运行时是否稳定？只有当新的后端在这些方面明显优于当前 performer 基线时，我们才考虑把它接入真实应用。我想完整描述一下这个项目的目标和测试思路。Local Voice Input 是一个本地优先的 Mac OS 语音输入工具，它不是云端听写服务，也不是当前阶段的 Input Method Kit 输入法。",
+      "index": 6,
+      "mode": "generate",
+      "sample_count": 480768
+    },
+    {
+      "audio_end_ms": 210336.0,
+      "audio_start_ms": 180288.0,
+      "cache_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/long_synthetic/spool/synthetic_repeat_180_001-1/segment_007.f32le",
+      "committed_offset_ms": 253732.722,
+      "compute_wall_ms": 1078.298,
+      "duration_ms": 30048.0,
+      "final_text": "用户在任意应用里按住右 Option 开始说话，松开后停止录音，系统把最终文本粘贴到当前光标位置。如果没有可用的输入框，就复制到剪切板。为了选择更好的语音识别模型，我们不能只看公开榜单，也不能每次都靠人工随便念几句。我们需要固定的录音脚本、标准答案、可重复的音频文件和。",
+      "index": 7,
+      "mode": "generate",
+      "sample_count": 480768
+    },
+    {
+      "audio_end_ms": 240384.0,
+      "audio_start_ms": 210336.0,
+      "cache_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/long_synthetic/spool/synthetic_repeat_180_001-1/segment_008.f32le",
+      "committed_offset_ms": 289902.761,
+      "compute_wall_ms": 969.829,
+      "duration_ms": 30048.0,
+      "final_text": "统一的测评指标，测评测时要关注中文准确率、中英混合、技术名词、长文本稳定性、首个partial延迟、最终延迟、实时因子、内存占用，以及模型在本机离线运行时是否稳定。只有当新的后端在这些方面明显优于当前performer基线时，我。",
+      "index": 8,
+      "mode": "generate",
+      "sample_count": 480768
+    },
+    {
+      "audio_end_ms": 243903.938,
+      "audio_start_ms": 240384.0,
+      "cache_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/long_synthetic/spool/synthetic_repeat_180_001-1/segment_009.f32le",
+      "committed_offset_ms": 294608.273,
+      "compute_wall_ms": 182.903,
+      "duration_ms": 3519.938,
+      "final_text": "我们才考虑把它接入真实应用。",
+      "index": 9,
+      "mode": "generate",
+      "sample_count": 56319
+    }
+  ],
+  "final_text": "我想完整描述一下这个项目的目标和测试思路。Local Voice Input 是一个本地优先的 Mac OS 语音输入工具，它不是云端听写服务，也不是当前阶段的 Input Method Kit 输入法。用户在任意应用里按住右 Option 开始说话，松开后停止录音，系统把最终文本粘贴到当前光标位置。如果没有可用的输入控就复制到剪切板。为了选择更好的语音识别模型，我们不能只看公开榜单，也不能每次都靠人工随便念几句。我们需要固定的录音脚本、标准答案、可重复的音频文件和统一的测评指标。测评测时，要关注中文准确率、中英混合、技术名词、长文本稳定性、首个partial。延迟、最终延迟、实时因子、内存占用，以及模型在本机离线运行时是否稳定。只有当新的后端在这些方面明显优于当前 Parformer 基线时，我们才考虑把它接入真实应用。我想完整描述一下这个项目的目标和测试思路。Local voice input 是一个本地优先的macOS语音输入工具，它不是云端听写服务，也不是当前阶段的Input Method Kit输入法。用户在任意应用里按住右Option开始说话，松开后停止录音，系统把最终文本粘贴到当前光标位置。如果没有可用的输入框，就复制到剪切板。为了选择更好的语音识别模型，我们不能只看公开榜单，也不。不能每次都靠人工随便念几句，我们需要固定的录音脚本、标准答案、可重复的音频文件和统一的测评指标。测评测时要关注中文准确率、中英混合、技术名词、长文本稳定性、首个partial延迟、最终延迟、实时因子、内存占用，以及模型在本机离线运。运行时是否稳定？只有当新的后端在这些方面明显优于当前 performer 基线时，我们才考虑把它接入真实应用。我想完整描述一下这个项目的目标和测试思路。Local Voice Input 是一个本地优先的 Mac OS 语音输入工具，它不是云端听写服务，也不是当前阶段的 Input Method Kit 输入法。用户在任意应用里按住右 Option 开始说话，松开后停止录音，系统把最终文本粘贴到当前光标位置。如果没有可用的输入框，就复制到剪切板。为了选择更好的语音识别模型，我们不能只看公开榜单，也不能每次都靠人工随便念几句。我们需要固定的录音脚本、标准答案、可重复的音频文件和。统一的测评指标，测评测时要关注中文准确率、中英混合、技术名词、长文本稳定性、首个partial延迟、最终延迟、实时因子、内存占用，以及模型在本机离线运行时是否稳定。只有当新的后端在这些方面明显优于当前performer基线时，我。我们才考虑把它接入真实应用。",
+  "merge_strategy": "zero_overlap_concat",
+  "sample_format": "float32_le",
+  "sample_rate": 16000,
+  "schema_version": "1.0",
+  "segment_policy": {
+    "max_partials_per_segment": 8,
+    "max_segment_sec": 30.0,
+    "min_segment_sec": 5.0,
+    "partial_step_sec": 1.0,
+    "soft_text_chars": 150
+  },
+  "session_audio_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/long_synthetic/spool/synthetic_repeat_180_001-1/session.f32le",
+  "session_id": "synthetic_repeat_180_001",
+  "session_token": 1,
+  "status": "finalized",
+  "updated_epoch_ms": 1782931838923
+}

@@ -1,0 +1,1 @@
+{"case_id": "numeric_percent_001", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 5.376, "start": 0.0, "text": "这次错误率下降了百分之三点五。"}], "text": "这次错误率下降了百分之三点五。"}, "recv_epoch_ms": 1782924370453, "recv_offset_ms": 570.0345829827711, "text": "这次错误率下降了百分之三点五。"}

@@ -1,0 +1,1 @@
+{"case_id": "numeric_mixed_001", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 11.712, "language": "Chinese", "start": 0.0, "text": "Queen三ASR零点六B的实时因子是零点二零八。"}], "text": "Queen三ASR零点六B的实时因子是零点二零八。"}, "recv_epoch_ms": 1782924134601, "recv_offset_ms": 349.83287495560944, "text": "Queen三ASR零点六B的实时因子是零点二零八。"}

@@ -1,0 +1,1 @@
+{"case_id": "numeric_index_002", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 3.530708333333333, "start": 0.0, "text": "这个问题对应第三组测试。"}], "text": "这个问题对应第三组测试。"}, "recv_epoch_ms": 1782924379845, "recv_offset_ms": 482.28691704571247, "text": "这个问题对应第三组测试。"}

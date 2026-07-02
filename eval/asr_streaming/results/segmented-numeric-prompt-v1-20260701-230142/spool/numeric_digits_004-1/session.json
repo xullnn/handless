@@ -1,0 +1,37 @@
+{
+  "active_duration_seconds": 0.0,
+  "active_segment_index": 2,
+  "cache_bytes": 429396,
+  "cache_dir": "eval/asr_streaming/results/segmented-numeric-prompt-v1-20260701-230142/spool/numeric_digits_004-1",
+  "committed_segments": [
+    {
+      "audio_end_ms": 6709.312,
+      "audio_start_ms": 0.0,
+      "cache_path": "eval/asr_streaming/results/segmented-numeric-prompt-v1-20260701-230142/spool/numeric_digits_004-1/segment_001.f32le",
+      "committed_offset_ms": 9155.544,
+      "compute_wall_ms": 191.823,
+      "duration_ms": 6709.312,
+      "final_text": "这批样本的编号从 1001 开始。",
+      "index": 1,
+      "mode": "generate",
+      "sample_count": 107349
+    }
+  ],
+  "final_text": "这批样本的编号从 1001 开始。",
+  "merge_strategy": "zero_overlap_concat",
+  "sample_format": "float32_le",
+  "sample_rate": 16000,
+  "schema_version": "1.0",
+  "segment_policy": {
+    "max_partials_per_segment": 8,
+    "max_segment_sec": 30.0,
+    "min_segment_sec": 5.0,
+    "partial_step_sec": 1.0,
+    "soft_text_chars": 150
+  },
+  "session_audio_path": "eval/asr_streaming/results/segmented-numeric-prompt-v1-20260701-230142/spool/numeric_digits_004-1/session.f32le",
+  "session_id": "numeric_digits_004",
+  "session_token": 1,
+  "status": "finalized",
+  "updated_epoch_ms": 1782918136936
+}

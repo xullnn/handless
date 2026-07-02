@@ -1,0 +1,49 @@
+{
+  "active_duration_seconds": 0.0,
+  "active_segment_index": 3,
+  "cache_bytes": 2688340,
+  "cache_dir": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/segment_cache/spool/existing_long_200_001__s90_c400_o0__seg001-1",
+  "committed_segments": [
+    {
+      "audio_end_ms": 30048.0,
+      "audio_start_ms": 0.0,
+      "cache_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/segment_cache/spool/existing_long_200_001__s90_c400_o0__seg001-1/segment_001.f32le",
+      "committed_offset_ms": 34904.49,
+      "compute_wall_ms": 1112.557,
+      "duration_ms": 30048.0,
+      "final_text": "现在我们要测试一段更接近真实使用的长文本输入，我可能会连续说一两分钟，中间有停顿，也可能会临时修改说法。模型需要持续输出稳定的实时转写，不能在收到中途的离线片段时提前结束整个会话。等我真正停止录音以后，它才应该给出最终结果。如果当前输入框仍然。",
+      "index": 1,
+      "mode": "generate",
+      "sample_count": 480768
+    },
+    {
+      "audio_end_ms": 42005.312,
+      "audio_start_ms": 30048.0,
+      "cache_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/segment_cache/spool/existing_long_200_001__s90_c400_o0__seg001-1/segment_002.f32le",
+      "committed_offset_ms": 50251.753,
+      "compute_wall_ms": 476.208,
+      "duration_ms": 11957.312,
+      "final_text": "安全可用就自动粘贴。如果焦点变化、目标不可编辑或者粘贴无法确认，就把结果保留在剪切板。",
+      "index": 2,
+      "mode": "generate",
+      "sample_count": 191317
+    }
+  ],
+  "final_text": "现在我们要测试一段更接近真实使用的长文本输入，我可能会连续说一两分钟，中间有停顿，也可能会临时修改说法。模型需要持续输出稳定的实时转写，不能在收到中途的离线片段时提前结束整个会话。等我真正停止录音以后，它才应该给出最终结果。如果当前输入框仍然。安全可用就自动粘贴。如果焦点变化、目标不可编辑或者粘贴无法确认，就把结果保留在剪切板。",
+  "merge_strategy": "zero_overlap_concat",
+  "sample_format": "float32_le",
+  "sample_rate": 16000,
+  "schema_version": "1.0",
+  "segment_policy": {
+    "max_partials_per_segment": 8,
+    "max_segment_sec": 30.0,
+    "min_segment_sec": 5.0,
+    "partial_step_sec": 1.0,
+    "soft_text_chars": 150
+  },
+  "session_audio_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/segment_cache/spool/existing_long_200_001__s90_c400_o0__seg001-1/session.f32le",
+  "session_id": "existing_long_200_001__s90_c400_o0__seg001",
+  "session_token": 1,
+  "status": "finalized",
+  "updated_epoch_ms": 1782928212002
+}

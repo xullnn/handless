@@ -1,0 +1,1 @@
+{"case_id": "numeric_negative_002", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 3.1573125, "language": "Chinese", "start": 0.0, "text": "这件事一点也不难。"}], "text": "这件事一点也不难。"}, "recv_epoch_ms": 1782924040028, "recv_offset_ms": 71.49999996181577, "text": "这件事一点也不难。"}

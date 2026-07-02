@@ -1,0 +1,1 @@
+{"case_id": "numeric_version_001", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 4.0533125, "language": "Chinese", "start": 0.0, "text": "当前版本是一点二点三。"}], "text": "当前版本是一点二点三。"}, "recv_epoch_ms": 1782924038424, "recv_offset_ms": 93.61974999774247, "text": "当前版本是一点二点三。"}

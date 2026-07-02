@@ -1,0 +1,1 @@
+{"case_id": "numeric_digits_002", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 5.3546875, "language": "Chinese", "start": 0.0, "text": "验证码是八零六二一九。"}], "text": "验证码是八零六二一九。"}, "recv_epoch_ms": 1782924129525, "recv_offset_ms": 196.25912501942366, "text": "验证码是八零六二一九。"}

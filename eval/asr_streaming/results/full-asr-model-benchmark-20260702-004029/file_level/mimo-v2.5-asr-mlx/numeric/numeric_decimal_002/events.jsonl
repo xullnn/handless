@@ -1,0 +1,1 @@
+{"case_id": "numeric_decimal_002", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 7.68, "start": 0.0, "text": "模型大小大约是零点六B。"}], "text": "模型大小大约是零点六B。"}, "recv_epoch_ms": 1782924369881, "recv_offset_ms": 669.092166936025, "text": "模型大小大约是零点六B。"}

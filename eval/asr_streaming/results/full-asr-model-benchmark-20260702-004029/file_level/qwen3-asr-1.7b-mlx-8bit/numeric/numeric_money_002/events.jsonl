@@ -1,0 +1,1 @@
+{"case_id": "numeric_money_002", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 5.4186875, "language": "Chinese", "start": 0.0, "text": "这张发票金额是三千零五十六元。"}], "text": "这张发票金额是三千零五十六元。"}, "recv_epoch_ms": 1782924132629, "recv_offset_ms": 205.0750000635162, "text": "这张发票金额是三千零五十六元。"}

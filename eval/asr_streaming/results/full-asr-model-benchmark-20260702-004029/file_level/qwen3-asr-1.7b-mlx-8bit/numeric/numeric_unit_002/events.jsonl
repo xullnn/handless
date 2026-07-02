@@ -1,0 +1,1 @@
+{"case_id": "numeric_unit_002", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 8.1706875, "language": "Chinese", "start": 0.0, "text": "模型文件大约占用九百六十四MB。"}], "text": "模型文件大约占用九百六十四MB。"}, "recv_epoch_ms": 1782924132013, "recv_offset_ms": 231.1977919889614, "text": "模型文件大约占用九百六十四MB。"}

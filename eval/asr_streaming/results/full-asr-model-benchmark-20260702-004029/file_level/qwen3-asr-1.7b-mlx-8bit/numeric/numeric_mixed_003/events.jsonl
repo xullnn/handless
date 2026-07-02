@@ -1,0 +1,1 @@
+{"case_id": "numeric_mixed_003", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 6.8053125, "language": "Chinese", "start": 0.0, "text": "mlx版本模型大小接近零点九四GB。"}], "text": "mlx版本模型大小接近零点九四GB。"}, "recv_epoch_ms": 1782924135103, "recv_offset_ms": 232.78287495486438, "text": "mlx版本模型大小接近零点九四GB。"}

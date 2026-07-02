@@ -1,0 +1,1 @@
+{"case_id": "numeric_decimal_002", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 7.68, "language": "Chinese", "start": 0.0, "text": "模型大小大约是零点六B。"}], "text": "模型大小大约是零点六B。"}, "recv_epoch_ms": 1782924130410, "recv_offset_ms": 221.97725006844848, "text": "模型大小大约是零点六B。"}

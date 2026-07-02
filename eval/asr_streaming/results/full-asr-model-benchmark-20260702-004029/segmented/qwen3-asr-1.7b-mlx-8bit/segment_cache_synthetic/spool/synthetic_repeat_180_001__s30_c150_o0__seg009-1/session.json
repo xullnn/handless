@@ -1,0 +1,37 @@
+{
+  "active_duration_seconds": 0.0,
+  "active_segment_index": 2,
+  "cache_bytes": 249852,
+  "cache_dir": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/segment_cache_synthetic/spool/synthetic_repeat_180_001__s30_c150_o0__seg009-1",
+  "committed_segments": [
+    {
+      "audio_end_ms": 3903.938,
+      "audio_start_ms": 0.0,
+      "cache_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/segment_cache_synthetic/spool/synthetic_repeat_180_001__s30_c150_o0__seg009-1/segment_001.f32le",
+      "committed_offset_ms": 5022.12,
+      "compute_wall_ms": 195.24,
+      "duration_ms": 3903.938,
+      "final_text": "我们才考虑把它接入真实应用。",
+      "index": 1,
+      "mode": "generate",
+      "sample_count": 62463
+    }
+  ],
+  "final_text": "我们才考虑把它接入真实应用。",
+  "merge_strategy": "zero_overlap_concat",
+  "sample_format": "float32_le",
+  "sample_rate": 16000,
+  "schema_version": "1.0",
+  "segment_policy": {
+    "max_partials_per_segment": 8,
+    "max_segment_sec": 30.0,
+    "min_segment_sec": 5.0,
+    "partial_step_sec": 1.0,
+    "soft_text_chars": 150
+  },
+  "session_audio_path": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-1.7b-mlx-8bit/segment_cache_synthetic/spool/synthetic_repeat_180_001__s30_c150_o0__seg009-1/session.f32le",
+  "session_id": "synthetic_repeat_180_001__s30_c150_o0__seg009",
+  "session_token": 1,
+  "status": "finalized",
+  "updated_epoch_ms": 1782934134494
+}

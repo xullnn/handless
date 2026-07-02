@@ -1,0 +1,1 @@
+{"case_id": "numeric_negative_003", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 3.1573125, "language": "Chinese", "start": 0.0, "text": "我想说三点建议。"}], "text": "我想说三点建议。"}, "recv_epoch_ms": 1782924135948, "recv_offset_ms": 139.59483394864947, "text": "我想说三点建议。"}

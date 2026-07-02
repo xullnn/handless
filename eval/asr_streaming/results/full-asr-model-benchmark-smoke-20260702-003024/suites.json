@@ -1,0 +1,8 @@
+[
+  {
+    "id": "smoke",
+    "manifest": "eval/asr_streaming/cases.smoke.local.jsonl",
+    "name_zh": "健康检查",
+    "purpose": "单条健康检查，不进入正式排名。"
+  }
+]

@@ -1,0 +1,1 @@
+{"case_id": "numeric_version_004", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 9.9946875, "language": "Chinese", "start": 0.0, "text": "这个接口使用一六K单声道音频。"}], "text": "这个接口使用一六K单声道音频。"}, "recv_epoch_ms": 1782924038831, "recv_offset_ms": 132.84354098141193, "text": "这个接口使用一六K单声道音频。"}

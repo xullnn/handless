@@ -1,0 +1,111 @@
+{
+  "base_regression_guard": {
+    "case_count": 10,
+    "delta_first_partial_ms": 550.6490751053207,
+    "delta_mean_cer": -0.0018491228070175447,
+    "delta_mean_wer": -0.03592099907889379,
+    "no_prompt_first_partial_ms": 1085.5318458052352,
+    "no_prompt_mean_cer": 0.05211099977686115,
+    "no_prompt_mean_wer": 0.19438094711347514,
+    "prompt_first_partial_ms": 1636.1809209105559,
+    "prompt_mean_cer": 0.050261876969843605,
+    "prompt_mean_wer": 0.15845994803458133,
+    "regression_count": 0
+  },
+  "inputs": {
+    "base_comparison": "eval/asr_streaming/results/qwen3-06b-prompt-ab-20260702-155144/base_prompt_vs_no_prompt_comparison.json",
+    "no_prompt_base_summary": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-0.6b-mlx-8bit/base/summary.json",
+    "no_prompt_numeric_analysis": "eval/asr_streaming/results/qwen3-06b-prompt-ab-20260702-155144/no_prompt_numeric_format_analysis.json",
+    "no_prompt_numeric_summary": "eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029/segmented/qwen3-asr-0.6b-mlx-8bit/numeric/summary.json",
+    "numeric_comparison": "eval/asr_streaming/results/qwen3-06b-prompt-ab-20260702-155144/numeric_prompt_vs_no_prompt_comparison.json",
+    "prompt_base_summary": "eval/asr_streaming/results/segmented-base-prompt-v1-20260701-230709/summary.json",
+    "prompt_numeric_analysis": "eval/asr_streaming/results/qwen3-06b-prompt-ab-20260702-155144/prompt_numeric_format_analysis.json",
+    "prompt_numeric_summary": "eval/asr_streaming/results/segmented-numeric-prompt-v1-20260701-230142/summary.json"
+  },
+  "model_id": "qwen3-asr-0.6b-mlx-8bit",
+  "numeric_format": {
+    "case_count": 37,
+    "delta_pass_rate": 0.13513513513513514,
+    "improved_case_count": 5,
+    "improved_cases": [
+      {
+        "case_id": "numeric_digits_002",
+        "must_include_missing_after_prompt": [],
+        "must_not_include_present_after_prompt": [],
+        "no_prompt_passed": false,
+        "no_prompt_text": "验证码是八零六二一九。",
+        "prompt_passed": true,
+        "prompt_text": "验证码是 806219。",
+        "scenario": "numbers_digits"
+      },
+      {
+        "case_id": "numeric_digits_004",
+        "must_include_missing_after_prompt": [],
+        "must_not_include_present_after_prompt": [],
+        "no_prompt_passed": false,
+        "no_prompt_text": "这批样本的编号从一零零一开始。",
+        "prompt_passed": true,
+        "prompt_text": "这批样本的编号从 1001 开始。",
+        "scenario": "numbers_digits"
+      },
+      {
+        "case_id": "numeric_decimal_001",
+        "must_include_missing_after_prompt": [],
+        "must_not_include_present_after_prompt": [],
+        "no_prompt_passed": false,
+        "no_prompt_text": "这个版本的实时因子是零点二零八。",
+        "prompt_passed": true,
+        "prompt_text": "这个版本的实时因子是 0.208。",
+        "scenario": "numbers_decimal"
+      },
+      {
+        "case_id": "numeric_unit_003",
+        "must_include_missing_after_prompt": [],
+        "must_not_include_present_after_prompt": [],
+        "no_prompt_passed": false,
+        "no_prompt_text": "这个服务监听一八一零五端口。",
+        "prompt_passed": true,
+        "prompt_text": "这个服务监听 18105 端口。",
+        "scenario": "numbers_unit"
+      },
+      {
+        "case_id": "numeric_version_001",
+        "must_include_missing_after_prompt": [],
+        "must_not_include_present_after_prompt": [],
+        "no_prompt_passed": false,
+        "no_prompt_text": "当前版本是一点二点三。",
+        "prompt_passed": true,
+        "prompt_text": "当前版本是 1.2.3。",
+        "scenario": "numbers_version"
+      }
+    ],
+    "no_prompt_pass_rate": 0.21621621621621623,
+    "no_prompt_passed": 8,
+    "prompt_pass_rate": 0.35135135135135137,
+    "prompt_passed": 13,
+    "worsened_case_count": 0,
+    "worsened_cases": []
+  },
+  "numeric_suite_quality_notes": {
+    "delta_first_partial_ms": 1365.3882825967378,
+    "no_prompt_first_partial_ms": 1076.8368727829609,
+    "no_prompt_mean_cer": 0.01694017835322183,
+    "no_prompt_mean_wer": 0.01932151932151932,
+    "note": "Numeric-suite CER/WER are computed against spoken-form references, so desired Arabic-number formatting can increase CER/WER. Use numeric pass rate as the primary numeric-suite metric.",
+    "prompt_first_partial_ms": 2442.2251553796987,
+    "prompt_mean_cer": 0.09305672413089293,
+    "prompt_mean_wer": 0.10234630234630235
+  },
+  "prompt_file": "configs/asr/qwen3_system_prompt.numeric_style.zh.txt",
+  "purpose": "Qwen3 0.6B segmented system-prompt versus no-prompt A/B comparison.",
+  "recommendation": {
+    "next_step": "先实现保守的本地数字 ITN / 后处理层，再考虑是否需要默认提示词。",
+    "rationale": [
+      "数字格式通过率有提升，但绝对通过率仍然偏低。",
+      "提示词明显增加 numeric 和 base 两个 suite 的首个 partial 延迟。",
+      "基础 suite 的 CER/WER 没有回退，因此提示词可以保留为实验依据，但不适合作为默认产品路径。"
+    ],
+    "status": "do_not_enable_prompt_by_default"
+  },
+  "schema_version": "1.0"
+}

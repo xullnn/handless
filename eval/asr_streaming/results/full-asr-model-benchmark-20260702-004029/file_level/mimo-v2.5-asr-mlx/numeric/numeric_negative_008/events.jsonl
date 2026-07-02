@@ -1,0 +1,1 @@
+{"case_id": "numeric_negative_008", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 5.834708333333333, "start": 0.0, "text": "我现在开始进行数字格式测试。"}], "text": "我现在开始进行数字格式测试。"}, "recv_epoch_ms": 1782924388314, "recv_offset_ms": 513.7613338883966, "text": "我现在开始进行数字格式测试。"}

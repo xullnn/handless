@@ -1,0 +1,1 @@
+{"case_id": "numeric_datetime_004", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 5.450708333333333, "start": 0.0, "text": "任务预计二十四小时内完成。"}], "text": "任务预计二十四小时内完成。"}, "recv_epoch_ms": 1782924373213, "recv_offset_ms": 468.7968749785796, "text": "任务预计二十四小时内完成。"}

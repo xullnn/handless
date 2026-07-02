@@ -1,0 +1,1 @@
+{"case_id": "numeric_unit_003", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 5.44, "language": "Chinese", "start": 0.0, "text": "这个服务监听一八一零五端口。"}], "text": "这个服务监听一八一零五端口。"}, "recv_epoch_ms": 1782924132228, "recv_offset_ms": 214.07741599250585, "text": "这个服务监听一八一零五端口。"}

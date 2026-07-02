@@ -1,0 +1,61 @@
+[
+  {
+    "file_level": {
+      "adapter": "mlx-stt-local",
+      "language": "Chinese"
+    },
+    "id": "qwen3-asr-0.6b-mlx-8bit",
+    "name": "Qwen3-ASR 0.6B MLX 8-bit",
+    "parameter_scale": "0.6B parameters, 8-bit quantized MLX weights",
+    "path": ".external/models/mlx-community__Qwen3-ASR-0.6B-8bit",
+    "release_date": "2026-01-29",
+    "role": "current_baseline",
+    "segmented": {
+      "service": "qwen3_mlx_segmented_cache_service.py",
+      "supported": true
+    },
+    "vendor": "Alibaba / Qwen upstream; MLX Community conversion",
+    "vendor_zh": "上游为阿里 / 通义千问 Qwen；MLX Community 转换"
+  },
+  {
+    "file_level": {
+      "adapter": "mlx-stt-local",
+      "language": "Chinese"
+    },
+    "id": "qwen3-asr-1.7b-mlx-8bit",
+    "name": "Qwen3-ASR 1.7B MLX 8-bit",
+    "parameter_scale": "1.7B parameters, 8-bit quantized MLX weights",
+    "path": ".external/models/mlx-community__Qwen3-ASR-1.7B-8bit",
+    "release_date": "2026-01-29",
+    "role": "larger_qwen_candidate",
+    "segmented": {
+      "service": "qwen3_mlx_segmented_cache_service.py",
+      "supported": true
+    },
+    "vendor": "Alibaba / Qwen upstream; MLX Community conversion",
+    "vendor_zh": "上游为阿里 / 通义千问 Qwen；MLX Community 转换"
+  },
+  {
+    "file_level": {
+      "adapter": "mimo-asr-mlx-local",
+      "audio_tokenizer_dir": ".external/models/MiMo-Audio-Tokenizer",
+      "language": "zh"
+    },
+    "id": "mimo-v2.5-asr-mlx",
+    "name": "MiMo-V2.5-ASR MLX",
+    "parameter_scale": "8B parameters",
+    "path": ".external/models/MiMo-V2.5-ASR-MLX",
+    "release_date": "2026-06-02",
+    "role": "high_quality_offline_candidate",
+    "segmented": {
+      "probe_required": true,
+      "reason": "Current local MiMo adapter is file-level generate(...); segmented/chunked capability must be inspected and reported.",
+      "supported": false
+    },
+    "support_paths": [
+      ".external/models/MiMo-Audio-Tokenizer"
+    ],
+    "vendor": "Xiaomi MiMo",
+    "vendor_zh": "小米 MiMo 团队"
+  }
+]

@@ -1,0 +1,1 @@
+{"case_id": "numeric_negative_005", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 4.0426875, "language": "Chinese", "start": 0.0, "text": "这个方案有两点需要调整。"}], "text": "这个方案有两点需要调整。"}, "recv_epoch_ms": 1782924136285, "recv_offset_ms": 171.93370801396668, "text": "这个方案有两点需要调整。"}

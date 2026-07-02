@@ -1,0 +1,1 @@
+{"case_id": "numeric_index_003", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 6.794708333333333, "start": 0.0, "text": "我们先处理case零三。"}], "text": "我们先处理case零三。"}, "recv_epoch_ms": 1782924380447, "recv_offset_ms": 600.5539579782635, "text": "我们先处理case零三。"}

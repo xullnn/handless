@@ -1,0 +1,20 @@
+{
+  "cpu_percent": {
+    "last": 86.0,
+    "mean": 47.3,
+    "peak": 86.0
+  },
+  "duration_seconds": 2.031,
+  "finished_epoch_ms": 1782923437972,
+  "label": "qwen3-asr-1.7b-mlx-8bit:file_level:smoke",
+  "pid": 31277,
+  "rss_mb": {
+    "last": 2065.109375,
+    "mean": 1041.6640625,
+    "peak": 2065.109375
+  },
+  "sample_count": 2,
+  "schema_version": "1.0",
+  "started_epoch_ms": 1782923435941,
+  "stop_reason": "process_exited"
+}

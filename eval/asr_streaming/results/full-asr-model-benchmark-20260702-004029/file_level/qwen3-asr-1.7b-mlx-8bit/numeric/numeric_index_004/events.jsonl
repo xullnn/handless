@@ -1,0 +1,1 @@
+{"case_id": "numeric_index_004", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 5.4506875, "language": "Chinese", "start": 0.0, "text": "这是一百二十秒长语音测试。"}], "text": "这是一百二十秒长语音测试。"}, "recv_epoch_ms": 1782924134250, "recv_offset_ms": 197.48850003816187, "text": "这是一百二十秒长语音测试。"}

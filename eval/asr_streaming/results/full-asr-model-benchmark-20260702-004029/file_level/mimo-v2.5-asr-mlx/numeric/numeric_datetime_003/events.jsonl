@@ -1,0 +1,1 @@
+{"case_id": "numeric_datetime_003", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 4.9387083333333335, "start": 0.0, "text": "请在七月一日上午十点十五提醒我。"}], "text": "请在七月一日上午十点十五提醒我。"}, "recv_epoch_ms": 1782924372744, "recv_offset_ms": 590.4264159034938, "text": "请在七月一日上午十点十五提醒我。"}

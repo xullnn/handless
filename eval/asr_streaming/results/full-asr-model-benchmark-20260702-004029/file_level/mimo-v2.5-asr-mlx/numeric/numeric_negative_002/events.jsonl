@@ -1,0 +1,1 @@
+{"case_id": "numeric_negative_002", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 3.1573333333333333, "start": 0.0, "text": "这件事一点也不难"}], "text": "这件事一点也不难"}, "recv_epoch_ms": 1782924385469, "recv_offset_ms": 356.7304159514606, "text": "这件事一点也不难"}

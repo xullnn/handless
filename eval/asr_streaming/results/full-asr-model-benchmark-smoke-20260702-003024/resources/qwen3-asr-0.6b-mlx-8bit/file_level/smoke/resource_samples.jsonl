@@ -1,0 +1,2 @@
+{"cpu_percent": 4.3, "epoch_ms": 1782923424569, "label": "qwen3-asr-0.6b-mlx-8bit:file_level:smoke", "pid": 29923, "rss_kb": 18736, "rss_mb": 18.296875}
+{"cpu_percent": 64.0, "epoch_ms": 1782923425582, "label": "qwen3-asr-0.6b-mlx-8bit:file_level:smoke", "pid": 29923, "rss_kb": 92960, "rss_mb": 90.78125}

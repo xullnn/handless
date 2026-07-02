@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-07-02-qwen3-06b-prompt-ab-benchmark",
+  "title": "Qwen3 0.6B prompt A/B benchmark",
+  "kind": "investigation",
+  "parent_id": "2026-07-02-full-asr-model-benchmark",
+  "created_from": "user_request",
+  "created_at": "2026-07-02",
+  "updated_at": "2026-07-02",
+  "follow_ups": [
+    {
+      "id": "FUP-001",
+      "title": "Numeric ITN strategy",
+      "kind": "investigation",
+      "reason": "Prompt A/B evidence can show whether prompt-only numeric formatting is enough; if not, create a separate local numeric ITN/post-processing feature.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    }
+  ]
+}

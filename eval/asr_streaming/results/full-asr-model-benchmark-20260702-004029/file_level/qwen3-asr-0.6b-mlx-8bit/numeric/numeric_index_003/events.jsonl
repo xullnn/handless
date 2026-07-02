@@ -1,0 +1,1 @@
+{"case_id": "numeric_index_003", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 6.7946875, "language": "Chinese", "start": 0.0, "text": "我们先处理 case 零三。"}], "text": "我们先处理 case 零三。"}, "recv_epoch_ms": 1782924039116, "recv_offset_ms": 110.71579100098461, "text": "我们先处理 case 零三。"}

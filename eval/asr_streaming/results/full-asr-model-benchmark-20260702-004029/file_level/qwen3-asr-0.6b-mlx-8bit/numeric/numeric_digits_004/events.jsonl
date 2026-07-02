@@ -1,0 +1,1 @@
+{"case_id": "numeric_digits_004", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 6.7093125, "language": "Chinese", "start": 0.0, "text": "这批样本的编号从一零零一开始。"}], "text": "这批样本的编号从一零零一开始。"}, "recv_epoch_ms": 1782924036919, "recv_offset_ms": 115.75975001323968, "text": "这批样本的编号从一零零一开始。"}

@@ -1,0 +1,1 @@
+{"case_id": "numeric_percent_002", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 5.888, "language": "Chinese", "start": 0.0, "text": "准确率提升到百分之九十二点八。"}], "text": "准确率提升到百分之九十二点八。"}, "recv_epoch_ms": 1782924037369, "recv_offset_ms": 108.79641701467335, "text": "准确率提升到百分之九十二点八。"}

@@ -1,0 +1,1 @@
+{"case_id": "numeric_decimal_001", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 5.3546875, "language": "Chinese", "start": 0.0, "text": "这个版本的实时因子是零点二零八。"}], "text": "这个版本的实时因子是零点二零八。"}, "recv_epoch_ms": 1782924037036, "recv_offset_ms": 116.06925004161894, "text": "这个版本的实时因子是零点二零八。"}

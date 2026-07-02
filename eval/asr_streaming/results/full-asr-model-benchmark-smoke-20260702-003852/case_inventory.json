@@ -1,0 +1,33 @@
+{
+  "cases": [
+    {
+      "audio": "audio/zh_short_001.wav",
+      "audio_exists": true,
+      "case_id": "zh_short_001",
+      "duration_seconds": 6.2933125,
+      "format_focus": null,
+      "lang": "zh",
+      "lineno": 1,
+      "must_include": null,
+      "must_not_include": null,
+      "resolved_audio": "eval/asr_streaming/audio/zh_short_001.wav",
+      "scenario": "short_dictation",
+      "suite_id": "smoke",
+      "suite_manifest": "eval/asr_streaming/cases.smoke.local.jsonl",
+      "text": "我想要做一个本地离线的中文语音输入工具。"
+    }
+  ],
+  "created_epoch_ms": 1782923932906,
+  "duplicate_audio": [],
+  "duplicate_audio_ref_count": 0,
+  "manifest_case_count": 1,
+  "missing_audio": [],
+  "missing_audio_count": 0,
+  "schema_version": "1.0",
+  "suite_count": 1,
+  "suite_counts": {
+    "smoke": 1
+  },
+  "total_duration_seconds": 6.2933125,
+  "unique_audio_count": 1
+}

@@ -1,0 +1,35 @@
+{
+  "case_count": 3,
+  "cases": [
+    {
+      "audio": "audio/long_120_001.wav",
+      "case_id": "existing_long_120_001",
+      "status": "not_run_unsupported_segmented_runtime"
+    },
+    {
+      "audio": "audio/long_200_001.wav",
+      "case_id": "existing_long_200_001",
+      "status": "not_run_unsupported_segmented_runtime"
+    },
+    {
+      "audio": "audio/long_400_001.wav",
+      "case_id": "existing_long_400_001",
+      "status": "not_run_unsupported_segmented_runtime"
+    }
+  ],
+  "created_epoch_ms": 1782924783536,
+  "model_id": "mimo-v2.5-asr-mlx",
+  "reason": "MiMo local MLX runtime is currently validated through file-level generate(...). No safe start/push_pcm/partial/finish/cancel or stream_transcribe surface has been proven for product-path segmented evaluation.",
+  "runtime_evidence": {
+    "has_create_streaming_session": false,
+    "has_generate": true,
+    "has_stream_generate": false,
+    "has_stream_transcribe": false,
+    "source_exists": true,
+    "source_path": ".external/repos/mlx-audio/mlx_audio/stt/models/mimo_v2_asr/asr.py"
+  },
+  "schema_version": "1.0",
+  "segmented_simulated_realtime_ran": false,
+  "status": "unsupported_segmented_runtime",
+  "suite_id": "long_prepared"
+}

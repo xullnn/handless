@@ -1,0 +1,1 @@
+{"case_id": "numeric_unit_001", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 5.8666875, "language": "Chinese", "start": 0.0, "text": "这台电脑有四十八GB内存。"}], "text": "这台电脑有四十八GB内存。"}, "recv_epoch_ms": 1782924037881, "recv_offset_ms": 102.27091598790139, "text": "这台电脑有四十八GB内存。"}

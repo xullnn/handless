@@ -1,0 +1,1 @@
+{"case_id": "numeric_digits_004", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 6.709333333333333, "start": 0.0, "text": "这批样本的编号从一零零一开始。"}], "text": "这批样本的编号从一零零一开始。"}, "recv_epoch_ms": 1782924368555, "recv_offset_ms": 677.4257079232484, "text": "这批样本的编号从一零零一开始。"}

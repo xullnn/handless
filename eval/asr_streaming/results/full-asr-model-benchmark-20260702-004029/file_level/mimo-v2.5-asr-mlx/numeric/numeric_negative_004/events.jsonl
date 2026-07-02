@@ -1,0 +1,1 @@
+{"case_id": "numeric_negative_004", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 3.6053333333333333, "start": 0.0, "text": "第一，我想说明测试目标。"}], "text": "第一，我想说明测试目标。"}, "recv_epoch_ms": 1782924386339, "recv_offset_ms": 450.42737503536046, "text": "第一，我想说明测试目标。"}

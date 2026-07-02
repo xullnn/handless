@@ -1,0 +1,1 @@
+{"case_id": "numeric_mixed_003", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 6.8053333333333335, "start": 0.0, "text": "MLX版本模型大小接近零点九四GB。"}], "text": "MLX版本模型大小接近零点九四GB。"}, "recv_epoch_ms": 1782924383454, "recv_offset_ms": 691.7055000085384, "text": "MLX版本模型大小接近零点九四GB。"}

@@ -1,0 +1,1 @@
+{"case_id": "numeric_datetime_002", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 5.024, "language": "Chinese", "start": 0.0, "text": "会议安排在下午三点半开始。"}], "text": "会议安排在下午三点半开始。"}, "recv_epoch_ms": 1782924131189, "recv_offset_ms": 187.79124994762242, "text": "会议安排在下午三点半开始。"}

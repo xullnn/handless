@@ -1,0 +1,1 @@
+{"case_id": "numeric_version_002", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 8.16, "language": "Chinese", "start": 0.0, "text": "我们测试的是天问三ASR零点六B。"}], "text": "我们测试的是天问三ASR零点六B。"}, "recv_epoch_ms": 1782924133080, "recv_offset_ms": 256.2315409304574, "text": "我们测试的是天问三ASR零点六B。"}

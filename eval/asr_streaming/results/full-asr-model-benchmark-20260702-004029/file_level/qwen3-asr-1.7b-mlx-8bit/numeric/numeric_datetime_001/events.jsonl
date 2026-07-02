@@ -1,0 +1,1 @@
+{"case_id": "numeric_datetime_001", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 3.5946875, "language": "Chinese", "start": 0.0, "text": "是二零二六年六月三十日。"}], "text": "是二零二六年六月三十日。"}, "recv_epoch_ms": 1782924131000, "recv_offset_ms": 183.00774996168911, "text": "是二零二六年六月三十日。"}

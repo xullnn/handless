@@ -1,0 +1,1 @@
+{"case_id": "numeric_percent_001", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 5.376, "language": "Chinese", "start": 0.0, "text": "这次错误率下降了百分之三点五。"}], "text": "这次错误率下降了百分之三点五。"}, "recv_epoch_ms": 1782924130610, "recv_offset_ms": 198.10150004923344, "text": "这次错误率下降了百分之三点五。"}

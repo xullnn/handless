@@ -1,0 +1,201 @@
+{
+  "args": {
+    "dry_run": false,
+    "mode": "all",
+    "model": [],
+    "no_realtime": false,
+    "out_dir": "eval/asr_streaming/results/full-asr-model-benchmark-smoke-20260702-003852",
+    "skip_existing": false,
+    "smoke": true,
+    "suite": [],
+    "warn_only": false
+  },
+  "argv": [
+    "eval/asr_streaming/full_asr_model_benchmark.py",
+    "--mode",
+    "all",
+    "--out-dir",
+    "eval/asr_streaming/results/full-asr-model-benchmark-smoke-20260702-003852",
+    "--smoke"
+  ],
+  "created_epoch_ms": 1782923932927,
+  "cwd": "/Users/xulelong/2025/projects/LocalVoiceInput",
+  "git_status_short": [
+    " M README.md",
+    " M Sources/LocalVoiceInputCore/HotkeyStateMachine.swift",
+    " M Sources/LocalVoiceInputMac/AppConfig.swift",
+    " M Sources/LocalVoiceInputMac/HotkeyController.swift",
+    " M Tests/LocalVoiceInputCoreTests/HotkeyStateMachineTests.swift",
+    " M Tests/LocalVoiceInputMacTests/LocalHTTPASRClientTests.swift",
+    " M configs/config.example.json",
+    " M eval/asr_streaming/README.md",
+    " M eval/asr_streaming/model_inventory.md",
+    " M eval/asr_streaming/model_registry.json",
+    " M eval/asr_streaming/model_survey.md",
+    " M eval/asr_streaming/monitor_pid_resources.py",
+    " D eval/asr_streaming/qwen3_mlx_cumulative_probe.py",
+    " D eval/asr_streaming/qwen3_mlx_cumulative_service.py",
+    " D eval/asr_streaming/qwen3_mlx_http_service.py",
+    " M eval/asr_streaming/qwen3_mlx_segmented_cache_service.py",
+    " M eval/asr_streaming/runtime_feasibility.md",
+    " M eval/asr_streaming/validate.sh",
+    " M project_memory_bank/core/current_focus.md",
+    " M project_memory_bank/modules/asr_audio/summary.md",
+    " M project_memory_bank/modules/packaging_ops/summary.md",
+    " D scripts/run_qwen3_mlx_app_smoke.sh",
+    " D scripts/run_qwen3_mlx_http_extended_gate.sh",
+    " D scripts/run_qwen3_mlx_http_gate_smoke.sh",
+    " D scripts/run_qwen3_mlx_http_long_benchmark.sh",
+    " M scripts/setup_qwen3_mlx_runtime.sh",
+    " M scripts/status_localvoiceinput.sh",
+    " M scripts/write_default_config.sh",
+    " M specs/feature_matrix.json",
+    " M specs/progress.md",
+    "?? eval/asr_streaming/analyze_numeric_format_results.py",
+    "?? eval/asr_streaming/compare_asr_summaries.py",
+    "?? eval/asr_streaming/full_asr_model_benchmark.py",
+    "?? eval/asr_streaming/qwen3_mlx_service_common.py",
+    "?? eval/asr_streaming/results/full-asr-model-benchmark-dry-run-20260702-003843/",
+    "?? eval/asr_streaming/results/full-asr-model-benchmark-dry-run/",
+    "?? eval/asr_streaming/results/full-asr-model-benchmark-smoke-20260702-003024/",
+    "?? eval/asr_streaming/results/full-asr-model-benchmark-smoke-20260702-003852/",
+    "?? eval/asr_streaming/results/full-asr-model-benchmark-smoke-dry-run/",
+    "?? eval/asr_streaming/results/manual-segmented-runtime-20260701-234213/",
+    "?? eval/asr_streaming/results/manual-segmented-runtime-20260701-234323/",
+    "?? eval/asr_streaming/results/segmented-base-prompt-v1-20260701-230709/",
+    "?? eval/asr_streaming/results/segmented-numeric-prompt-v1-20260701-230142/",
+    "?? scripts/run_full_asr_model_benchmark.sh",
+    "?? scripts/run_qwen3_mlx_segmented_regression_gate.sh",
+    "?? specs/2026-07-01-qwen3-segmented-regression-suite/",
+    "?? specs/2026-07-01-retire-qwen3-cumulative-route/",
+    "?? specs/2026-07-02-full-asr-model-benchmark/"
+  ],
+  "inventory_summary": {
+    "duplicate_audio_ref_count": 0,
+    "manifest_case_count": 1,
+    "missing_audio_count": 0,
+    "total_duration_seconds": 6.2933125,
+    "unique_audio_count": 1
+  },
+  "metric_explanations_zh": {
+    "CER": "字符错误率，越低越好。按标准答案和识别结果的字符级编辑距离除以标准答案字符数计算，主要用于中文识别准确率。",
+    "CPU": "进程 CPU 使用率。peak CPU 是采样峰值，mean CPU 是采样平均值。",
+    "RSS": "进程常驻内存，单位 MB。peak RSS 是峰值内存，mean RSS 是采样平均内存。",
+    "RTF": "实时因子，越低越快。RTF=0.5 表示处理耗时约为音频时长的一半；RTF>1 表示慢于实时。",
+    "WER": "词或 token 错误率，越低越好。中文近似按单字 token，连续英文、数字和符号按一个 token，用来观察中英混合和技术词错误。",
+    "final_coverage_ratio": "最终文本长度相对于标准答案长度的比例，用于发现漏识别、截断或异常过长输出。",
+    "final_latency_ms": "停止输入后最终结果返回延迟，越低越好。",
+    "first_partial_latency_ms": "从开始输入音频到第一段实时文字出现的延迟，越低越好。",
+    "numeric_format_pass_rate": "数字格式约束通过率，用于观察阿拉伯数字、日期、小数、百分比、金额、版本号等格式偏好。",
+    "partial_cadence_ms": "实时 partial 文本的平均刷新间隔，越低表示浮窗更新越频繁。"
+  },
+  "model_path_status": {
+    "missing": [],
+    "missing_count": 0,
+    "paths": [
+      {
+        "exists": true,
+        "is_dir": true,
+        "model_id": "qwen3-asr-0.6b-mlx-8bit",
+        "path": ".external/models/mlx-community__Qwen3-ASR-0.6B-8bit"
+      },
+      {
+        "exists": true,
+        "is_dir": true,
+        "model_id": "qwen3-asr-1.7b-mlx-8bit",
+        "path": ".external/models/mlx-community__Qwen3-ASR-1.7B-8bit"
+      },
+      {
+        "exists": true,
+        "is_dir": true,
+        "model_id": "mimo-v2.5-asr-mlx",
+        "path": ".external/models/MiMo-V2.5-ASR-MLX"
+      },
+      {
+        "exists": true,
+        "is_dir": true,
+        "model_id": "mimo-v2.5-asr-mlx",
+        "path": ".external/models/MiMo-Audio-Tokenizer"
+      }
+    ],
+    "schema_version": "1.0"
+  },
+  "models": [
+    {
+      "file_level": {
+        "adapter": "mlx-stt-local",
+        "language": "Chinese"
+      },
+      "id": "qwen3-asr-0.6b-mlx-8bit",
+      "name": "Qwen3-ASR 0.6B MLX 8-bit",
+      "parameter_scale": "0.6B parameters, 8-bit quantized MLX weights",
+      "path": ".external/models/mlx-community__Qwen3-ASR-0.6B-8bit",
+      "release_date": "2026-01-29",
+      "role": "current_baseline",
+      "segmented": {
+        "service": "qwen3_mlx_segmented_cache_service.py",
+        "supported": true
+      },
+      "vendor": "Alibaba / Qwen upstream; MLX Community conversion",
+      "vendor_zh": "上游为阿里 / 通义千问 Qwen；MLX Community 转换"
+    },
+    {
+      "file_level": {
+        "adapter": "mlx-stt-local",
+        "language": "Chinese"
+      },
+      "id": "qwen3-asr-1.7b-mlx-8bit",
+      "name": "Qwen3-ASR 1.7B MLX 8-bit",
+      "parameter_scale": "1.7B parameters, 8-bit quantized MLX weights",
+      "path": ".external/models/mlx-community__Qwen3-ASR-1.7B-8bit",
+      "release_date": "2026-01-29",
+      "role": "larger_qwen_candidate",
+      "segmented": {
+        "service": "qwen3_mlx_segmented_cache_service.py",
+        "supported": true
+      },
+      "vendor": "Alibaba / Qwen upstream; MLX Community conversion",
+      "vendor_zh": "上游为阿里 / 通义千问 Qwen；MLX Community 转换"
+    },
+    {
+      "file_level": {
+        "adapter": "mimo-asr-mlx-local",
+        "audio_tokenizer_dir": ".external/models/MiMo-Audio-Tokenizer",
+        "language": "zh"
+      },
+      "id": "mimo-v2.5-asr-mlx",
+      "name": "MiMo-V2.5-ASR MLX",
+      "parameter_scale": "8B parameters",
+      "path": ".external/models/MiMo-V2.5-ASR-MLX",
+      "registry_id": "mimo-v2.5-asr",
+      "release_date": "2026-06-02",
+      "role": "high_quality_offline_candidate",
+      "segmented": {
+        "probe_required": true,
+        "reason": "Current local MiMo adapter is file-level generate(...); segmented/chunked capability must be inspected and reported.",
+        "supported": false
+      },
+      "support_paths": [
+        ".external/models/MiMo-Audio-Tokenizer"
+      ],
+      "vendor": "Xiaomi MiMo",
+      "vendor_zh": "小米 MiMo 团队"
+    }
+  ],
+  "platform": {
+    "machine": "arm64",
+    "processor": "arm",
+    "release": "24.6.0",
+    "system": "Darwin"
+  },
+  "python": "3.12.13 | packaged by Anaconda, Inc. | (main, Mar 19 2026, 20:12:32) [Clang 20.1.8 ]",
+  "schema_version": "1.0",
+  "suites": [
+    {
+      "id": "smoke",
+      "manifest": "eval/asr_streaming/cases.smoke.local.jsonl",
+      "name_zh": "健康检查",
+      "purpose": "单条健康检查，不进入正式排名。"
+    }
+  ]
+}

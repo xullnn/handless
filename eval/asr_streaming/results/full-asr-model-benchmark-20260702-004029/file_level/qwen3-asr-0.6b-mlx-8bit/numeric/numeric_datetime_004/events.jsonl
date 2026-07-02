@@ -1,0 +1,1 @@
+{"case_id": "numeric_datetime_004", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 5.4506875, "language": "Chinese", "start": 0.0, "text": "任务预计二十四小时内完成。"}], "text": "任务预计二十四小时内完成。"}, "recv_epoch_ms": 1782924037777, "recv_offset_ms": 91.8088749749586, "text": "任务预计二十四小时内完成。"}

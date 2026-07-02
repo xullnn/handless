@@ -1,0 +1,1 @@
+{"case_id": "numeric_mixed_002", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 10.869333333333334, "start": 0.0, "text": "Local voice input，现在使用十六K音频输入。"}], "text": "Local voice input，现在使用十六K音频输入。"}, "recv_epoch_ms": 1782924382761, "recv_offset_ms": 763.7862500268966, "text": "Local voice input，现在使用十六K音频输入。"}

@@ -1,0 +1,1 @@
+{"case_id": "numeric_datetime_003", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 4.9386875, "language": "Chinese", "start": 0.0, "text": "请在七月一日上午十点十五提醒我。"}], "text": "请在七月一日上午十点十五提醒我。"}, "recv_epoch_ms": 1782924131399, "recv_offset_ms": 208.86470808181912, "text": "请在七月一日上午十点十五提醒我。"}

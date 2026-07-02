@@ -1,0 +1,21 @@
+{
+  "cpu_percent": {
+    "last": 46.9,
+    "mean": 29.357692307692307,
+    "peak": 84.2
+  },
+  "duration_seconds": 106.872,
+  "finished_epoch_ms": 1782924755795,
+  "label": "mimo-v2.5-asr-mlx:file_level:segment_cache_synthetic",
+  "pid": 92875,
+  "process_scope": "process_tree",
+  "rss_mb": {
+    "last": 7277.84375,
+    "mean": 7052.449969951923,
+    "peak": 7277.84375
+  },
+  "sample_count": 104,
+  "schema_version": "1.0",
+  "started_epoch_ms": 1782924648923,
+  "stop_reason": "process_exited"
+}

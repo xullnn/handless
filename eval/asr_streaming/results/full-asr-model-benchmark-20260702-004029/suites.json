@@ -1,0 +1,50 @@
+[
+  {
+    "id": "base",
+    "manifest": "eval/asr_streaming/cases.local.jsonl",
+    "name_zh": "基础能力",
+    "purpose": "短句、中英文混合、hotword、标点、安全、长文本和 code-switching。"
+  },
+  {
+    "id": "numeric",
+    "manifest": "eval/asr_streaming/cases.numeric.local.jsonl",
+    "name_zh": "数字专项",
+    "purpose": "数字、日期、小数、百分比、金额、版本号、编号、单位和负例。"
+  },
+  {
+    "id": "extended_long",
+    "manifest": "eval/asr_streaming/cases.extended.local.jsonl",
+    "name_zh": "扩展长文本",
+    "purpose": "现有长文本压力子集。"
+  },
+  {
+    "id": "long_prepared",
+    "manifest": "eval/asr_streaming/cases.long_prepared.local.jsonl",
+    "name_zh": "长文本准备集",
+    "purpose": "准备好的长语音用例。"
+  },
+  {
+    "id": "long_synthetic",
+    "manifest": "eval/asr_streaming/cases.long_synthetic.local.jsonl",
+    "name_zh": "合成长文本",
+    "purpose": "合成超长压力用例。"
+  },
+  {
+    "id": "segment_budget",
+    "manifest": "eval/asr_streaming/cases.segment_budget.local.jsonl",
+    "name_zh": "分段预算",
+    "purpose": "时间和内容预算行为。"
+  },
+  {
+    "id": "segment_cache",
+    "manifest": "eval/asr_streaming/cases.segment_cache.local.jsonl",
+    "name_zh": "分段缓存",
+    "purpose": "准备好的分段缓存用例。"
+  },
+  {
+    "id": "segment_cache_synthetic",
+    "manifest": "eval/asr_streaming/cases.segment_cache.synthetic.local.jsonl",
+    "name_zh": "合成分段缓存",
+    "purpose": "合成分段缓存压力用例。"
+  }
+]

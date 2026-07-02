@@ -1,0 +1,1 @@
+{"case_id": "numeric_datetime_001", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 3.594708333333333, "start": 0.0, "text": "是二零二六年六月三十日。"}], "text": "是二零二六年六月三十日。"}, "recv_epoch_ms": 1782924371642, "recv_offset_ms": 542.873915983364, "text": "是二零二六年六月三十日。"}

@@ -1,0 +1,487 @@
+{
+  "aggregate_by_model_mode": [
+    {
+      "deduplicated_audio_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.0,
+        "mean_final_coverage_ratio": 1.0,
+        "mean_final_latency_ms": 41638.84754094761,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": 6.616363626628634,
+        "mean_wer": 0.0,
+        "ok_like_count": 1
+      },
+      "mode": "file_level",
+      "model_id": "mimo-v2.5-asr-mlx",
+      "raw_manifest_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.0,
+        "mean_final_coverage_ratio": 1.0,
+        "mean_final_latency_ms": 41638.84754094761,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": 6.616363626628634,
+        "mean_wer": 0.0,
+        "ok_like_count": 1
+      }
+    },
+    {
+      "deduplicated_audio_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": null,
+        "mean_final_coverage_ratio": null,
+        "mean_final_latency_ms": null,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": null,
+        "mean_wer": null,
+        "ok_like_count": 0
+      },
+      "mode": "segmented",
+      "model_id": "mimo-v2.5-asr-mlx",
+      "raw_manifest_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": null,
+        "mean_final_coverage_ratio": null,
+        "mean_final_latency_ms": null,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": null,
+        "mean_wer": null,
+        "ok_like_count": 0
+      }
+    },
+    {
+      "deduplicated_audio_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 195.17116690985858,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": 0.031010682688777734,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      },
+      "mode": "file_level",
+      "model_id": "qwen3-asr-0.6b-mlx-8bit",
+      "raw_manifest_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 195.17116690985858,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": 0.031010682688777734,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      }
+    },
+    {
+      "deduplicated_audio_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 154.61358393076807,
+        "mean_first_partial_latency_ms": 1087.7245829906315,
+        "mean_partial_cadence_ms": 1014.9159000022337,
+        "mean_rtf": 1.2626298551151338,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      },
+      "mode": "segmented",
+      "model_id": "qwen3-asr-0.6b-mlx-8bit",
+      "raw_manifest_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 154.61358393076807,
+        "mean_first_partial_latency_ms": 1087.7245829906315,
+        "mean_partial_cadence_ms": 1014.9159000022337,
+        "mean_rtf": 1.2626298551151338,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      }
+    },
+    {
+      "deduplicated_audio_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 287.2557920636609,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": 0.04564245126444239,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      },
+      "mode": "file_level",
+      "model_id": "qwen3-asr-1.7b-mlx-8bit",
+      "raw_manifest_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 287.2557920636609,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": 0.04564245126444239,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      }
+    },
+    {
+      "deduplicated_audio_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 267.12374994531274,
+        "mean_first_partial_latency_ms": 1129.313417011872,
+        "mean_partial_cadence_ms": 1024.565341603011,
+        "mean_rtf": 1.3632129477096433,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      },
+      "mode": "segmented",
+      "model_id": "qwen3-asr-1.7b-mlx-8bit",
+      "raw_manifest_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 267.12374994531274,
+        "mean_first_partial_latency_ms": 1129.313417011872,
+        "mean_partial_cadence_ms": 1024.565341603011,
+        "mean_rtf": 1.3632129477096433,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      }
+    }
+  ],
+  "created_epoch_ms": 1782923493133,
+  "metric_explanations_zh": {
+    "CER": "字符错误率，越低越好。按标准答案和识别结果的字符级编辑距离除以标准答案字符数计算，主要用于中文识别准确率。",
+    "CPU": "进程 CPU 使用率。peak CPU 是采样峰值，mean CPU 是采样平均值。",
+    "RSS": "进程常驻内存，单位 MB。peak RSS 是峰值内存，mean RSS 是采样平均内存。",
+    "RTF": "实时因子，越低越快。RTF=0.5 表示处理耗时约为音频时长的一半；RTF>1 表示慢于实时。",
+    "WER": "词或 token 错误率，越低越好。中文近似按单字 token，连续英文、数字和符号按一个 token，用来观察中英混合和技术词错误。",
+    "final_coverage_ratio": "最终文本长度相对于标准答案长度的比例，用于发现漏识别、截断或异常过长输出。",
+    "final_latency_ms": "停止输入后最终结果返回延迟，越低越好。",
+    "first_partial_latency_ms": "从开始输入音频到第一段实时文字出现的延迟，越低越好。",
+    "numeric_format_pass_rate": "数字格式约束通过率，用于观察阿拉伯数字、日期、小数、百分比、金额、版本号等格式偏好。",
+    "partial_cadence_ms": "实时 partial 文本的平均刷新间隔，越低表示浮窗更新越频繁。"
+  },
+  "schema_version": "1.0",
+  "suite_results": [
+    {
+      "case_count": 1,
+      "deduplicated_audio_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 195.17116690985858,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": 0.031010682688777734,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      },
+      "mode": "file_level",
+      "model_id": "qwen3-asr-0.6b-mlx-8bit",
+      "numeric_summary": null,
+      "raw_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 195.17116690985858,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": 0.031010682688777734,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      },
+      "resource_summary": {
+        "cpu_percent": {
+          "last": 64.0,
+          "mean": 34.15,
+          "peak": 64.0
+        },
+        "duration_seconds": 2.036,
+        "finished_epoch_ms": 1782923426603,
+        "label": "qwen3-asr-0.6b-mlx-8bit:file_level:smoke",
+        "pid": 29923,
+        "rss_mb": {
+          "last": 90.78125,
+          "mean": 54.5390625,
+          "peak": 90.78125
+        },
+        "sample_count": 2,
+        "schema_version": "1.0",
+        "started_epoch_ms": 1782923424567,
+        "stop_reason": "process_exited"
+      },
+      "status": null,
+      "suite_id": "smoke",
+      "summary_path": "eval/asr_streaming/results/full-asr-model-benchmark-smoke-20260702-003024/file_level/qwen3-asr-0.6b-mlx-8bit/smoke/summary.json"
+    },
+    {
+      "case_count": 1,
+      "deduplicated_audio_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 287.2557920636609,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": 0.04564245126444239,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      },
+      "mode": "file_level",
+      "model_id": "qwen3-asr-1.7b-mlx-8bit",
+      "numeric_summary": null,
+      "raw_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 287.2557920636609,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": 0.04564245126444239,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      },
+      "resource_summary": {
+        "cpu_percent": {
+          "last": 86.0,
+          "mean": 47.3,
+          "peak": 86.0
+        },
+        "duration_seconds": 2.031,
+        "finished_epoch_ms": 1782923437972,
+        "label": "qwen3-asr-1.7b-mlx-8bit:file_level:smoke",
+        "pid": 31277,
+        "rss_mb": {
+          "last": 2065.109375,
+          "mean": 1041.6640625,
+          "peak": 2065.109375
+        },
+        "sample_count": 2,
+        "schema_version": "1.0",
+        "started_epoch_ms": 1782923435941,
+        "stop_reason": "process_exited"
+      },
+      "status": null,
+      "suite_id": "smoke",
+      "summary_path": "eval/asr_streaming/results/full-asr-model-benchmark-smoke-20260702-003024/file_level/qwen3-asr-1.7b-mlx-8bit/smoke/summary.json"
+    },
+    {
+      "case_count": 1,
+      "deduplicated_audio_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.0,
+        "mean_final_coverage_ratio": 1.0,
+        "mean_final_latency_ms": 41638.84754094761,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": 6.616363626628634,
+        "mean_wer": 0.0,
+        "ok_like_count": 1
+      },
+      "mode": "file_level",
+      "model_id": "mimo-v2.5-asr-mlx",
+      "numeric_summary": null,
+      "raw_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.0,
+        "mean_final_coverage_ratio": 1.0,
+        "mean_final_latency_ms": 41638.84754094761,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": 6.616363626628634,
+        "mean_wer": 0.0,
+        "ok_like_count": 1
+      },
+      "resource_summary": {
+        "cpu_percent": {
+          "last": 24.4,
+          "mean": 7.586363636363636,
+          "peak": 87.1
+        },
+        "duration_seconds": 44.723,
+        "finished_epoch_ms": 1782923493113,
+        "label": "mimo-v2.5-asr-mlx:file_level:smoke",
+        "pid": 32698,
+        "rss_mb": {
+          "last": 7107.6875,
+          "mean": 6757.638494318182,
+          "peak": 7107.6875
+        },
+        "sample_count": 44,
+        "schema_version": "1.0",
+        "started_epoch_ms": 1782923448390,
+        "stop_reason": "process_exited"
+      },
+      "status": null,
+      "suite_id": "smoke",
+      "summary_path": "eval/asr_streaming/results/full-asr-model-benchmark-smoke-20260702-003024/file_level/mimo-v2.5-asr-mlx/smoke/summary.json"
+    },
+    {
+      "case_count": 1,
+      "deduplicated_audio_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 154.61358393076807,
+        "mean_first_partial_latency_ms": 1087.7245829906315,
+        "mean_partial_cadence_ms": 1014.9159000022337,
+        "mean_rtf": 1.2626298551151338,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      },
+      "mode": "segmented",
+      "model_id": "qwen3-asr-0.6b-mlx-8bit",
+      "numeric_summary": null,
+      "raw_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 154.61358393076807,
+        "mean_first_partial_latency_ms": 1087.7245829906315,
+        "mean_partial_cadence_ms": 1014.9159000022337,
+        "mean_rtf": 1.2626298551151338,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      },
+      "resource_summary": {
+        "cpu_percent": {
+          "last": 3.8,
+          "mean": 15.722222222222223,
+          "peak": 77.2
+        },
+        "duration_seconds": 9.134,
+        "finished_epoch_ms": 1782923435839,
+        "label": "qwen3-asr-0.6b-mlx-8bit:segmented:smoke",
+        "pid": 30138,
+        "rss_mb": {
+          "last": 1156.453125,
+          "mean": 1023.2881944444445,
+          "peak": 1156.453125
+        },
+        "sample_count": 9,
+        "schema_version": "1.0",
+        "started_epoch_ms": 1782923426705,
+        "stop_reason": "signal_15"
+      },
+      "status": "passed",
+      "suite_id": "smoke",
+      "summary_path": "eval/asr_streaming/results/full-asr-model-benchmark-smoke-20260702-003024/segmented/qwen3-asr-0.6b-mlx-8bit/smoke/summary.json"
+    },
+    {
+      "case_count": 1,
+      "deduplicated_audio_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 267.12374994531274,
+        "mean_first_partial_latency_ms": 1129.313417011872,
+        "mean_partial_cadence_ms": 1024.565341603011,
+        "mean_rtf": 1.3632129477096433,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      },
+      "mode": "segmented",
+      "model_id": "qwen3-asr-1.7b-mlx-8bit",
+      "numeric_summary": null,
+      "raw_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": 0.10526315789473684,
+        "mean_final_coverage_ratio": 0.9473684210526315,
+        "mean_final_latency_ms": 267.12374994531274,
+        "mean_first_partial_latency_ms": 1129.313417011872,
+        "mean_partial_cadence_ms": 1024.565341603011,
+        "mean_rtf": 1.3632129477096433,
+        "mean_wer": 0.10526315789473684,
+        "ok_like_count": 1
+      },
+      "resource_summary": {
+        "cpu_percent": {
+          "last": 18.1,
+          "mean": 21.83,
+          "peak": 120.0
+        },
+        "duration_seconds": 10.155,
+        "finished_epoch_ms": 1782923448232,
+        "label": "qwen3-asr-1.7b-mlx-8bit:segmented:smoke",
+        "pid": 31424,
+        "rss_mb": {
+          "last": 2553.421875,
+          "mean": 2289.496875,
+          "peak": 2553.421875
+        },
+        "sample_count": 10,
+        "schema_version": "1.0",
+        "started_epoch_ms": 1782923438077,
+        "stop_reason": "signal_15"
+      },
+      "status": "passed",
+      "suite_id": "smoke",
+      "summary_path": "eval/asr_streaming/results/full-asr-model-benchmark-smoke-20260702-003024/segmented/qwen3-asr-1.7b-mlx-8bit/smoke/summary.json"
+    },
+    {
+      "case_count": 1,
+      "deduplicated_audio_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": null,
+        "mean_final_coverage_ratio": null,
+        "mean_final_latency_ms": null,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": null,
+        "mean_wer": null,
+        "ok_like_count": 0
+      },
+      "mode": "segmented",
+      "model_id": "mimo-v2.5-asr-mlx",
+      "numeric_summary": null,
+      "raw_rollup": {
+        "case_count": 1,
+        "error_count": 0,
+        "mean_cer": null,
+        "mean_final_coverage_ratio": null,
+        "mean_final_latency_ms": null,
+        "mean_first_partial_latency_ms": null,
+        "mean_partial_cadence_ms": null,
+        "mean_rtf": null,
+        "mean_wer": null,
+        "ok_like_count": 0
+      },
+      "resource_summary": null,
+      "status": "unsupported_segmented_runtime",
+      "suite_id": "smoke",
+      "summary_path": "eval/asr_streaming/results/full-asr-model-benchmark-smoke-20260702-003024/segmented/mimo-v2.5-asr-mlx/smoke/summary.json"
+    }
+  ]
+}

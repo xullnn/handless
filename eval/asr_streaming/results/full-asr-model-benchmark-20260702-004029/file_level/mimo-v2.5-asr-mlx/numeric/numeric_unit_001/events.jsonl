@@ -1,0 +1,1 @@
+{"case_id": "numeric_unit_001", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 5.866708333333333, "start": 0.0, "text": "这台电脑有四十八G B内存。"}], "text": "这台电脑有四十八G B内存。"}, "recv_epoch_ms": 1782924373794, "recv_offset_ms": 578.878041007556, "text": "这台电脑有四十八G B内存。"}

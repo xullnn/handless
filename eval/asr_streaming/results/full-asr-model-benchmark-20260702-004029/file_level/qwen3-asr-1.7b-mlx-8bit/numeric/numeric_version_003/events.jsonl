@@ -1,0 +1,1 @@
+{"case_id": "numeric_version_003", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 4.512, "language": "Chinese", "start": 0.0, "text": "下一个候选模型是1.7B版本。"}], "text": "下一个候选模型是1.7B版本。"}, "recv_epoch_ms": 1782924133279, "recv_offset_ms": 198.17095797043294, "text": "下一个候选模型是1.7B版本。"}

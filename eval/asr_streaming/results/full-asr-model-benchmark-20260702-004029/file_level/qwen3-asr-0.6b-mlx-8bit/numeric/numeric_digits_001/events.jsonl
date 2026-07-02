@@ -1,0 +1,1 @@
+{"case_id": "numeric_digits_001", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 4.832, "language": "Chinese", "start": 0.0, "text": "订单编号是一二三四五六。"}], "text": "订单编号是一二三四五六。"}, "recv_epoch_ms": 1782924036579, "recv_offset_ms": 133.88866698369384, "text": "订单编号是一二三四五六。"}

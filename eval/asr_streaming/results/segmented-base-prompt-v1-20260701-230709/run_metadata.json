@@ -1,0 +1,36 @@
+{
+  "cases": "eval/asr_streaming/cases.local.jsonl",
+  "chunk_ms": 96,
+  "duration_seconds": 325.64,
+  "finished_epoch_ms": 1782918755583,
+  "gate_exit_code": 0,
+  "input_realtime_pacing": true,
+  "mlx_audio_source": ".external/repos/mlx-audio",
+  "model": ".external/models/mlx-community__Qwen3-ASR-0.6B-8bit",
+  "model_id": "qwen3-asr-0.6b-mlx-8bit",
+  "out_dir": "eval/asr_streaming/results/segmented-base-prompt-v1-20260701-230709",
+  "paths": {
+    "gate_summary": "eval/asr_streaming/results/segmented-base-prompt-v1-20260701-230709/summary.json",
+    "resource_monitor_log": "eval/asr_streaming/results/segmented-base-prompt-v1-20260701-230709/resource_monitor.log",
+    "resource_samples": "eval/asr_streaming/results/segmented-base-prompt-v1-20260701-230709/resource_samples.jsonl",
+    "resource_summary": "eval/asr_streaming/results/segmented-base-prompt-v1-20260701-230709/resource_summary.json",
+    "service_log": "eval/asr_streaming/results/segmented-base-prompt-v1-20260701-230709/service.log",
+    "spool_dir": "eval/asr_streaming/results/segmented-base-prompt-v1-20260701-230709/spool"
+  },
+  "request_timeout_sec": 240.0,
+  "runner": "run_qwen3_mlx_segmented_regression_gate.sh",
+  "schema_version": "1.0",
+  "segment_policy": {
+    "max_partials_per_segment": 8,
+    "max_segment_sec": 30.0,
+    "min_segment_sec": 5.0,
+    "partial_step_sec": 1.0,
+    "soft_text_chars": 150
+  },
+  "service_pid": 28711,
+  "service_url": "http://127.0.0.1:18113",
+  "started_epoch_ms": 1782918429943,
+  "system_prompt_enabled": true,
+  "system_prompt_file": "configs/asr/qwen3_system_prompt.numeric_style.zh.txt",
+  "warn_only": true
+}

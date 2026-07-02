@@ -1,0 +1,1 @@
+{"case_id": "numeric_version_004", "is_final": true, "kind": "final", "mode": "mimo-asr-mlx-local", "raw": {"language": "zh", "segments": [{"end": 9.994708333333334, "start": 0.0, "text": "这个接口使用16K单声道音频。"}], "text": "这个接口使用16K单声道音频。"}, "recv_epoch_ms": 1782924378902, "recv_offset_ms": 734.7709580790251, "text": "这个接口使用16K单声道音频。"}

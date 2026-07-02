@@ -1,0 +1,1 @@
+{"case_id": "numeric_index_001", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 4.0213125, "language": "Chinese", "start": 0.0, "text": "请查看第十二条测试结果。"}], "text": "请查看第十二条测试结果。"}, "recv_epoch_ms": 1782924133705, "recv_offset_ms": 172.03179199714214, "text": "请查看第十二条测试结果。"}

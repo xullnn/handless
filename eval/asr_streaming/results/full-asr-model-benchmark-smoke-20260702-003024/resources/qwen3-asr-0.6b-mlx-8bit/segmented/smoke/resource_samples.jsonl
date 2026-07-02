@@ -1,0 +1,9 @@
+{"cpu_percent": 4.2, "epoch_ms": 1782923426708, "label": "qwen3-asr-0.6b-mlx-8bit:segmented:smoke", "pid": 30138, "rss_kb": 17984, "rss_mb": 17.5625}
+{"cpu_percent": 77.2, "epoch_ms": 1782923427716, "label": "qwen3-asr-0.6b-mlx-8bit:segmented:smoke", "pid": 30138, "rss_kb": 1165424, "rss_mb": 1138.109375}
+{"cpu_percent": 4.0, "epoch_ms": 1782923428732, "label": "qwen3-asr-0.6b-mlx-8bit:segmented:smoke", "pid": 30138, "rss_kb": 1165648, "rss_mb": 1138.328125}
+{"cpu_percent": 2.9, "epoch_ms": 1782923429749, "label": "qwen3-asr-0.6b-mlx-8bit:segmented:smoke", "pid": 30138, "rss_kb": 1175440, "rss_mb": 1147.890625}
+{"cpu_percent": 4.5, "epoch_ms": 1782923430766, "label": "qwen3-asr-0.6b-mlx-8bit:segmented:smoke", "pid": 30138, "rss_kb": 1176368, "rss_mb": 1148.796875}
+{"cpu_percent": 13.0, "epoch_ms": 1782923431787, "label": "qwen3-asr-0.6b-mlx-8bit:segmented:smoke", "pid": 30138, "rss_kb": 1178576, "rss_mb": 1150.953125}
+{"cpu_percent": 30.0, "epoch_ms": 1782923432805, "label": "qwen3-asr-0.6b-mlx-8bit:segmented:smoke", "pid": 30138, "rss_kb": 1182816, "rss_mb": 1155.09375}
+{"cpu_percent": 1.9, "epoch_ms": 1782923433809, "label": "qwen3-asr-0.6b-mlx-8bit:segmented:smoke", "pid": 30138, "rss_kb": 1184160, "rss_mb": 1156.40625}
+{"cpu_percent": 3.8, "epoch_ms": 1782923434831, "label": "qwen3-asr-0.6b-mlx-8bit:segmented:smoke", "pid": 30138, "rss_kb": 1184208, "rss_mb": 1156.453125}

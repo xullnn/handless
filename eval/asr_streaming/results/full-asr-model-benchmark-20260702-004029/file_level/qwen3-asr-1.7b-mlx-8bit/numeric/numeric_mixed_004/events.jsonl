@@ -1,0 +1,1 @@
+{"case_id": "numeric_mixed_004", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 11.296, "language": "Chinese", "start": 0.0, "text": "C E R是零点零七五八，W E R是零点二二三六。"}], "text": "C E R是零点零七五八，W E R是零点二二三六。"}, "recv_epoch_ms": 1782924135486, "recv_offset_ms": 381.58199994359165, "text": "C E R是零点零七五八，W E R是零点二二三六。"}

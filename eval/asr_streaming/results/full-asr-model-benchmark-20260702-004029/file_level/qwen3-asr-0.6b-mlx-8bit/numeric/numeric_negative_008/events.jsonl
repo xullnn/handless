@@ -1,0 +1,1 @@
+{"case_id": "numeric_negative_008", "is_final": true, "kind": "final", "mode": "mlx-stt-local", "raw": {"language": ["Chinese"], "segments": [{"end": 5.8346875, "language": "Chinese", "start": 0.0, "text": "我现在开始进行数字格式测试。"}], "text": "我现在开始进行数字格式测试。"}, "recv_epoch_ms": 1782924040567, "recv_offset_ms": 95.18262499477714, "text": "我现在开始进行数字格式测试。"}
