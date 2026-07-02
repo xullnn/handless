@@ -457,6 +457,18 @@
       ],
       "passes": true,
       "updated_at": "2026-07-02"
+    },
+    {
+      "id": "2026-07-02-silence-aware-segment-boundaries",
+      "title": "Silence-aware segmented ASR boundaries",
+      "status": "validated",
+      "spec_path": "specs/2026-07-02-silence-aware-segment-boundaries",
+      "depends_on": [
+        "2026-06-26-qwen3-mlx-segmented-cache-service",
+        "2026-07-01-qwen3-segmented-regression-suite"
+      ],
+      "passes": true,
+      "updated_at": "2026-07-02"
     }
   ]
 }

@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-07-02-silence-aware-segment-boundaries",
+  "title": "Silence-aware segmented ASR boundaries",
+  "kind": "feature",
+  "parent_id": "2026-06-26-qwen3-mlx-segmented-cache-service",
+  "created_from": "Long-dictation boundary quality review for the Qwen3 segmented-cache local HTTP route",
+  "created_at": "2026-07-02",
+  "updated_at": "2026-07-02",
+  "follow_ups": [
+    "Run focused natural long-dictation regression with boundary-near speech, natural pauses, and no-pause continuous speech before tuning thresholds."
+  ]
+}

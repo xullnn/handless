@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import math
 import re
 import sys
 import tempfile
@@ -71,6 +72,13 @@ class SegmentPolicy:
     soft_text_chars: int = 150
     partial_step_sec: float = 1.0
     max_partials_per_segment: int = 8
+    boundary_search_back_sec: float = 8.0
+    min_silence_ms: float = 250.0
+    silence_frame_ms: float = 20.0
+    silence_hop_ms: float = 10.0
+    silence_dbfs: float = -42.0
+    hard_overlap_ms: float = 800.0
+    dedupe_max_chars: int = 30
 
     def validate(self) -> None:
         if self.max_segment_sec <= 0:
@@ -85,6 +93,60 @@ class SegmentPolicy:
             raise ValueError("partial_step_sec must be > 0")
         if self.max_partials_per_segment < 0:
             raise ValueError("max_partials_per_segment must be >= 0")
+        if self.boundary_search_back_sec <= 0:
+            raise ValueError("boundary_search_back_sec must be > 0")
+        if self.min_silence_ms <= 0:
+            raise ValueError("min_silence_ms must be > 0")
+        if self.silence_frame_ms <= 0:
+            raise ValueError("silence_frame_ms must be > 0")
+        if self.silence_hop_ms <= 0:
+            raise ValueError("silence_hop_ms must be > 0")
+        if self.silence_hop_ms > self.silence_frame_ms:
+            raise ValueError("silence_hop_ms must be <= silence_frame_ms")
+        if self.hard_overlap_ms < 0:
+            raise ValueError("hard_overlap_ms must be >= 0")
+        if self.hard_overlap_ms >= self.max_segment_sec * 1000.0:
+            raise ValueError("hard_overlap_ms must be less than max_segment_sec")
+        if self.dedupe_max_chars < 0:
+            raise ValueError("dedupe_max_chars must be >= 0")
+
+
+@dataclass(frozen=True)
+class BoundaryDecision:
+    reason: str
+    trigger_reason: str
+    commit_sample_count: int
+    carry_start_sample: int
+    target_sample_count: int
+    search_start_sample: int
+    search_end_sample: int
+    silence_start_sample: int | None = None
+    silence_end_sample: int | None = None
+    overlap_sample_count: int = 0
+
+    def public_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "reason": self.reason,
+            "trigger_reason": self.trigger_reason,
+            "commit_sample_count": self.commit_sample_count,
+            "carry_start_sample": self.carry_start_sample,
+            "target_sample_count": self.target_sample_count,
+            "search_start_sample": self.search_start_sample,
+            "search_end_sample": self.search_end_sample,
+            "commit_ms": samples_to_ms(self.commit_sample_count),
+            "carry_start_ms": samples_to_ms(self.carry_start_sample),
+            "target_ms": samples_to_ms(self.target_sample_count),
+            "search_start_ms": samples_to_ms(self.search_start_sample),
+            "search_end_ms": samples_to_ms(self.search_end_sample),
+            "overlap_sample_count": self.overlap_sample_count,
+            "overlap_ms": samples_to_ms(self.overlap_sample_count),
+        }
+        if self.silence_start_sample is not None and self.silence_end_sample is not None:
+            result["silence_start_sample"] = self.silence_start_sample
+            result["silence_end_sample"] = self.silence_end_sample
+            result["silence_start_ms"] = samples_to_ms(self.silence_start_sample)
+            result["silence_end_ms"] = samples_to_ms(self.silence_end_sample)
+        return result
 
 
 @dataclass
@@ -98,6 +160,9 @@ class SegmentRecord:
     compute_wall_ms: float
     committed_offset_ms: float
     mode: str
+    boundary_reason: str
+    overlap_from_previous_ms: float = 0.0
+    boundary_decision: dict[str, Any] = field(default_factory=dict)
 
     def public_dict(self) -> dict[str, Any]:
         return {
@@ -111,6 +176,9 @@ class SegmentRecord:
             "compute_wall_ms": round3(self.compute_wall_ms),
             "committed_offset_ms": round3(self.committed_offset_ms),
             "mode": self.mode,
+            "boundary_reason": self.boundary_reason,
+            "overlap_from_previous_ms": round3(self.overlap_from_previous_ms),
+            "boundary_decision": self.boundary_decision,
         }
 
 
@@ -124,6 +192,7 @@ class SegmentedSessionState:
     active_segment_index: int = 1
     active_segment_start_ms: float = 0.0
     active_chunks: list[np.ndarray] = field(default_factory=list)
+    active_overlap_from_previous_ms: float = 0.0
     active_next_prefix_sec: float = 1.0
     active_emitted_prefix_count: int = 0
     active_partial_text: str = ""
@@ -331,7 +400,7 @@ class SegmentedCacheService:
         final_recv_ms = max(simulated_now_ms, self.worker_available_ms)
         session.status = "finalized"
         session.revision += 1
-        session.final_text = session.committed_text
+        session.final_text = self._committed_text(session)
         event = self._append_event(
             {
                 "kind": "final",
@@ -344,7 +413,7 @@ class SegmentedCacheService:
                 "mode": "segmented_cache_merge_final",
                 "text": session.final_text,
                 "segment_count": len(session.committed_segments),
-                "merge_strategy": "zero_overlap_concat",
+                "merge_strategy": merge_strategy_name(self.policy),
                 "cache_dir": str(session.cache_dir),
                 "is_final": True,
                 "accepted": True,
@@ -401,7 +470,7 @@ class SegmentedCacheService:
             session.revision += 1
             self._emit_visible_partial(
                 session,
-                text=join_text_parts([session.committed_text, result.text]),
+                text=join_text_parts([self._committed_text(session), result.text]),
                 recv_offset_ms=emit_ms,
                 ready_offset_ms=ready_ms,
                 compute_wall_ms=result.wall_ms,
@@ -435,31 +504,56 @@ class SegmentedCacheService:
         active_audio = session.active_audio
         if len(active_audio) == 0:
             return None
+        decision = select_boundary_decision(active_audio, self.policy, reason)
+        if decision is None:
+            return None
+        commit_audio = active_audio[: decision.commit_sample_count]
+        carry_audio = active_audio[decision.carry_start_sample :]
+        if len(commit_audio) == 0:
+            return None
         audio_start_ms = session.active_segment_start_ms
-        audio_end_ms = audio_start_ms + len(active_audio) / float(SAMPLE_RATE) * 1000.0
+        audio_end_ms = audio_start_ms + len(commit_audio) / float(SAMPLE_RATE) * 1000.0
         cache_path = session.segment_cache_path()
+        write_float32(cache_path, commit_audio)
         ready_ms = max(simulated_now_ms, audio_end_ms, self.worker_available_ms)
-        result = self.backend.final(active_audio)
+        result = self.backend.final(commit_audio)
         committed_ms = ready_ms + result.wall_ms
         self.worker_available_ms = committed_ms
+        overlap_from_previous_ms = session.active_overlap_from_previous_ms
         record = SegmentRecord(
             index=session.active_segment_index,
             audio_start_ms=audio_start_ms,
             audio_end_ms=audio_end_ms,
-            sample_count=int(len(active_audio)),
+            sample_count=int(len(commit_audio)),
             cache_path=cache_path,
             final_text=result.text,
             compute_wall_ms=result.wall_ms,
             committed_offset_ms=committed_ms,
             mode=result.mode,
+            boundary_reason=decision.reason,
+            overlap_from_previous_ms=overlap_from_previous_ms,
+            boundary_decision=decision.public_dict(),
         )
         session.committed_segments.append(record)
-        session.active_chunks = []
         session.active_partial_text = ""
         session.active_segment_index += 1
-        session.active_segment_start_ms = audio_end_ms
-        session.active_next_prefix_sec = self.policy.partial_step_sec
         session.active_emitted_prefix_count = 0
+        if len(carry_audio) > 0:
+            session.active_chunks = [np.asarray(carry_audio, dtype=np.float32)]
+            session.active_segment_start_ms = (
+                audio_start_ms + decision.carry_start_sample / float(SAMPLE_RATE) * 1000.0
+            )
+            session.active_overlap_from_previous_ms = samples_to_ms(decision.overlap_sample_count)
+            session.active_next_prefix_sec = next_partial_prefix_after_carry(
+                len(carry_audio),
+                self.policy.partial_step_sec,
+            )
+            write_float32(session.segment_cache_path(), carry_audio)
+        else:
+            session.active_chunks = []
+            session.active_segment_start_ms = audio_end_ms
+            session.active_overlap_from_previous_ms = 0.0
+            session.active_next_prefix_sec = self.policy.partial_step_sec
         self._append_event(
             {
                 "kind": "segment_final",
@@ -468,7 +562,9 @@ class SegmentedCacheService:
                 "recv_offset_ms": committed_ms,
                 "ready_offset_ms": ready_ms,
                 "compute_wall_ms": result.wall_ms,
-                "reason": reason,
+                "reason": decision.reason,
+                "trigger_reason": reason,
+                "boundary_decision": decision.public_dict(),
                 "segment": record.public_dict(),
                 "is_final": False,
                 "accepted": False,
@@ -478,7 +574,7 @@ class SegmentedCacheService:
             session.revision += 1
             self._emit_visible_partial(
                 session,
-                text=session.committed_text,
+                text=self._committed_text(session),
                 recv_offset_ms=committed_ms,
                 ready_offset_ms=ready_ms,
                 compute_wall_ms=result.wall_ms,
@@ -486,6 +582,12 @@ class SegmentedCacheService:
                 mode="segment_commit_partial",
             )
         return record
+
+    def _committed_text(self, session: SegmentedSessionState) -> str:
+        return merge_segment_records(
+            session.committed_segments,
+            max_chars=self.policy.dedupe_max_chars,
+        )
 
     def _emit_visible_partial(
         self,
@@ -610,8 +712,10 @@ class SegmentedCacheService:
                 "committed_segments": [segment.public_dict() for segment in session.committed_segments],
                 "active_segment_index": session.active_segment_index,
                 "active_duration_seconds": round3(session.active_duration_seconds),
+                "active_segment_start_ms": round3(session.active_segment_start_ms),
+                "active_overlap_from_previous_ms": round3(session.active_overlap_from_previous_ms),
                 "final_text": session.final_text,
-                "merge_strategy": "zero_overlap_concat",
+                "merge_strategy": merge_strategy_name(self.policy),
                 "updated_epoch_ms": now_ms(),
             },
         )
@@ -987,32 +1091,75 @@ def command_self_test(args: argparse.Namespace) -> int:
             soft_text_chars=0,
             partial_step_sec=0.5,
             max_partials_per_segment=4,
+            boundary_search_back_sec=0.8,
+            min_silence_ms=120.0,
+            silence_frame_ms=20.0,
+            silence_hop_ms=10.0,
+            silence_dbfs=-50.0,
+            hard_overlap_ms=200.0,
+            dedupe_max_chars=30,
         )
+
+        def push_chunked_audio(
+            target_service: SegmentedCacheService,
+            session_id: str,
+            token: int,
+            audio: np.ndarray,
+            *,
+            start_index: int,
+            end_index: int,
+            stride: int,
+        ) -> None:
+            for index in range(start_index, end_index):
+                offset = index * stride
+                chunk = audio[offset : offset + stride]
+                start_ms = offset / SAMPLE_RATE * 1000.0
+                end_ms = (offset + len(chunk)) / SAMPLE_RATE * 1000.0
+                target_service.push_pcm(
+                    session_id,
+                    chunk,
+                    session_token=token,
+                    simulated_now_ms=end_ms,
+                    audio_start_ms=start_ms,
+                    audio_end_ms=end_ms,
+                    chunk_index=index,
+                )
+
+        stride = int(SAMPLE_RATE * 0.4)
+
         backend = ExpectedTextFakeBackend()
         backend.set_expected_text("这是一个分段缓存服务测试。")
-        service = SegmentedCacheService(backend=backend, policy=policy, spool_dir=Path(tmp))
-        token = service.start("session", simulated_now_ms=0.0)
-        stride = int(SAMPLE_RATE * 0.4)
-        for index in range(5):
-            start_ms = index * 400.0
-            end_ms = start_ms + 400.0
-            service.push_pcm(
-                "session",
-                np.zeros((stride,), dtype=np.float32),
-                session_token=token,
-                simulated_now_ms=end_ms,
-                audio_start_ms=start_ms,
-                audio_end_ms=end_ms,
-                chunk_index=index,
-            )
-        service.finish("session", session_token=token, simulated_now_ms=2000.0)
-        events = [event for event in service.events if event.get("session_id") == "session"]
-        if not any(event.get("kind") == "segment_final" and event.get("reason") == "hard_duration" for event in events):
-            raise AssertionError(f"expected a hard-duration segment commit: {events}")
+        service = SegmentedCacheService(backend=backend, policy=policy, spool_dir=Path(tmp) / "silence")
+        token = service.start("silence", simulated_now_ms=0.0)
+        silence_audio = np.full((int(SAMPLE_RATE * 2.0),), 0.18, dtype=np.float32)
+        silence_audio[int(SAMPLE_RATE * 0.86) : int(SAMPLE_RATE * 1.08)] = 0.0
+        push_chunked_audio(service, "silence", token, silence_audio, start_index=0, end_index=3, stride=stride)
+        events = [event for event in service.events if event.get("session_id") == "silence"]
+        segment_events = [event for event in events if event.get("kind") == "segment_final"]
+        if len(segment_events) != 1 or segment_events[0].get("reason") != "silence_boundary":
+            raise AssertionError(f"expected one silence-boundary segment commit: {events}")
+        boundary = segment_events[0]["boundary_decision"]
+        if not 850.0 <= float(boundary["commit_ms"]) <= 1100.0:
+            raise AssertionError(f"silence cut was outside the expected window: {boundary}")
+        if float(segment_events[0]["segment"]["duration_ms"]) >= 1200.0:
+            raise AssertionError(f"silence cut did not happen before the hard limit: {segment_events[0]}")
+        session = service.sessions["silence"]
+        if session.active_duration_seconds <= 0:
+            raise AssertionError("post-silence audio was not carried into the next segment")
+        if not 850.0 <= session.active_segment_start_ms <= 1100.0:
+            raise AssertionError(f"unexpected carry start: {session.active_segment_start_ms}")
+        segment_cache_path = Path(segment_events[0]["segment"]["cache_path"])
+        expected_cache_bytes = int(segment_events[0]["segment"]["sample_count"]) * 4
+        if segment_cache_path.stat().st_size != expected_cache_bytes:
+            raise AssertionError("committed segment cache size does not match selected prefix")
+
+        push_chunked_audio(service, "silence", token, silence_audio, start_index=3, end_index=5, stride=stride)
+        service.finish("silence", session_token=token, simulated_now_ms=2000.0)
+        events = [event for event in service.events if event.get("session_id") == "silence"]
         finals = [event for event in events if event.get("kind") == "final" and event.get("accepted") is True]
         if len(finals) != 1:
             raise AssertionError(f"expected exactly one accepted final: {events}")
-        session = service.sessions["session"]
+        session = service.sessions["silence"]
         if not session.session_audio_path.exists() or session.session_audio_path.stat().st_size == 0:
             raise AssertionError("session audio cache was not written")
         if not session.metadata_path.exists():
@@ -1027,6 +1174,68 @@ def command_self_test(args: argparse.Namespace) -> int:
         )
         if not gate["service_gate_passed"]:
             raise AssertionError(f"fake segmented service gate failed: {gate}")
+
+        hard_backend = ExpectedTextFakeBackend()
+        hard_backend.set_expected_text("连续语音没有静音点。")
+        hard_service = SegmentedCacheService(
+            backend=hard_backend,
+            policy=policy,
+            spool_dir=Path(tmp) / "hard",
+        )
+        hard_token = hard_service.start("hard", simulated_now_ms=0.0)
+        hard_audio = np.full((int(SAMPLE_RATE * 2.0),), 0.18, dtype=np.float32)
+        push_chunked_audio(hard_service, "hard", hard_token, hard_audio, start_index=0, end_index=3, stride=stride)
+        hard_events = [event for event in hard_service.events if event.get("session_id") == "hard"]
+        hard_segment_events = [event for event in hard_events if event.get("kind") == "segment_final"]
+        if len(hard_segment_events) != 1 or hard_segment_events[0].get("reason") != "hard_overlap":
+            raise AssertionError(f"expected one hard-overlap segment commit: {hard_events}")
+        hard_boundary = hard_segment_events[0]["boundary_decision"]
+        if float(hard_boundary["commit_ms"]) != 1200.0:
+            raise AssertionError(f"hard cut did not commit at max duration: {hard_boundary}")
+        if float(hard_boundary["overlap_ms"]) != 200.0:
+            raise AssertionError(f"hard cut did not carry configured overlap: {hard_boundary}")
+        hard_session = hard_service.sessions["hard"]
+        if not 999.0 <= hard_session.active_segment_start_ms <= 1001.0:
+            raise AssertionError(f"hard overlap carry starts at the wrong offset: {hard_session.active_segment_start_ms}")
+        if not 0.19 <= hard_session.active_duration_seconds <= 0.21:
+            raise AssertionError(f"hard overlap carry duration is wrong: {hard_session.active_duration_seconds}")
+        push_chunked_audio(hard_service, "hard", hard_token, hard_audio, start_index=3, end_index=5, stride=stride)
+        hard_service.finish("hard", session_token=hard_token, simulated_now_ms=2000.0)
+        if not any(event.get("kind") == "final" and event.get("accepted") is True for event in hard_service.events):
+            raise AssertionError(f"hard-overlap path did not produce a final: {hard_service.events}")
+
+        dedupe_records = [
+            SegmentRecord(
+                index=1,
+                audio_start_ms=0.0,
+                audio_end_ms=1000.0,
+                sample_count=16000,
+                cache_path=Path(tmp) / "dedupe-1.f32le",
+                final_text="语音输入",
+                compute_wall_ms=1.0,
+                committed_offset_ms=1000.0,
+                mode="fake_final",
+                boundary_reason="hard_overlap",
+            ),
+            SegmentRecord(
+                index=2,
+                audio_start_ms=800.0,
+                audio_end_ms=1600.0,
+                sample_count=12800,
+                cache_path=Path(tmp) / "dedupe-2.f32le",
+                final_text="输入功能",
+                compute_wall_ms=1.0,
+                committed_offset_ms=1600.0,
+                mode="fake_final",
+                boundary_reason="finish",
+                overlap_from_previous_ms=200.0,
+            ),
+        ]
+        if merge_segment_records(dedupe_records, max_chars=30) != "语音输入功能":
+            raise AssertionError("exact overlap de-duplication failed")
+        dedupe_records[1].overlap_from_previous_ms = 0.0
+        if merge_segment_records(dedupe_records, max_chars=30) != "语音输入输入功能":
+            raise AssertionError("non-overlap segment text was unexpectedly de-duplicated")
 
         stale_service = SegmentedCacheService(
             backend=ExpectedTextFakeBackend(),
@@ -1144,7 +1353,141 @@ def policy_from_args(args: argparse.Namespace) -> SegmentPolicy:
         soft_text_chars=int(args.soft_text_chars),
         partial_step_sec=float(args.partial_step_sec),
         max_partials_per_segment=int(args.max_partials_per_segment),
+        boundary_search_back_sec=float(args.boundary_search_back_sec),
+        min_silence_ms=float(args.min_silence_ms),
+        silence_frame_ms=float(args.silence_frame_ms),
+        silence_hop_ms=float(args.silence_hop_ms),
+        silence_dbfs=float(args.silence_dbfs),
+        hard_overlap_ms=float(args.hard_overlap_ms),
+        dedupe_max_chars=int(args.dedupe_max_chars),
     )
+
+
+def select_boundary_decision(
+    audio: np.ndarray,
+    policy: SegmentPolicy,
+    trigger_reason: str,
+) -> BoundaryDecision | None:
+    sample_count = int(len(audio))
+    if sample_count <= 0:
+        return None
+    if trigger_reason == "finish":
+        return BoundaryDecision(
+            reason="finish",
+            trigger_reason=trigger_reason,
+            commit_sample_count=sample_count,
+            carry_start_sample=sample_count,
+            target_sample_count=sample_count,
+            search_start_sample=0,
+            search_end_sample=sample_count,
+        )
+
+    if trigger_reason == "hard_duration":
+        target_sample_count = min(sample_count, seconds_to_samples(policy.max_segment_sec))
+        silence_start, silence_end, search_start, search_end = latest_silence_window(
+            audio,
+            policy,
+            target_sample_count=target_sample_count,
+        )
+        if silence_start is not None and silence_end is not None:
+            commit_sample_count = clamp_sample((silence_start + silence_end) // 2, 1, target_sample_count)
+            return BoundaryDecision(
+                reason="silence_boundary",
+                trigger_reason=trigger_reason,
+                commit_sample_count=commit_sample_count,
+                carry_start_sample=commit_sample_count,
+                target_sample_count=target_sample_count,
+                search_start_sample=search_start,
+                search_end_sample=search_end,
+                silence_start_sample=silence_start,
+                silence_end_sample=silence_end,
+            )
+
+        overlap_sample_count = min(
+            milliseconds_to_samples(policy.hard_overlap_ms),
+            max(0, target_sample_count - 1),
+        )
+        carry_start_sample = max(0, target_sample_count - overlap_sample_count)
+        return BoundaryDecision(
+            reason="hard_overlap",
+            trigger_reason=trigger_reason,
+            commit_sample_count=target_sample_count,
+            carry_start_sample=carry_start_sample,
+            target_sample_count=target_sample_count,
+            search_start_sample=search_start,
+            search_end_sample=search_end,
+            overlap_sample_count=target_sample_count - carry_start_sample,
+        )
+
+    if trigger_reason == "soft_text_chars":
+        target_sample_count = sample_count
+        silence_start, silence_end, search_start, search_end = latest_silence_window(
+            audio,
+            policy,
+            target_sample_count=target_sample_count,
+        )
+        if silence_start is None or silence_end is None:
+            return None
+        commit_sample_count = clamp_sample((silence_start + silence_end) // 2, 1, target_sample_count)
+        return BoundaryDecision(
+            reason="silence_boundary",
+            trigger_reason=trigger_reason,
+            commit_sample_count=commit_sample_count,
+            carry_start_sample=commit_sample_count,
+            target_sample_count=target_sample_count,
+            search_start_sample=search_start,
+            search_end_sample=search_end,
+            silence_start_sample=silence_start,
+            silence_end_sample=silence_end,
+        )
+
+    raise ValueError(f"unsupported segment commit reason: {trigger_reason}")
+
+
+def latest_silence_window(
+    audio: np.ndarray,
+    policy: SegmentPolicy,
+    *,
+    target_sample_count: int,
+) -> tuple[int | None, int | None, int, int]:
+    target_sample_count = clamp_sample(target_sample_count, 0, len(audio))
+    frame_samples = max(1, milliseconds_to_samples(policy.silence_frame_ms))
+    hop_samples = max(1, milliseconds_to_samples(policy.silence_hop_ms))
+    min_silence_samples = max(frame_samples, milliseconds_to_samples(policy.min_silence_ms))
+    search_back_samples = max(frame_samples, seconds_to_samples(policy.boundary_search_back_sec))
+    min_segment_samples = min(target_sample_count, seconds_to_samples(policy.min_segment_sec))
+    search_start = max(min_segment_samples, target_sample_count - search_back_samples)
+    search_end = target_sample_count
+
+    if search_end - search_start < frame_samples:
+        return None, None, search_start, search_end
+
+    latest_start: int | None = None
+    latest_end: int | None = None
+    region_start: int | None = None
+    region_end: int | None = None
+
+    for frame_start in range(search_start, search_end - frame_samples + 1, hop_samples):
+        frame = audio[frame_start : frame_start + frame_samples]
+        frame64 = frame.astype(np.float64, copy=False)
+        rms = float(np.sqrt(np.mean(frame64 * frame64)))
+        dbfs = 20.0 * math.log10(max(rms, 1e-12))
+        if dbfs <= policy.silence_dbfs:
+            if region_start is None:
+                region_start = frame_start
+            region_end = frame_start + frame_samples
+        else:
+            if region_start is not None and region_end is not None and region_end - region_start >= min_silence_samples:
+                latest_start = region_start
+                latest_end = region_end
+            region_start = None
+            region_end = None
+
+    if region_start is not None and region_end is not None and region_end - region_start >= min_silence_samples:
+        latest_start = region_start
+        latest_end = region_end
+
+    return latest_start, latest_end, search_start, search_end
 
 
 def append_float32(path: Path, audio: np.ndarray) -> None:
@@ -1153,8 +1496,56 @@ def append_float32(path: Path, audio: np.ndarray) -> None:
         f.write(np.asarray(audio, dtype="<f4").tobytes())
 
 
+def write_float32(path: Path, audio: np.ndarray) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("wb") as f:
+        f.write(np.asarray(audio, dtype="<f4").tobytes())
+
+
 def join_text_parts(parts: list[str]) -> str:
     return "".join(part for part in parts if part)
+
+
+def merge_segment_records(segments: list[SegmentRecord], *, max_chars: int) -> str:
+    merged = ""
+    for segment in segments:
+        text = segment.final_text
+        if merged and segment.overlap_from_previous_ms > 0 and max_chars > 0:
+            drop_chars = exact_overlap_chars(merged, text, max_chars=max_chars)
+            text = text[drop_chars:]
+        merged += text
+    return merged
+
+
+def exact_overlap_chars(left: str, right: str, *, max_chars: int) -> int:
+    limit = min(len(left), len(right), max_chars)
+    for count in range(limit, 0, -1):
+        if left[-count:] == right[:count]:
+            return count
+    return 0
+
+
+def next_partial_prefix_after_carry(carry_sample_count: int, partial_step_sec: float) -> float:
+    carry_sec = carry_sample_count / float(SAMPLE_RATE)
+    if carry_sec <= 0:
+        return partial_step_sec
+    return (math.floor(carry_sec / partial_step_sec) + 1) * partial_step_sec
+
+
+def seconds_to_samples(seconds: float) -> int:
+    return int(round(seconds * SAMPLE_RATE))
+
+
+def milliseconds_to_samples(milliseconds: float) -> int:
+    return int(round(milliseconds / 1000.0 * SAMPLE_RATE))
+
+
+def samples_to_ms(sample_count: int) -> float:
+    return round3(sample_count / float(SAMPLE_RATE) * 1000.0)
+
+
+def clamp_sample(value: int, lower: int, upper: int) -> int:
+    return max(lower, min(int(value), upper))
 
 
 def safe_component(value: str) -> str:
@@ -1169,7 +1560,20 @@ def policy_dict(policy: SegmentPolicy) -> dict[str, Any]:
         "soft_text_chars": policy.soft_text_chars,
         "partial_step_sec": policy.partial_step_sec,
         "max_partials_per_segment": policy.max_partials_per_segment,
+        "boundary_search_back_sec": policy.boundary_search_back_sec,
+        "min_silence_ms": policy.min_silence_ms,
+        "silence_frame_ms": policy.silence_frame_ms,
+        "silence_hop_ms": policy.silence_hop_ms,
+        "silence_dbfs": policy.silence_dbfs,
+        "hard_overlap_ms": policy.hard_overlap_ms,
+        "dedupe_max_chars": policy.dedupe_max_chars,
     }
+
+
+def merge_strategy_name(policy: SegmentPolicy) -> str:
+    if policy.dedupe_max_chars <= 0:
+        return "boundary_concat"
+    return "boundary_concat_exact_overlap_dedupe"
 
 
 def round3(value: float) -> float:
@@ -1192,6 +1596,13 @@ def add_common_runtime_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--soft-text-chars", type=int, default=150)
     parser.add_argument("--partial-step-sec", type=float, default=1.0)
     parser.add_argument("--max-partials-per-segment", type=int, default=8)
+    parser.add_argument("--boundary-search-back-sec", type=float, default=8.0)
+    parser.add_argument("--min-silence-ms", type=float, default=250.0)
+    parser.add_argument("--silence-frame-ms", type=float, default=20.0)
+    parser.add_argument("--silence-hop-ms", type=float, default=10.0)
+    parser.add_argument("--silence-dbfs", type=float, default=-42.0)
+    parser.add_argument("--hard-overlap-ms", type=float, default=800.0)
+    parser.add_argument("--dedupe-max-chars", type=int, default=30)
 
 
 def build_parser() -> argparse.ArgumentParser:

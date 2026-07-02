@@ -4251,3 +4251,77 @@ Latency and base regression guard:
 ### Next recommended action
 
 - Use the current final-output ITN in daily dictation and collect concrete misses. Expand only when a missed form has a narrow local syntax/context rule and a clear negative fixture.
+
+## 2026-07-02 - 2026-07-02-silence-aware-segment-boundaries validation closeout
+
+### Summary
+
+- Implemented silence-aware boundary selection inside the Qwen3 segmented-cache local HTTP service.
+- At a hard segment limit, the service now scans backward near the target boundary for a continuous low-energy window and cuts at that window when found.
+- If no low-energy window is found, the service hard-cuts at the maximum duration and carries a bounded overlap into the next active segment.
+- Segment cache files are rewritten so each committed segment file matches the selected committed prefix, while carried audio is written into the next segment cache file.
+- Added conservative exact suffix/prefix de-duplication only for segments marked as overlap-originated; ordinary adjacent segment text is left unchanged.
+- Added segment metadata for boundary reason, trigger reason, search range, selected cut point, silence window, and overlap.
+- The current user-facing App and `http://127.0.0.1:18096` Qwen3 service were left running untouched during automated validation.
+- Promoted the validated durable segmented-boundary behavior into PMB without copying feature-level validation evidence.
+
+### Files changed
+
+- `eval/asr_streaming/qwen3_mlx_segmented_cache_service.py`
+- `specs/2026-07-02-silence-aware-segment-boundaries/`
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+- `project_memory_bank/core/current_focus.md`
+- `project_memory_bank/modules/asr_audio/summary.md`
+
+### Validation
+
+- Command: `python3 -m py_compile eval/asr_streaming/qwen3_mlx_segmented_cache_service.py`
+  Result: pass
+  Notes: Python syntax check completed successfully.
+- Command: `python3 eval/asr_streaming/qwen3_mlx_segmented_cache_service.py self-test`
+  Result: pass
+  Notes: synthetic silence audio cut at the detected low-energy window before the hard limit; post-cut audio was carried into the next segment; no-silence audio used hard overlap; exact overlap de-duplication removed `语音输入` + `输入功能` duplicate boundary text only when overlap was marked; stale-token and cancel checks still passed.
+- Command: `python3 -m json.tool specs/feature_matrix.json >/dev/null`
+  Result: pass
+  Notes: feature matrix remained valid JSON after status update.
+- Command: `git diff --check`
+  Result: pass
+  Notes: no whitespace errors were detected.
+- Command: `ps -axo pid,etime,pcpu,pmem,command | awk '/qwen3_mlx_segmented_cache_service.py serve|LocalVoiceInputMac|LocalVoiceInput.app/ && !/awk/ {print}'`
+  Result: pass
+  Notes: running Qwen3 segmented service stayed on PID `82353`; running packaged App stayed on PID `95655`; no automated validation restart was performed.
+
+### Additional runtime validation after service/App restart
+
+- Command: restarted the Qwen3 segmented service on `http://127.0.0.1:18096` with the updated `eval/asr_streaming/qwen3_mlx_segmented_cache_service.py` code and restarted `dist/LocalVoiceInput.app` with `--local-http-asr --asr-http-url http://127.0.0.1:18096 --numeric-itn`
+  Result: pass
+  Notes: final running service PID `28304`; final running App PID `31058`; `/metadata` reports the new boundary policy fields including `boundary_search_back_sec=8.0`, `min_silence_ms=250.0`, `hard_overlap_ms=800.0`, and `dedupe_max_chars=30`.
+- Command: sent a 31s synthetic PCM request through the live `18096` service with a low-energy window around `28.90s-29.25s`
+  Result: pass
+  Report: `eval/asr_streaming/results/manual-segmented-runtime-20260702-silence-boundaries/runtime-boundary-validation.json`
+  Notes: first committed segment used `boundary_reason=silence_boundary`; selected cut was `29075.0ms`; second segment started at `29075.0ms`; no overlap marker was attached for the silence cut.
+- Command: sent a 31s synthetic continuous non-silent PCM request through the live `18096` service
+  Result: pass
+  Report: `eval/asr_streaming/results/manual-segmented-runtime-20260702-silence-boundaries/runtime-hard-overlap-validation.json`
+  Notes: first committed segment used `boundary_reason=hard_overlap`; committed at `30000.0ms`; next segment started at `29200.0ms`; overlap marker was `800.0ms`.
+- Command: `bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: status script reports App running with `--numeric-itn`, Qwen3 segmented service running, healthy `/metadata`, and overall `ok`.
+- Command: `python3 -m json.tool eval/asr_streaming/results/manual-segmented-runtime-20260702-silence-boundaries/runtime-boundary-validation.json >/dev/null && python3 -m json.tool eval/asr_streaming/results/manual-segmented-runtime-20260702-silence-boundaries/runtime-hard-overlap-validation.json >/dev/null`
+  Result: pass
+  Notes: live-runtime validation reports are valid JSON; the result directory is an ignored runtime artifact path.
+
+### Optional checks skipped
+
+- Fake HTTP service on a non-user port was not run because the required `self-test` covers the service boundary mechanics without starting an extra server.
+- Full real Qwen3 segmented regression suite was not run in this pass; instead, the updated live `18096` service was validated with focused synthetic boundary and hard-overlap requests.
+
+### Blockers / open questions
+
+- None for the deterministic boundary mechanics.
+- Real-model accuracy impact around difficult boundary speech should be measured later with recorded natural speech cases.
+
+### Next recommended action
+
+- Collect or record natural long-dictation cases that contain boundary-near speech, natural pauses, and no-pause continuous speech, then run the focused segmented regression against those real audio cases.
