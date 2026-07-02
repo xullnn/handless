@@ -125,6 +125,15 @@ final class HotkeyController {
                 }
                 return nil
             }
+            if keyCode == 49 && appSessionActive && appSessionType == .longDraft { // Space stops long draft mode.
+                if !isRepeat {
+                    let actions = stateMachine.send(.space)
+                    if !actions.isEmpty {
+                        perform(actions)
+                    }
+                }
+                return nil
+            }
             if keyCode == 53 { // Esc
                 if !isRepeat {
                     let actions = stateMachine.send(.escape)

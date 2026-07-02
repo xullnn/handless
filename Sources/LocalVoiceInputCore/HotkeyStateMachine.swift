@@ -5,6 +5,7 @@ public enum HotkeyInputEvent: Equatable, Sendable {
     case rightOptionUp
     case pushToTalkDebounceFired
     case optionSpace
+    case space
     case escape
     case externalSessionEnded
 }
@@ -80,6 +81,11 @@ public struct HotkeyStateMachine: Equatable, Sendable {
                 mode = .longDraft
                 return [.convertPushToTalkToLongDraft, .consumeEvent]
             }
+
+        case .space:
+            guard mode == .longDraft else { return [] }
+            mode = .idle
+            return [.toggleLongDraft, .consumeEvent]
 
         case .escape:
             switch mode {

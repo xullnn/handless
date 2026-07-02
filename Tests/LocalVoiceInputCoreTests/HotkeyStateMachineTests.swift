@@ -37,6 +37,16 @@ final class HotkeyStateMachineTests: XCTestCase {
         XCTAssertEqual(machine.mode, .idle)
     }
 
+    func testSpaceStopsOnlyLongDraft() {
+        var idleMachine = HotkeyStateMachine()
+        XCTAssertEqual(idleMachine.send(.space), [])
+        XCTAssertEqual(idleMachine.mode, .idle)
+
+        var longDraftMachine = HotkeyStateMachine(mode: .longDraft)
+        XCTAssertEqual(longDraftMachine.send(.space), [.toggleLongDraft, .consumeEvent])
+        XCTAssertEqual(longDraftMachine.mode, .idle)
+    }
+
     func testOptionSpaceDoesNotInterruptActivePushToTalk() {
         var machine = HotkeyStateMachine(mode: .pushToTalk, isRightOptionDown: true)
 
