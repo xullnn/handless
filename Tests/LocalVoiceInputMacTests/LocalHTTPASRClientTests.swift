@@ -6,10 +6,10 @@ import LocalVoiceInputCore
 
 final class LocalHTTPASRClientTests: XCTestCase {
     func testRejectsNonLoopbackServiceURL() {
-        XCTAssertFalse(LocalHTTPASRClient.isAllowedLoopbackURL(URL(string: "http://192.168.1.2:18105")!))
-        XCTAssertFalse(LocalHTTPASRClient.isAllowedLoopbackURL(URL(string: "https://127.0.0.1:18105")!))
-        XCTAssertTrue(LocalHTTPASRClient.isAllowedLoopbackURL(URL(string: "http://127.0.0.1:18105")!))
-        XCTAssertTrue(LocalHTTPASRClient.isAllowedLoopbackURL(URL(string: "http://localhost:18105")!))
+        XCTAssertFalse(LocalHTTPASRClient.isAllowedLoopbackURL(URL(string: "http://192.168.1.2:18096")!))
+        XCTAssertFalse(LocalHTTPASRClient.isAllowedLoopbackURL(URL(string: "https://127.0.0.1:18096")!))
+        XCTAssertTrue(LocalHTTPASRClient.isAllowedLoopbackURL(URL(string: "http://127.0.0.1:18096")!))
+        XCTAssertTrue(LocalHTTPASRClient.isAllowedLoopbackURL(URL(string: "http://localhost:18096")!))
     }
 
     func testStartAndChunkEmitPartialWithSessionToken() {
@@ -32,7 +32,7 @@ final class LocalHTTPASRClientTests: XCTestCase {
             return ["events": []]
         }
         let client = LocalHTTPASRClient(
-            serviceURLString: "http://127.0.0.1:18105",
+            serviceURLString: "http://127.0.0.1:18096",
             transport: transport,
             timeout: 1,
             tokenProvider: { 42 }
@@ -81,7 +81,7 @@ final class LocalHTTPASRClientTests: XCTestCase {
             return ["events": []]
         }
         let client = LocalHTTPASRClient(
-            serviceURLString: "http://127.0.0.1:18105",
+            serviceURLString: "http://127.0.0.1:18096",
             transport: transport,
             timeout: 1,
             tokenProvider: { 7 }
@@ -111,7 +111,7 @@ final class LocalHTTPASRClientTests: XCTestCase {
             return ["events": []]
         }
         let client = LocalHTTPASRClient(
-            serviceURLString: "http://127.0.0.1:18105",
+            serviceURLString: "http://127.0.0.1:18096",
             transport: transport,
             timeout: 1,
             tokenProvider: { 8 }
@@ -169,7 +169,7 @@ final class LocalHTTPASRClientTests: XCTestCase {
             return ["events": []]
         }
         let client = LocalHTTPASRClient(
-            serviceURLString: "http://127.0.0.1:18105",
+            serviceURLString: "http://127.0.0.1:18096",
             transport: transport,
             timeout: 1,
             tokenProvider: { 11 }
@@ -212,7 +212,7 @@ final class LocalHTTPASRClientTests: XCTestCase {
             return ["events": []]
         }
         let client = LocalHTTPASRClient(
-            serviceURLString: "http://127.0.0.1:18105",
+            serviceURLString: "http://127.0.0.1:18096",
             transport: transport,
             timeout: 1,
             tokenProvider: { 9 }
@@ -247,7 +247,7 @@ final class LocalHTTPASRClientTests: XCTestCase {
             return ["events": []]
         }
         let client = LocalHTTPASRClient(
-            serviceURLString: "http://127.0.0.1:18105",
+            serviceURLString: "http://127.0.0.1:18096",
             transport: transport,
             timeout: 1,
             tokenProvider: { 10 }

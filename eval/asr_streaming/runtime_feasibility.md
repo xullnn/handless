@@ -93,11 +93,11 @@ Runtime facts:
 - Runtime probe on the locally loaded 0.6B and 1.7B MLX snapshots confirms `generate`, `stream_transcribe`, and `stream_generate` are present, but `create_streaming_session` is not present.
 - It is not a stateful microphone session API that accepts PCM chunks as the user is speaking.
 - Prefix-audio diagnostics on `zh_short_001` can emit tokens quickly from the first 2 seconds of an already materialized buffer, but that is not equivalent to a realtime gate pass.
-- Cumulative recompute probe on `qwen3-asr-0.6b-mlx-8bit` is promising as a future wrapper experiment but still not native realtime streaming:
+- Historical note: the cumulative recompute probe on `qwen3-asr-0.6b-mlx-8bit` looked promising as an early wrapper experiment, but it is now retired from active code/config after segmented-route validation and daily-use feedback:
   - Smoke `zh_short_001`: first meaningful simulated partial from the 2s prefix, visible at about `2086ms`; serial recompute RTF `0.1065`; final CER/WER `0.1053`; final text confused `语音` as `云`.
   - Long `long_120_001`: first meaningful simulated partial from the 1s prefix, visible at about `1106ms`; tested prefixes through 8s; serial recompute RTF `0.1214`; final CER/WER `0.0082`; final text confused `本机` as `手机`.
   - Result directories: `eval/asr_streaming/results/qwen3-mlx-cumulative-probe-0.6b-smoke-20260622` and `eval/asr_streaming/results/qwen3-mlx-cumulative-probe-0.6b-long120-20260622`.
-- In-process cumulative service prototype validates the wrapper session contract but remains outside the Swift app:
+- Historical note: the in-process cumulative service prototype validated an early wrapper session contract but is no longer the active Qwen3 route:
   - Self-test covers old session event rejection, late partial rejection after final, and cancel producing no final.
   - Smoke `zh_short_001`: `service_gate_passed=true`; 6 partials before stop; 1 final after stop; first usable partial about `2078ms`; final latency about `137ms`; final CER/WER `0.1053`.
   - Long `long_120_001`: `service_gate_passed=true`; 8 partials before stop; 1 final after stop; first usable partial about `1092ms`; final latency about `603ms`; final CER/WER `0.0082`.
@@ -105,9 +105,8 @@ Runtime facts:
 
 Risk:
 
-- This remains useful for file-level quality and possible custom service experiments, but it should not be integrated as the MVP realtime backend unless a session-style wrapper is built and passes the realtime gate.
-- A cumulative wrapper would need scheduling, cancellation, stale-result isolation, and an equivalent timed-PCM gate before any Swift app integration.
-- The current service prototype is in-process. Swift integration still needs a real local service boundary and separate macOS runtime validation.
+- These cumulative results remain historical evidence only. New runtime work should use the segmented-cache local HTTP route.
+- The active route still is not native model streaming; it is a local wrapper with timed PCM chunks, bounded segment finalization, cancellation, and stale-session isolation.
 
 ### MiMo-V2.5-ASR MLX path
 
@@ -201,8 +200,7 @@ Required checks:
 
 ## Current Decision
 
-For the next implementation step, do not wire Qwen3-ASR MLX directly into the
-macOS App. The in-process cumulative service prototype has passed smoke and
-`long_120_001`; next, create a real local process boundary for the same service
-contract, then test it before Swift integration. MiMo remains the strongest
+For the next implementation step, use the segmented-cache Qwen3 local HTTP
+route for App-facing work. The cumulative recompute route is retired from active
+code/config and retained only as historical evidence. MiMo remains the strongest
 file-level model, but not a realtime partial backend yet.

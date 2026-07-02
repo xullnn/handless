@@ -30,7 +30,7 @@ def handle_stop(signum: int, frame: Any) -> None:
 
 def sample_process(pid: int) -> dict[str, Any] | None:
     result = subprocess.run(
-        ["ps", "-p", str(pid), "-o", "rss=", "-o", "%cpu="],
+        ["ps", "-p", str(pid), "-o", "pid=", "-o", "ppid=", "-o", "rss=", "-o", "%cpu="],
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
@@ -39,19 +39,75 @@ def sample_process(pid: int) -> dict[str, Any] | None:
     if result.returncode != 0:
         return None
     fields = result.stdout.strip().split()
-    if len(fields) < 2:
+    if len(fields) < 4:
         return None
-    rss_kb = int(float(fields[0]))
-    cpu_percent = float(fields[1])
+    rss_kb = int(float(fields[2]))
+    cpu_percent = float(fields[3])
+    if rss_kb <= 0:
+        return None
     return {
         "epoch_ms": now_ms(),
+        "pid": int(float(fields[0])),
+        "ppid": int(float(fields[1])),
         "rss_kb": rss_kb,
         "rss_mb": rss_kb / 1024.0,
         "cpu_percent": cpu_percent,
     }
 
 
-def write_summary(path: Path, samples: list[dict[str, Any]], *, pid: int, label: str, started_epoch_ms: int) -> None:
+def child_pids(pid: int) -> list[int]:
+    result = subprocess.run(
+        ["pgrep", "-P", str(pid)],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if result.returncode != 0:
+        return []
+    children: list[int] = []
+    for line in result.stdout.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        try:
+            child = int(stripped)
+        except ValueError:
+            continue
+        children.append(child)
+        children.extend(child_pids(child))
+    return children
+
+
+def sample_process_tree(pid: int) -> dict[str, Any] | None:
+    pids = [pid] + child_pids(pid)
+    process_samples = [sample for item in pids if (sample := sample_process(item)) is not None]
+    if not process_samples:
+        return None
+    root = next((sample for sample in process_samples if sample["pid"] == pid), None)
+    return {
+        "epoch_ms": now_ms(),
+        "pid": pid,
+        "pids": [sample["pid"] for sample in process_samples],
+        "process_count": len(process_samples),
+        "rss_kb": sum(int(sample["rss_kb"]) for sample in process_samples),
+        "rss_mb": sum(float(sample["rss_mb"]) for sample in process_samples),
+        "cpu_percent": sum(float(sample["cpu_percent"]) for sample in process_samples),
+        "root_rss_mb": root.get("rss_mb") if root else None,
+        "root_cpu_percent": root.get("cpu_percent") if root else None,
+        "processes": process_samples,
+    }
+
+
+def write_summary(
+    path: Path,
+    samples: list[dict[str, Any]],
+    *,
+    pid: int,
+    label: str,
+    started_epoch_ms: int,
+    include_children: bool,
+) -> None:
     rss_values = [float(sample["rss_mb"]) for sample in samples]
     cpu_values = [float(sample["cpu_percent"]) for sample in samples]
     finished_epoch_ms = now_ms()
@@ -59,6 +115,7 @@ def write_summary(path: Path, samples: list[dict[str, Any]], *, pid: int, label:
         "schema_version": "1.0",
         "label": label,
         "pid": pid,
+        "process_scope": "process_tree" if include_children else "single_process",
         "started_epoch_ms": started_epoch_ms,
         "finished_epoch_ms": finished_epoch_ms,
         "duration_seconds": (finished_epoch_ms - started_epoch_ms) / 1000.0,
@@ -92,17 +149,23 @@ def command_run(args: argparse.Namespace) -> int:
 
     with samples_path.open("w", encoding="utf-8") as handle:
         while not stop_requested:
-            sample = sample_process(args.pid)
+            sample = sample_process_tree(args.pid) if args.include_children else sample_process(args.pid)
             if sample is None:
                 break
             sample["label"] = args.label
-            sample["pid"] = args.pid
             samples.append(sample)
             handle.write(json.dumps(sample, ensure_ascii=False, sort_keys=True) + "\n")
             handle.flush()
             time.sleep(max(0.1, args.interval_sec))
 
-    write_summary(summary_path, samples, pid=args.pid, label=args.label, started_epoch_ms=started_epoch_ms)
+    write_summary(
+        summary_path,
+        samples,
+        pid=args.pid,
+        label=args.label,
+        started_epoch_ms=started_epoch_ms,
+        include_children=args.include_children,
+    )
     print(json.dumps({"summary": str(summary_path), "sample_count": len(samples)}, ensure_ascii=False, sort_keys=True))
     return 0
 
@@ -114,6 +177,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--summary", required=True)
     parser.add_argument("--interval-sec", type=float, default=1.0)
     parser.add_argument("--label", default="process")
+    parser.add_argument("--include-children", action="store_true", help="Aggregate RSS/CPU for the pid and its child processes.")
     return parser
 
 

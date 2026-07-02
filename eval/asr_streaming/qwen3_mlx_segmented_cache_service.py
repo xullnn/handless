@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Segmented-cache service prototype for Qwen3-ASR MLX.
 
-This is an evaluation/runtime prototype, not the macOS App integration. It
-keeps the same user-visible contract as the existing cumulative service
-(`partial` while recording, one `final` after stop) but commits bounded audio
-segments internally so long dictation does not require final recognition of the
-entire session.
+This service keeps the App-facing local HTTP contract simple: `partial` while
+recording and one `final` after stop. Internally it commits bounded audio
+segments so long dictation does not require final recognition of the entire
+session.
 """
 
 from __future__ import annotations
@@ -28,13 +27,11 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from qwen3_mlx_cumulative_service import (  # noqa: E402
+from qwen3_mlx_service_common import (  # noqa: E402
     MLXBackend,
     SAMPLE_RATE,
     ServiceResult,
     evaluate_service_gate,
-)
-from qwen3_mlx_cumulative_probe import (  # noqa: E402
     resolve_system_prompt,
     system_prompt_metadata,
 )

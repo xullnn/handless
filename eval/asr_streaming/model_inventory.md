@@ -6,7 +6,7 @@ This inventory records the model/cache files currently present on this Mac for L
 
 ## Current Product Direction
 
-The current first integration candidate is `mlx-community__Qwen3-ASR-0.6B-8bit` through the validated local HTTP cumulative-wrapper service boundary. It is not native realtime streaming, but it has passed the current incremental UX gates and resource smoke checks.
+The current first integration candidate is `mlx-community__Qwen3-ASR-0.6B-8bit` through the validated segmented-cache local HTTP service boundary. It is not native model streaming, but it has passed the current segmented incremental UX gates and resource smoke checks. The older cumulative-wrapper route is retired from active code/config and kept only as historical evidence.
 
 MiMo-V2.5-ASR MLX remains useful as an offline quality reference. It is not the first floating-panel partial backend unless a chunked/session API is proven or a separate wrapper is validated.
 

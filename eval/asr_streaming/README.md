@@ -131,37 +131,7 @@ PYTHONPATH=.external/repos/mlx-audio .venv-mimo/bin/python \
 
 This probe is deliberately stricter than checking whether `stream_transcribe(...)` returns token chunks. A model is realtime-gate eligible only if it exposes a session-style API, or an equivalent local service contract, that accepts incremental PCM chunks.
 
-Probe whether Qwen3-ASR MLX cumulative recompute is worth a future local service wrapper:
-
-```bash
-PYTHONPATH=.external/repos/mlx-audio .venv-mimo/bin/python \
-  eval/asr_streaming/qwen3_mlx_cumulative_probe.py run \
-  --model-id qwen3-asr-0.6b-mlx-8bit \
-  --model .external/models/mlx-community__Qwen3-ASR-0.6B-8bit \
-  --cases eval/asr_streaming/cases.local.jsonl \
-  --case-id long_120_001 \
-  --language Chinese \
-  --max-prefixes 8 \
-  --out-dir eval/asr_streaming/results/qwen3-mlx-cumulative-probe-0.6b-long120
-```
-
-This cumulative probe periodically reruns the model on 1s, 2s, 3s, ... accumulated audio prefixes and treats those outputs as simulated partials. It records prefix latency, queued serial-worker latency, serial recompute RTF, prefix rewrite rate, final CER/WER, and always marks `native_realtime_gate_eligible=false`. A good cumulative result means “worth prototyping a local wrapper,” not “ready to wire into the app.”
-
-Prototype the cumulative recompute service contract:
-
-```bash
-PYTHONPATH=.external/repos/mlx-audio .venv-mimo/bin/python \
-  eval/asr_streaming/qwen3_mlx_cumulative_service.py run \
-  --model-id qwen3-asr-0.6b-mlx-8bit \
-  --model .external/models/mlx-community__Qwen3-ASR-0.6B-8bit \
-  --cases eval/asr_streaming/cases.local.jsonl \
-  --case-id long_120_001 \
-  --language Chinese \
-  --max-prefixes 8 \
-  --out-dir eval/asr_streaming/results/qwen3-mlx-cumulative-service-0.6b-long120
-```
-
-This service probe validates the wrapper contract independently from the macOS app: `start`, timed `push_pcm`, `partial`, `finish`, `final`, and `cancel`. Its self-test covers old session event rejection, late partial rejection after final, and cancel producing no final. Runtime summaries include `service_gate_passed` and keep `native_realtime_gate_eligible=false`.
+The older Qwen3 cumulative-recompute route has been retired from active code and config. Historical specs and result directories remain as evidence, but new runtime work should use the segmented-cache route below.
 
 Prototype the segmented-cache service contract:
 
@@ -177,7 +147,7 @@ python3 eval/asr_streaming/qwen3_mlx_segmented_cache_service.py run \
   --out-dir eval/asr_streaming/results/qwen3-mlx-segmented-cache-service-fake-smoke
 ```
 
-The segmented-cache prototype keeps the App-facing event shape simple: user-visible `partial` updates during recording and one `final` after stop. Internally, it writes incoming audio to a local cache directory and commits bounded segments so long dictation does not require full-session final recompute. It remains a wrapper service, not native realtime model evidence, and should not be wired into the macOS App without a separate Swift integration spec.
+The segmented-cache service keeps the App-facing event shape simple: user-visible `partial` updates during recording and one `final` after stop. Internally, it writes incoming audio to a local cache directory and commits bounded segments so long dictation does not require full-session final recompute. It remains a local wrapper service, not native model streaming evidence.
 
 Run its fake HTTP boundary through the shared incremental UX gate:
 
@@ -211,7 +181,7 @@ The smoke runner starts `qwen3_mlx_segmented_cache_service.py serve`, waits for 
 swift run LocalVoiceInputMac --local-http-asr --asr-http-url http://127.0.0.1:18096
 ```
 
-It writes `service.log`, `app.log`, run metadata, and segmented audio cache files under `eval/asr_streaming/results/qwen3-mlx-segmented-app-smoke-*`. This is a manual App smoke path only: the default App backend remains FunASR WebSocket, and service supervision/restart behavior is still a separate feature.
+It writes `service.log`, `app.log`, run metadata, and segmented audio cache files under `eval/asr_streaming/results/qwen3-mlx-segmented-app-smoke-*`. This is the active Qwen3 manual App smoke path: the default App backend remains FunASR WebSocket, and service supervision/restart behavior is still a separate feature.
 
 Inspect and clean local ASR runtime artifacts:
 
@@ -261,19 +231,15 @@ python3 eval/asr_streaming/prepare_long_corpus.py \
 
 The manifest separates metric-bearing cases from experience-smoke material. Metric-bearing cases require trusted transcripts and can report CER/WER. Public talks or interviews without trusted transcripts should remain experience-smoke only and should not be used for accuracy claims.
 
-Dry-run the Qwen3 MLX long benchmark command without loading the model:
+Run long-dictation checks through the segmented regression runner rather than the retired cumulative benchmark:
 
 ```bash
-DRY_RUN=1 bash scripts/run_qwen3_mlx_http_long_benchmark.sh
+CASES=eval/asr_streaming/cases.long_prepared.local.jsonl \
+OUT_DIR=eval/asr_streaming/results/qwen3-mlx-segmented-long-$(date +%Y%m%d-%H%M%S) \
+bash scripts/run_qwen3_mlx_segmented_regression_gate.sh
 ```
 
-Run the benchmark against prepared long cases:
-
-```bash
-bash scripts/run_qwen3_mlx_http_long_benchmark.sh
-```
-
-The runner starts the local Qwen3 MLX HTTP service, runs `incremental_ux_gate.py --adapter http-json`, records resource samples, and writes run metadata. It remains a cumulative-recompute wrapper benchmark, not proof of native streaming.
+The runner starts `qwen3_mlx_segmented_cache_service.py serve`, runs `incremental_ux_gate.py --adapter http-json`, records resource samples, and writes run metadata.
 
 Probe the community `mlx-qwen3-asr` package surface:
 

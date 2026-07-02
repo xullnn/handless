@@ -106,7 +106,7 @@
       "id": "qwen3-asr-0.6b-mlx-8bit",
       "vendor": "Alibaba / Qwen upstream; MLX Community conversion",
       "vendor_zh": "上游为阿里 / 通义千问 Qwen；MLX Community 转换",
-      "status": "candidate_file_level_validated",
+      "status": "candidate_segmented_route_validated",
       "license": "Apache-2.0",
       "parameter_scale": "0.6B parameters, 8-bit quantized MLX weights",
       "parameter_scale_zh": "约 6 亿参数，8-bit 量化 MLX 权重",
@@ -114,13 +114,13 @@
       "release_date_precision": "day",
       "release_date_zh": "2026 年 1 月 29 日；MLX Community 转换仓库同日更新",
       "local_weight_size": "Mac local snapshot .external/models/mlx-community__Qwen3-ASR-0.6B-8bit is about 0.94GiB; model.safetensors is 1,006,229,426 bytes",
-      "streaming": "file_or_token_streaming_needs_runtime_check",
-      "runtime": "Apple MLX via mlx-audio generic STT loader; generate(...) full eval passed; stream_transcribe(...) emits token chunks from a provided audio buffer; realtime probe confirmed no create_streaming_session/feed/step/close API on the loaded model; cumulative recompute and in-process service probes are promising for a future local wrapper but are not native realtime streaming",
+      "streaming": "segmented_cache_wrapper_validated_not_native_session_streaming",
+      "runtime": "Apple MLX via mlx-audio generic STT loader; generate(...) full eval passed; stream_transcribe(...) emits token chunks from a provided audio buffer; realtime probe confirmed no create_streaming_session/feed/step/close API on the loaded model. The active LocalVoiceInput route is the segmented-cache local HTTP wrapper; the older cumulative-recompute wrapper is retired from active code/config because long dictation responsiveness and numeric-format behavior were worse in daily use.",
       "adapter": "mlx-stt-local",
       "public_evidence": [
         "MLX-Audio Qwen3-ASR README documents 0.6B/1.7B 8-bit models, generate(...), and stream_transcribe(...)."
       ],
-      "local_validation": "full_10_case_passed_2026-06-22_mlx_file_level; stream_transcribe_file_token_probe_passed_2026-06-22; amd_transfer_snapshot_smoke_passed_2026-06-22; realtime_surface_probe_no_session_api_2026-06-22; cumulative_recompute_probe_smoke_and_long120_promising_not_native_realtime_2026-06-22; cumulative_service_probe_smoke_and_long120_passed_not_native_realtime_2026-06-22"
+      "local_validation": "full_10_case_passed_2026-06-22_mlx_file_level; stream_transcribe_file_token_probe_passed_2026-06-22; amd_transfer_snapshot_smoke_passed_2026-06-22; realtime_surface_probe_no_session_api_2026-06-22; segmented_cache_service_validated_2026-06-26; segmented_app_smoke_validated_2026-06-26; segmented_numeric_and_base_regression_passed_2026-07-01; cumulative_recompute_route_retired_2026-07-01"
     },
     {
       "id": "qwen3-asr-1.7b-mlx-8bit",

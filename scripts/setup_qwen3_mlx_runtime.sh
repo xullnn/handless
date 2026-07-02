@@ -125,4 +125,4 @@ print(json.dumps(status, ensure_ascii=False, sort_keys=True))
 PY
 
 echo "Qwen3 MLX runtime ready in $RUNTIME_PY"
-echo "Run app smoke with: bash scripts/run_qwen3_mlx_app_smoke.sh"
+echo "Run app smoke with: bash scripts/run_qwen3_mlx_segmented_app_smoke.sh"

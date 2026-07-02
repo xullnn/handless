@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-07-01-retire-qwen3-cumulative-route",
+  "title": "Retire Qwen3 cumulative recompute runtime route",
+  "kind": "architecture",
+  "parent_id": "2026-07-01-qwen3-segmented-regression-suite",
+  "created_from": "User decision after daily-use observation: segmented route is faster and more usable; cumulative recompute did not solve numeric formatting reliably.",
+  "created_at": "2026-07-01",
+  "updated_at": "2026-07-01",
+  "follow_ups": [
+    {
+      "id": "FUP-001",
+      "title": "Rework numeric-format handling on segmented route",
+      "kind": "test",
+      "reason": "Arabic-number formatting remains unreliable and should be evaluated on long segmented dictation cases instead of cumulative short-case references.",
+      "source": "requirements",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    }
+  ]
+}
