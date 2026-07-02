@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-07-02-simple-numeric-itn",
+  "title": "Simple numeric ITN for local ASR output",
+  "kind": "feature",
+  "parent_id": null,
+  "created_from": "Qwen3 0.6B prompt A/B benchmark and daily-use numeric-format observations",
+  "created_at": "2026-07-02",
+  "updated_at": "2026-07-02",
+  "follow_ups": [
+    {
+      "id": "FUP-001",
+      "title": "Evaluate broader numeric domains after conservative ITN validation",
+      "kind": "feature",
+      "reason": "Percent, date/time, money, and larger integer normalization remain outside the first conservative rule set to avoid false positives and half-normalized output.",
+      "source": "implementation",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec_or_expand_scope",
+      "target_feature_id": null
+    },
+    {
+      "id": "FUP-002",
+      "title": "Consider high-confidence partial display numeric ITN",
+      "kind": "feature",
+      "reason": "The first integration is final-output only; partial/floating-panel normalization may improve perceived quality but needs separate jitter and false-positive validation.",
+      "source": "implementation",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec_or_expand_scope",
+      "target_feature_id": null
+    }
+  ]
+}

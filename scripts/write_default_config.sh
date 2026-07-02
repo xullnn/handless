@@ -6,7 +6,7 @@ cat > "$CONFIG_DIR/config.json" <<'JSON'
 {
   "asrURL": "ws://127.0.0.1:10095",
   "asrBackend": "funasr-websocket",
-  "asrHTTPURL": "http://127.0.0.1:18105",
+  "asrHTTPURL": "http://127.0.0.1:18096",
   "mockASR": false,
   "mockTranscript": "这是一次本地语音输入测试，松开快捷键以后会自动粘贴或者复制到剪切板。",
   "hotwords": {
@@ -24,6 +24,7 @@ cat > "$CONFIG_DIR/config.json" <<'JSON'
     "forcePasteWhenFocusLowConfidenceForBundleIds": []
   },
   "correctionMode": "clean",
+  "numericITNEnabled": false,
   "historyMaxItems": 20
 }
 JSON

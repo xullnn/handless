@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-SERVICE_URL="${SERVICE_URL:-${ASR_HTTP_URL:-http://127.0.0.1:18105}}"
+SERVICE_URL="${SERVICE_URL:-${ASR_HTTP_URL:-http://127.0.0.1:18096}}"
 CONFIG_PATH="${CONFIG_PATH:-$HOME/Library/Application Support/LocalVoiceInput/config.json}"
 PYTHON_BIN="${PYTHON_BIN:-.venv-mimo/bin/python}"
 MODEL="${MODEL:-.external/models/mlx-community__Qwen3-ASR-0.6B-8bit}"
@@ -61,7 +61,15 @@ fi
 
 section "Processes"
 print_processes "App" 'LocalVoiceInput\.app/Contents/MacOS/LocalVoiceInput|LocalVoiceInputMac'
-print_processes "Qwen3 HTTP ASR service" 'qwen3_mlx_http_service\.py'
+app_process_lines="$(pgrep -fl 'LocalVoiceInput\.app/Contents/MacOS/LocalVoiceInput|LocalVoiceInputMac' || true)"
+if printf '%s\n' "$app_process_lines" | grep -q -- '--numeric-itn'; then
+  printf 'App numericITN override: enabled (--numeric-itn)\n'
+elif printf '%s\n' "$app_process_lines" | grep -q -- '--no-numeric-itn'; then
+  printf 'App numericITN override: disabled (--no-numeric-itn)\n'
+else
+  printf 'App numericITN override: none (config/default applies)\n'
+fi
+print_processes "Qwen3 segmented ASR service" 'qwen3_mlx_segmented_cache_service\.py'
 
 section "Config"
 python3 - "$CONFIG_PATH" <<'PY'
@@ -85,9 +93,10 @@ print("config: ok")
 defaults = {
     "asrBackend": "funasr-websocket",
     "asrURL": "ws://127.0.0.1:10095",
-    "asrHTTPURL": "http://127.0.0.1:18105",
+    "asrHTTPURL": "http://127.0.0.1:18096",
     "mockASR": False,
     "correctionMode": "clean",
+    "numericITNEnabled": False,
     "historyMaxItems": 20,
 }
 for key, default in defaults.items():
@@ -117,7 +126,7 @@ base_url = sys.argv[1].rstrip("/")
 timeout = float(sys.argv[2])
 last_error = ""
 
-for endpoint in ("/status", "/health"):
+for endpoint in ("/metadata", "/health"):
     url = base_url + endpoint
     try:
         with urllib.request.urlopen(url, timeout=timeout) as response:
@@ -135,8 +144,8 @@ for endpoint in ("/status", "/health"):
 
     print(f"url: {base_url}")
     print(f"endpoint: {endpoint}")
-    if endpoint != "/status":
-        print("status_detail: /status unavailable; using /health")
+    if endpoint != "/metadata":
+        print("status_detail: /metadata unavailable; using /health")
     print(f"service: {payload.get('service', 'unknown')}")
     print(f"schema_version: {payload.get('schema_version', 'unknown')}")
     print(f"fake_backend: {payload.get('fake_backend', 'unknown')}")

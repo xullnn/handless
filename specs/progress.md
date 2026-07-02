@@ -3549,3 +3549,639 @@ bash scripts/run_qwen3_mlx_segmented_app_smoke.sh
 
 ### Next recommended action
 - Run a longer Qwen3 HTTP soak with `/status` polling after this change to measure retained event count, active session count, and RSS after many short sessions.
+
+## 2026-07-01 — 2026-07-01-qwen3-segmented-regression-suite
+
+### Summary
+
+- Created the segmented-route regression SDD contract.
+- Added a repeatable segmented HTTP gate runner for `qwen3_mlx_segmented_cache_service.py serve`.
+- Added numeric-format analysis based on `must_include` / `must_not_include`, separate from CER/WER.
+- Added summary comparison tooling for candidate vs baseline ASR `summary.json` files.
+- Ran the current Qwen3-ASR 0.6B MLX segmented route with the numeric-style system prompt against:
+  - 37 numeric-format cases;
+  - 10 base-recognition cases.
+
+### Files changed
+
+- `scripts/run_qwen3_mlx_segmented_regression_gate.sh`
+- `eval/asr_streaming/analyze_numeric_format_results.py`
+- `eval/asr_streaming/compare_asr_summaries.py`
+- `specs/2026-07-01-qwen3-segmented-regression-suite/*`
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+
+### Validation
+
+- Command: `bash -n scripts/run_qwen3_mlx_segmented_regression_gate.sh`
+  Result: pass
+  Notes: Shell syntax is valid.
+- Command: `python3 -m py_compile eval/asr_streaming/analyze_numeric_format_results.py eval/asr_streaming/compare_asr_summaries.py eval/asr_streaming/qwen3_mlx_segmented_cache_service.py`
+  Result: pass
+  Notes: New analysis scripts and segmented service compile.
+- Command: `python3 eval/asr_streaming/qwen3_mlx_segmented_cache_service.py self-test`
+  Result: pass
+  Notes: Fake-backend service lifecycle, stale-session rejection, cancel handling, and cache writing self-test passed.
+- Command: `DRY_RUN=1 bash scripts/run_qwen3_mlx_segmented_regression_gate.sh`
+  Result: pass
+  Notes: Dry-run printed segmented service command, gate command, service URL, output dir, and runtime path checks.
+- Command: `python3 -m json.tool specs/feature_matrix.json >/dev/null && python3 -m json.tool specs/2026-07-01-qwen3-segmented-regression-suite/feature.json >/dev/null`
+  Result: pass
+  Notes: Feature matrix and feature metadata JSON are valid.
+- Command: `git diff --check`
+  Result: pass
+  Notes: No whitespace errors.
+
+### Segmented numeric prompt suite
+
+- Command:
+
+```bash
+CASES=eval/asr_streaming/cases.numeric.local.jsonl \
+SYSTEM_PROMPT_FILE=configs/asr/qwen3_system_prompt.numeric_style.zh.txt \
+OUT_DIR=eval/asr_streaming/results/segmented-numeric-prompt-v1-20260701-230142 \
+bash scripts/run_qwen3_mlx_segmented_regression_gate.sh
+```
+
+- Result directory: `eval/asr_streaming/results/segmented-numeric-prompt-v1-20260701-230142`
+- Gate result: 37/37 passed.
+- Aggregate metrics:
+  - CER: `0.0931`
+  - WER: `0.1023`
+  - RTF: `1.3114`
+  - first partial latency: `2442 ms`
+  - final latency after stop: `178 ms`
+  - final coverage ratio: `0.9751`
+- Resource summary:
+  - RSS mean: `1200 MB`
+  - RSS peak: `1234 MB`
+  - CPU mean: `19.1%`
+  - CPU peak: `106.2%`
+  - run duration: `291.8 s`
+- Numeric-format analysis:
+  - total: 37
+  - passed: 13
+  - failed: 24
+  - pass rate: `35.1%`
+  - arabic numeric preference cases: 5/29 passed
+  - false-positive guard cases: 8/8 passed
+- Numeric comparison against cumulative prompt reference:
+  - candidate gate passed count improved from 16/37 to 37/37.
+  - aggregate CER increased from `0.0343` to `0.0931`.
+  - aggregate WER increased from `0.0474` to `0.1023`.
+  - comparison script flagged 6 accuracy/coverage regressions, mostly cases where converting Chinese number words into Arabic digits raises CER/WER against the original spoken-text reference.
+
+### Segmented base prompt suite
+
+- Command:
+
+```bash
+CASES=eval/asr_streaming/cases.local.jsonl \
+SYSTEM_PROMPT_FILE=configs/asr/qwen3_system_prompt.numeric_style.zh.txt \
+OUT_DIR=eval/asr_streaming/results/segmented-base-prompt-v1-20260701-230709 \
+bash scripts/run_qwen3_mlx_segmented_regression_gate.sh
+```
+
+- Result directory: `eval/asr_streaming/results/segmented-base-prompt-v1-20260701-230709`
+- Gate result: 10/10 passed.
+- Aggregate metrics:
+  - CER: `0.0503`
+  - WER: `0.1585`
+  - RTF: `1.2490`
+  - first partial latency: `1636 ms`
+  - final latency after stop: `242 ms`
+  - final coverage ratio: `0.9894`
+- Resource summary:
+  - RSS mean: `1278 MB`
+  - RSS peak: `1374 MB`
+  - CPU mean: `10.4%`
+  - CPU peak: `107.7%`
+  - run duration: `325.5 s`
+- Comparison against cumulative prompt reference:
+  - candidate gate passed count improved from 5/10 to 10/10.
+  - aggregate CER changed from `0.0497` to `0.0503` (`+0.0005`).
+  - aggregate WER changed from `0.1620` to `0.1585` (`-0.0035`).
+  - final coverage changed from `0.9896` to `0.9894` (`-0.0002`).
+  - regression count: 0 under the configured case-level rule.
+
+### Conclusions
+
+- The segmented route is now validated as the better UX/runtime direction for user-perceived realtime dictation: both suites had pre-stop partials, post-stop finals, and no event-order failures.
+- The base-recognition suite did not show meaningful regression compared with the cumulative prompt route.
+- The numeric-style problem is not solved by the current system prompt alone. It improves some cases and avoids false-positive numeric conversion, but Arabic-number preference still fails on most target cases.
+- Cumulative recompute should remain as reference/rollback while runtime defaults and LaunchAgent/App wiring are moved toward the segmented service.
+- Current daily App runtime was not switched by this feature. `status_localvoiceinput.sh` showed the App still using `http://127.0.0.1:18105` backed by `qwen3_mlx_http_service.py`; the segmented validation used temporary port `18113`.
+
+### Blockers / open questions
+
+- Numeric formatting needs a separate follow-up strategy. Options include better prompt variants, domain-specific non-LLM normalization with strict guards, or a hybrid that only touches highly confident numeric spans.
+- RTF from realtime-paced segmented runs is not directly comparable to older no-realtime cumulative runs. Use it as product-path runtime evidence, not as a pure model throughput comparison.
+- Segment merge still introduces occasional punctuation/spacing artifacts in long text. This did not trigger CER/WER regressions in the base suite, but it should be addressed before polishing long-draft UX.
+
+### Next recommended action
+
+- Promote segmented service as the primary development route.
+- Keep cumulative recompute available as a legacy reference until the App runtime supervision path is switched and manually validated.
+- Create a focused follow-up for numeric formatting and segment-boundary merge cleanup.
+
+## 2026-07-01 - 2026-07-01-retire-qwen3-cumulative-route
+
+### Summary
+
+- Retired the Qwen3 cumulative-recompute route from active code and configuration.
+- Added `eval/asr_streaming/qwen3_mlx_service_common.py` so the segmented service owns shared active helpers without importing deleted cumulative modules.
+- Removed active cumulative Python entrypoints:
+  - `eval/asr_streaming/qwen3_mlx_cumulative_probe.py`
+  - `eval/asr_streaming/qwen3_mlx_cumulative_service.py`
+  - `eval/asr_streaming/qwen3_mlx_http_service.py`
+- Removed active cumulative runner scripts:
+  - `scripts/run_qwen3_mlx_app_smoke.sh`
+  - `scripts/run_qwen3_mlx_http_gate_smoke.sh`
+  - `scripts/run_qwen3_mlx_http_extended_gate.sh`
+  - `scripts/run_qwen3_mlx_http_long_benchmark.sh`
+- Updated active Qwen3 docs/config/status defaults to the segmented service route on `http://127.0.0.1:18096`.
+- Updated PMB durable guidance: cumulative recompute is historical evidence only; segmented-cache local HTTP is the active Qwen3 route.
+
+### Files changed
+
+- `eval/asr_streaming/qwen3_mlx_service_common.py`
+- `eval/asr_streaming/qwen3_mlx_segmented_cache_service.py`
+- `eval/asr_streaming/validate.sh`
+- `scripts/status_localvoiceinput.sh`
+- `scripts/write_default_config.sh`
+- `scripts/setup_qwen3_mlx_runtime.sh`
+- `configs/config.example.json`
+- `Sources/LocalVoiceInputMac/AppConfig.swift`
+- `Tests/LocalVoiceInputMacTests/LocalHTTPASRClientTests.swift`
+- `README.md`
+- `eval/asr_streaming/README.md`
+- `eval/asr_streaming/model_registry.json`
+- `eval/asr_streaming/model_survey.md`
+- `eval/asr_streaming/model_inventory.md`
+- `eval/asr_streaming/runtime_feasibility.md`
+- `project_memory_bank/core/current_focus.md`
+- `project_memory_bank/modules/asr_audio/summary.md`
+- `project_memory_bank/modules/packaging_ops/summary.md`
+- `specs/2026-07-01-retire-qwen3-cumulative-route/*`
+- `specs/feature_matrix.json`
+
+### Validation
+
+- Command: `bash eval/asr_streaming/validate.sh`
+  Result: pass
+  Notes: eval harness self-tests passed; active validation no longer compiles or self-tests cumulative Qwen3 modules.
+- Command: `DRY_RUN=1 bash scripts/run_qwen3_mlx_segmented_app_smoke.sh`
+  Result: pass
+  Notes: dry run points service to `qwen3_mlx_segmented_cache_service.py serve` on `http://127.0.0.1:18096`.
+- Command: `DRY_RUN=1 bash scripts/run_qwen3_mlx_segmented_regression_gate.sh`
+  Result: pass
+  Notes: dry run points the gate to the segmented service and default realtime-paced replay.
+- Command: `swift build`
+  Result: pass
+  Notes: `LocalVoiceInputMac` built successfully.
+- Command: `swift test`
+  Result: pass
+  Notes: 58 tests, 0 failures.
+- Command: `bash -n scripts/status_localvoiceinput.sh scripts/write_default_config.sh scripts/setup_qwen3_mlx_runtime.sh scripts/run_qwen3_mlx_segmented_app_smoke.sh scripts/run_qwen3_mlx_segmented_regression_gate.sh`
+  Result: pass
+  Notes: active shell scripts parse successfully.
+- Command: `python3 -m py_compile eval/asr_streaming/qwen3_mlx_service_common.py eval/asr_streaming/qwen3_mlx_segmented_cache_service.py && python3 eval/asr_streaming/qwen3_mlx_segmented_cache_service.py self-test`
+  Result: pass
+  Notes: segmented service passes without cumulative module imports.
+- Command: `python3 -m json.tool specs/2026-07-01-retire-qwen3-cumulative-route/feature.json >/dev/null && python3 -m json.tool specs/feature_matrix.json >/dev/null && python3 -m json.tool eval/asr_streaming/model_registry.json >/dev/null`
+  Result: pass
+  Notes: JSON artifacts are valid.
+- Command: `git diff --check`
+  Result: pass
+  Notes: no whitespace errors.
+- Command: `test ! -e eval/asr_streaming/qwen3_mlx_cumulative_probe.py && test ! -e eval/asr_streaming/qwen3_mlx_cumulative_service.py && test ! -e eval/asr_streaming/qwen3_mlx_http_service.py && test ! -e scripts/run_qwen3_mlx_app_smoke.sh && test ! -e scripts/run_qwen3_mlx_http_gate_smoke.sh && test ! -e scripts/run_qwen3_mlx_http_extended_gate.sh && test ! -e scripts/run_qwen3_mlx_http_long_benchmark.sh`
+  Result: pass
+  Notes: retired active cumulative files are removed.
+- Command: `rg -n "qwen3_mlx_http_service|qwen3_mlx_cumulative|run_qwen3_mlx_http|run_qwen3_mlx_app_smoke|prefix-step-sec|prefix_step_sec|max-prefixes|max_prefixes" README.md configs scripts Sources Tests eval/asr_streaming project_memory_bank --glob '!eval/asr_streaming/results/**' --glob '!eval/asr_streaming/audio/**' -S`
+  Result: pass
+  Notes: no active-path references remain. Historical specs/results are intentionally excluded.
+
+### Blockers / open questions
+
+- Current running App/service processes are not automatically restarted by this cleanup. A running old process may continue until manually quit/restarted.
+- Numeric-format handling remains unresolved and is tracked as a separate follow-up candidate.
+- Historical cumulative result directories remain in the repo for traceability; a later archival cleanup can decide whether to move them outside the active tree.
+
+### Next recommended action
+
+- Restart the local Qwen3 App smoke using `bash scripts/run_qwen3_mlx_segmented_app_smoke.sh` when ready to switch the live runtime.
+- Create a focused segmented-route numeric-format feature using long/mixed numeric dictation cases.
+
+## 2026-07-02 - 2026-07-02-full-asr-model-benchmark
+
+### Summary
+
+- Completed the full local ASR benchmark for the current baseline and retained candidates:
+  - `qwen3-asr-0.6b-mlx-8bit`
+  - `qwen3-asr-1.7b-mlx-8bit`
+  - `mimo-v2.5-asr-mlx`
+- Output directory: `eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029`
+- Formal benchmark inventory:
+  - manifest case rows: `106`
+  - unique audio files: `100`
+  - missing audio files: `0`
+  - suites: `8`
+- Coverage:
+  - file-level case results: `318` (`3` models x `106` manifest rows)
+  - Qwen segmented case results: `212` (`2` Qwen models x `106` manifest rows)
+  - MiMo segmented compatibility records: `106` manifest rows marked `unsupported_segmented_runtime`
+  - numeric analysis files: `5`
+  - resource summary/sample groups checked: `40`
+- Generated reports:
+  - `comparison.json`
+  - `comparison.csv`
+  - `comparison.md`
+  - `recommendation.md`
+
+### Key Metrics
+
+Raw manifest rollup:
+
+| Model | Mode | Cases | CER | WER | RTF | First partial | Final latency | Coverage |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `qwen3-asr-0.6b-mlx-8bit` | `segmented` | 106 | 0.0589 | 0.0792 | 1.1845 | 1077.6 ms | 184.5 ms | 0.9891 |
+| `qwen3-asr-1.7b-mlx-8bit` | `segmented` | 106 | 0.0582 | 0.0856 | 1.2404 | 1114.4 ms | 335.3 ms | 0.9896 |
+| `qwen3-asr-0.6b-mlx-8bit` | `file_level` | 106 | 0.0621 | 0.0813 | 0.0182 | n/a | 703.1 ms | 0.9850 |
+| `qwen3-asr-1.7b-mlx-8bit` | `file_level` | 106 | 0.0577 | 0.0843 | 0.0350 | n/a | 1344.6 ms | 0.9893 |
+| `mimo-v2.5-asr-mlx` | `file_level` | 106 | 0.0928 | 0.1144 | 0.1057 | n/a | 3799.5 ms | 0.9538 |
+
+Resource/resource-fit summary:
+
+- Qwen3 0.6B segmented max peak RSS: `1469.0 MB`
+- Qwen3 1.7B segmented max peak RSS: `2878.8 MB`
+- MiMo file-level max peak RSS: `7514.9 MB`
+- Qwen3 1.7B segmented uses roughly twice the memory of Qwen3 0.6B with no product-significant quality win.
+- MiMo segmented/chunked runtime is unsupported by current local runtime evidence; its local source exposes file-level `generate(...)` evidence but no proven safe `stream_transcribe`, `stream_generate`, or `create_streaming_session` product interface.
+
+Numeric-format summary:
+
+- Best numeric pass rate is only `0.2432`.
+- Qwen3 0.6B segmented numeric pass rate is `0.2162`.
+- Qwen3 1.7B segmented numeric pass rate is `0.2432`.
+- MiMo file-level numeric pass rate is `0.2432`.
+- Conclusion: numeric formatting is not solved by switching models and needs a separate strategy.
+
+### Final Recommendation
+
+- Keep `qwen3-asr-0.6b-mlx-8bit` as the current default realtime ASR backend.
+- Do not replace it with `qwen3-asr-1.7b-mlx-8bit` now. The 1.7B model has a small CER advantage but worse WER, RTF, first partial latency, final latency, and memory in segmented mode.
+- Do not use `mimo-v2.5-asr-mlx` as the realtime backbone. Keep it only as an offline/reference model unless a safe segmented/chunked runtime is proven separately.
+- Do not change the macOS App runtime, default model, hotkeys, floating panel, paste, clipboard, or focus logic as part of this benchmark.
+
+### Files changed
+
+- `eval/asr_streaming/full_asr_model_benchmark.py`
+- `eval/asr_streaming/monitor_pid_resources.py`
+- `scripts/run_full_asr_model_benchmark.sh`
+- `specs/2026-07-02-full-asr-model-benchmark/decisions.md`
+- `specs/2026-07-02-full-asr-model-benchmark/feature.json`
+- `specs/2026-07-02-full-asr-model-benchmark/plan.md`
+- `specs/2026-07-02-full-asr-model-benchmark/requirements.md`
+- `specs/2026-07-02-full-asr-model-benchmark/validation.md`
+- `specs/progress.md`
+- `specs/feature_matrix.json`
+
+### Validation
+
+- Command: `DRY_RUN=1 OUT_DIR=eval/asr_streaming/results/full-asr-model-benchmark-dryrun-verify-20260702-035347 bash scripts/run_full_asr_model_benchmark.sh`
+  Result: pass
+  Notes: runner scanned the formal manifests, wrote dry-run inventory/manifest JSON, and printed complete file-level/segmented command construction without inference.
+- Command: completion audit script against `eval/asr_streaming/results/full-asr-model-benchmark-20260702-004029`
+  Result: pass
+  Notes: verified `106` manifest rows, `100` unique audio files, `0` missing audio, `318` file-level case summaries, `212` Qwen segmented case summaries, `106` MiMo unsupported segmented records, `5` numeric analysis files, and `40` resource summary/sample groups.
+- Command: `python3 -m json.tool specs/feature_matrix.json >/dev/null`
+  Result: pass
+  Notes: feature matrix JSON is valid.
+- Command: `python3 -m json.tool specs/2026-07-02-full-asr-model-benchmark/feature.json >/dev/null`
+  Result: pass
+  Notes: feature metadata JSON is valid.
+- Command: `bash -n scripts/run_full_asr_model_benchmark.sh`
+  Result: pass
+  Notes: benchmark shell runner parses successfully.
+- Command: `.venv-mimo/bin/python -m py_compile eval/asr_streaming/full_asr_model_benchmark.py eval/asr_streaming/analyze_numeric_format_results.py eval/asr_streaming/monitor_pid_resources.py`
+  Result: pass
+  Notes: benchmark/reporting/resource scripts compile.
+- Command: `python3 -m json.tool "$OUT_DIR/comparison.json" >/dev/null && python3 -m json.tool "$OUT_DIR/run_manifest.json" >/dev/null && python3 -m json.tool "$OUT_DIR/case_inventory.json" >/dev/null`
+  Result: pass
+  Notes: core result JSON artifacts are valid.
+- Command: `test -s "$OUT_DIR/comparison.md" && test -s "$OUT_DIR/recommendation.md" && test -s "$OUT_DIR/comparison.csv"`
+  Result: pass
+  Notes: human-readable and CSV reports are present and non-empty.
+- Command: `git diff --check`
+  Result: pass
+  Notes: no whitespace errors.
+
+### Blockers / open questions
+
+- No blocker remains for this benchmark feature.
+- MiMo segmented/realtime remains unsupported in the current local runtime; this is a measured compatibility result, not a silent skip.
+- Numeric formatting remains below product expectations and should be handled as a separate feature.
+- PMB promotion is recommended after closeout because the durable baseline decision and model-ranking guidance should be reflected in project memory.
+
+### Next recommended action
+
+- Keep using Qwen3 0.6B segmented as the realtime baseline.
+- Create a separate numeric-format strategy feature.
+- If Qwen3 1.7B is revisited, test it as a final-only correction candidate with an explicit waiting-time budget instead of making it the realtime partial backend.
+
+## 2026-07-02 - 2026-07-02-qwen3-06b-prompt-ab-benchmark
+
+### Summary
+
+- Added and ran a focused prompt-vs-no-prompt A/B benchmark for `qwen3-asr-0.6b-mlx-8bit` only.
+- Output directory: `eval/asr_streaming/results/qwen3-06b-prompt-ab-20260702-155144`
+- Prompt file: `configs/asr/qwen3_system_prompt.numeric_style.zh.txt`
+- Product path tested: segmented simulated realtime.
+- Test scope:
+  - numeric suite: `37` cases
+  - base regression guard: `10` cases
+- Generated artifacts:
+  - `comparison.json`
+  - `comparison.md`
+  - `recommendation.md`
+  - `no_prompt_numeric_format_analysis.json`
+  - `prompt_numeric_format_analysis.json`
+  - `numeric_prompt_vs_no_prompt_comparison.json`
+  - `base_prompt_vs_no_prompt_comparison.json`
+
+### Results
+
+Numeric formatting:
+
+| Condition | Passed | Total | Pass rate |
+|---|---:|---:|---:|
+| no-prompt | 8 | 37 | 21.6% |
+| prompt | 13 | 37 | 35.1% |
+| delta | +5 | - | +13.5 pp |
+
+- Improved numeric cases: `5`
+- Worsened numeric-format cases: `0`
+- Improved examples:
+  - `numeric_digits_002`: `验证码是八零六二一九。` -> `验证码是 806219。`
+  - `numeric_digits_004`: `这批样本的编号从一零零一开始。` -> `这批样本的编号从 1001 开始。`
+  - `numeric_decimal_001`: `这个版本的实时因子是零点二零八。` -> `这个版本的实时因子是 0.208。`
+  - `numeric_unit_003`: `这个服务监听一八一零五端口。` -> `这个服务监听 18105 端口。`
+  - `numeric_version_001`: `当前版本是一点二点三。` -> `当前版本是 1.2.3。`
+
+Latency and base regression guard:
+
+| Suite | Metric | no-prompt | prompt | Delta |
+|---|---|---:|---:|---:|
+| numeric | first partial | 1076.8 ms | 2442.2 ms | +1365.4 ms |
+| base | first partial | 1085.5 ms | 1636.2 ms | +550.6 ms |
+| base | CER | 0.0521 | 0.0503 | -0.0018 |
+| base | WER | 0.1944 | 0.1585 | -0.0359 |
+
+- Base regression count: `0`
+- Numeric-suite CER/WER are not the primary numeric metric because the reference text is spoken-form. Desired Arabic-number conversion can increase CER/WER against that reference.
+
+### Recommendation
+
+- Do not enable the current numeric-style system prompt by default.
+- Keep no-prompt as the current default realtime ASR route.
+- Preserve the prompt evidence as experiment data.
+- Handle numeric formatting through a conservative local ITN/post-processing feature before reconsidering prompt defaults.
+
+### Files changed
+
+- `eval/asr_streaming/qwen3_prompt_ab_report.py`
+- `scripts/run_qwen3_06b_prompt_ab_benchmark.sh`
+- `specs/2026-07-02-qwen3-06b-prompt-ab-benchmark/*`
+- `specs/progress.md`
+- `specs/feature_matrix.json`
+
+### Validation
+
+- Command: `DRY_RUN=1 bash scripts/run_qwen3_06b_prompt_ab_benchmark.sh`
+  Result: pass
+  Notes: printed selected prompt file, source summaries, output directory, and reuse mode.
+- Command: `python3 -m json.tool specs/feature_matrix.json >/dev/null`
+  Result: pass
+  Notes: feature matrix JSON is valid.
+- Command: `python3 -m json.tool specs/2026-07-02-qwen3-06b-prompt-ab-benchmark/feature.json >/dev/null`
+  Result: pass
+  Notes: feature metadata JSON is valid.
+- Command: `bash -n scripts/run_qwen3_06b_prompt_ab_benchmark.sh`
+  Result: pass
+  Notes: shell runner parses successfully.
+- Command: `python3 -m py_compile eval/asr_streaming/qwen3_prompt_ab_report.py eval/asr_streaming/analyze_numeric_format_results.py eval/asr_streaming/compare_asr_summaries.py`
+  Result: pass
+  Notes: report, numeric analysis, and comparison scripts compile.
+- Command: `OUT_DIR=eval/asr_streaming/results/qwen3-06b-prompt-ab-20260702-155144 bash scripts/run_qwen3_06b_prompt_ab_benchmark.sh`
+  Result: pass
+  Notes: generated comparison and recommendation reports from existing prompt/no-prompt segmented summaries.
+- Command: `python3 -m json.tool eval/asr_streaming/results/qwen3-06b-prompt-ab-20260702-155144/comparison.json >/dev/null`
+  Result: pass
+  Notes: A/B comparison JSON is valid.
+- Command: `test -s eval/asr_streaming/results/qwen3-06b-prompt-ab-20260702-155144/comparison.md && test -s eval/asr_streaming/results/qwen3-06b-prompt-ab-20260702-155144/recommendation.md`
+  Result: pass
+  Notes: human-readable reports are present and non-empty.
+
+### Blockers / open questions
+
+- No blocker remains for this A/B feature.
+- Fresh rerun mode exists as `RUN_FRESH=1 bash scripts/run_qwen3_06b_prompt_ab_benchmark.sh`, but was not required for closeout because existing prompt and no-prompt summaries cover the same model and target suites.
+- Numeric formatting should move to a separate ITN/post-processing feature.
+
+### Next recommended action
+
+- Create a focused local numeric ITN/post-processing feature with conservative transformation rules and the existing 37 numeric cases as the first regression suite.
+
+## 2026-07-02 - 2026-07-02-simple-numeric-itn
+
+### Summary
+
+- Implemented a conservative Swift Core `NumericITN` rule engine for final-output numeric formatting.
+- Added focused pure logic tests for:
+  - decimals such as `零点六` -> `0.6`
+  - version-like text such as `一点二点三` -> `1.2.3`
+  - technical unit contexts such as `十六KB` -> `16KB`
+  - strong digit-sequence contexts such as verification codes, IDs, case numbers, and ports
+  - no-op false-positive guards such as `一点也不`, `三点建议`, `十几个`, `千万不要`, and `一二三木头人`
+- Integrated the rule engine into final-output `CorrectionPipeline` behind `numericITNEnabled`.
+- Added App config decoding and config examples for `numericITNEnabled`; default remains `false` in this implementation pass.
+- Did not change the ASR model, segmented HTTP service contract, cumulative route retirement, partial/floating-panel behavior, paste routing, clipboard policy, focus downgrade behavior, secure-field behavior, or cancel behavior.
+
+### Files changed
+
+- `Sources/LocalVoiceInputCore/NumericITN.swift`
+- `Sources/LocalVoiceInputCore/CorrectionPipeline.swift`
+- `Tests/LocalVoiceInputCoreTests/NumericITNTests.swift`
+- `Tests/LocalVoiceInputCoreTests/CorrectionPipelineTests.swift`
+- `Sources/LocalVoiceInputMac/AppConfig.swift`
+- `Sources/LocalVoiceInputMac/AppController.swift`
+- `configs/config.example.json`
+- `eval/asr_streaming/apply_numeric_itn_to_summary.swift`
+- `eval/asr_streaming/numeric_itn_report.py`
+- `scripts/write_default_config.sh`
+- `scripts/status_localvoiceinput.sh`
+- `scripts/run_numeric_itn_report.sh`
+- `README.md`
+- `specs/2026-07-02-simple-numeric-itn/feature.json`
+- `specs/2026-07-02-simple-numeric-itn/decisions.md`
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+
+### Validation
+
+- Command: `swift test --filter NumericITN`
+  Result: pass
+  Notes: executed `8` selected tests covering `NumericITNTests` plus the numeric ITN configurability test in `CorrectionPipelineTests`.
+- Command: `swift test --filter CorrectionPipelineTests`
+  Result: pass
+  Notes: executed `6` correction pipeline tests, including default disabled and enabled numeric ITN behavior.
+- Command: `swift test`
+  Result: pass
+  Notes: executed `66` tests with `0` failures.
+- Command: `bash -n scripts/write_default_config.sh && bash -n scripts/status_localvoiceinput.sh && python3 -m json.tool configs/config.example.json >/dev/null`
+  Result: pass
+  Notes: changed shell scripts parse and example config JSON is valid.
+- Command: `bash -n scripts/run_numeric_itn_report.sh && python3 -m py_compile eval/asr_streaming/numeric_itn_report.py eval/asr_streaming/analyze_numeric_format_results.py`
+  Result: pass
+  Notes: numeric ITN report runner parses and Python reporting scripts compile.
+- Command: `swiftc Sources/LocalVoiceInputCore/NumericITN.swift eval/asr_streaming/apply_numeric_itn_to_summary.swift -o .build/numeric-itn-tools/apply_numeric_itn_to_summary_check`
+  Result: pass
+  Notes: the Swift summary-transform helper compiles directly against the production `NumericITN.swift` implementation.
+- Command: `BASE_SUMMARY=eval/asr_streaming/results/simple-numeric-itn-segmented-numeric-20260702-1724/summary.json OUT_DIR=eval/asr_streaming/results/simple-numeric-itn-report-fresh-20260702-1730 bash scripts/run_numeric_itn_report.sh`
+  Result: pass
+  Notes: generated `comparison.md`, `comparison.json`, raw numeric analysis, ITN numeric analysis, and ITN-transformed summary from the fresh numeric segmented regression output. Numeric-format pass rate improved from `8/37` (`21.6%`) to `20/37` (`54.1%`), delta `+12` cases / `+32.4 pp`, with `0` worsened cases. Report path: `eval/asr_streaming/results/simple-numeric-itn-report-fresh-20260702-1730/comparison.md`.
+- Command: `.build/numeric-itn-tools/apply_numeric_itn_to_summary --summary eval/asr_streaming/results/simple-numeric-itn-segmented-base-20260702-1718/summary.json --out eval/asr_streaming/results/simple-numeric-itn-base-fresh-20260702-1730/itn_summary.json`
+  Result: pass
+  Notes: base-suite ITN transform changed `1/10` cases: `long_code_switch_001` changed `Memo 二点五杠 ASR` to `Memo 2.5杠 ASR`, which is a technical decimal/model-version context rather than a normal-language false positive.
+- Command: `git diff --check`
+  Result: pass
+  Notes: no whitespace errors.
+- Command: `bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: read-only status check reported the App still running on PID `82406`, Qwen3 segmented service still running on PID `82353`, `/metadata` healthy on `http://127.0.0.1:18096`, and `numericITNEnabled: False (default)` in the current user config view.
+- Command: `OUT_DIR=eval/asr_streaming/results/simple-numeric-itn-segmented-base-20260702-1718 bash scripts/run_qwen3_mlx_segmented_regression_gate.sh`
+  Result: pass
+  Notes: fresh base segmented regression completed on independent port `18113`, wrote `summary.json`, and exited with `gate_exit_code=0`; `10/10` cases passed, mean CER `0.0521`, mean WER `0.1944`, mean first partial `1106.5 ms`.
+- Command: `CASES=eval/asr_streaming/cases.numeric.local.jsonl OUT_DIR=eval/asr_streaming/results/simple-numeric-itn-segmented-numeric-20260702-1724 bash scripts/run_qwen3_mlx_segmented_regression_gate.sh`
+  Result: pass
+  Notes: fresh numeric segmented regression completed on independent port `18113`, wrote `summary.json`, and exited with `gate_exit_code=0`; `37/37` cases passed, mean CER `0.0169`, mean WER `0.0193`, mean first partial `1090.0 ms`.
+
+### Blockers / open questions
+
+- Full feature validation is incomplete because manual App smoke has not been run with ITN enabled.
+- The current running App was not restarted and the user config was not rewritten, so live behavior remains unchanged until `numericITNEnabled` is explicitly enabled and the App is relaunched.
+
+### Next recommended action
+
+- When the user is ready to interrupt the current running App, enable `numericITNEnabled`, relaunch the App, and run the manual final-output smoke checks from `validation.md`.
+
+## 2026-07-02 - 2026-07-02-simple-numeric-itn config override follow-up
+
+### Summary
+
+- Added command-line overrides for the numeric ITN App setting:
+  - `--numeric-itn`
+  - `--no-numeric-itn`
+- Extracted App command-line override application into `AppConfig.applyCommandLine(_:)` so the config path is directly testable without launching the App.
+- Added `LocalVoiceInputMacTests/AppConfigTests.swift` coverage for:
+  - missing JSON field keeps `numericITNEnabled=false`
+  - JSON can enable `numericITNEnabled`
+  - command-line flags can enable/disable the setting
+  - the last numeric ITN command-line override wins
+- Updated README configuration notes with the temporary launch flags.
+- Did not restart or modify the currently running App or ASR service; live behavior remains unchanged.
+
+### Files changed
+
+- `Sources/LocalVoiceInputMac/AppConfig.swift`
+- `Tests/LocalVoiceInputMacTests/AppConfigTests.swift`
+- `README.md`
+- `specs/2026-07-02-simple-numeric-itn/decisions.md`
+- `specs/progress.md`
+
+### Validation
+
+- Command: `swift test --filter AppConfigTests`
+  Result: pass
+  Notes: executed `4` App config tests with `0` failures.
+- Command: `swift test`
+  Result: pass
+  Notes: executed `70` tests with `0` failures after adding the App config tests.
+- Command: `bash -n scripts/run_numeric_itn_report.sh && bash -n scripts/status_localvoiceinput.sh && python3 -m py_compile eval/asr_streaming/numeric_itn_report.py eval/asr_streaming/analyze_numeric_format_results.py && python3 -m json.tool configs/config.example.json >/dev/null && python3 -m json.tool specs/feature_matrix.json >/dev/null`
+  Result: pass
+  Notes: changed scripts still parse, Python reporting scripts compile, and config/feature-matrix JSON is valid.
+- Command: `git diff --check`
+  Result: pass
+  Notes: no whitespace errors.
+- Command: `bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: read-only status check reported the App still running on PID `82406`, Qwen3 segmented service still running on PID `82353`, `/metadata` healthy on `http://127.0.0.1:18096`, and `numericITNEnabled: False (default)`.
+
+### Blockers / open questions
+
+- Full feature validation is still incomplete because manual App smoke with ITN enabled has not been run.
+- The feature remains `implemented` with `passes=false`.
+
+### Next recommended action
+
+- If App interruption is acceptable, relaunch the App with `--numeric-itn` for a final-output manual smoke, then repeat with `--no-numeric-itn` or default config to confirm disable behavior.
+
+## 2026-07-02 - 2026-07-02-simple-numeric-itn validation closeout
+
+### Summary
+
+- Rebuilt `dist/LocalVoiceInput.app` from the current source so the packaged app includes `NumericITN` and the new CLI overrides.
+- Restarted only the App; the existing Qwen3 segmented service on `http://127.0.0.1:18096` was left running.
+- Ran App-level final-output smoke checks through the packaged app, global hotkey path, mock ASR final events, and a normal TextEdit document:
+  - enabled ITN converts `版本是零点六B` to `版本是0.6B。`
+  - enabled ITN leaves `这件事一点也不难` as `这件事一点也不难。`
+  - disabled ITN leaves `版本是零点六B` as `版本是零点六B。`
+- Restored the pre-smoke App history file after the smoke checks so the controlled test entries do not remain in user history.
+- Relaunched the packaged App for actual use with local HTTP ASR and `--numeric-itn`.
+- Updated `scripts/status_localvoiceinput.sh` so process-level `--numeric-itn` / `--no-numeric-itn` overrides are visible alongside the config-file value.
+- Promoted the validated durable outcome into PMB without copying feature-level validation evidence.
+
+### Files changed
+
+- `scripts/status_localvoiceinput.sh`
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+- `project_memory_bank/core/current_focus.md`
+- `project_memory_bank/modules/core_logic/summary.md`
+- `project_memory_bank/modules/macos_app/summary.md`
+
+### Validation
+
+- Command: `bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: release build succeeded, rebuilt `dist/LocalVoiceInput.app`, and signed with `Apple Development: 290016537@qq.com (HVFY7KCG8C)`.
+- Command: `open /Users/xulelong/2025/projects/LocalVoiceInput/dist/LocalVoiceInput.app --args --mock-asr --mock-transcript '版本是零点六B' --numeric-itn`, then Right Option hotkey smoke into TextEdit
+  Result: pass
+  Notes: TextEdit received `版本是0.6B。`.
+- Command: `open /Users/xulelong/2025/projects/LocalVoiceInput/dist/LocalVoiceInput.app --args --mock-asr --mock-transcript '这件事一点也不难' --numeric-itn`, then Right Option hotkey smoke into TextEdit
+  Result: pass
+  Notes: TextEdit received `这件事一点也不难。`.
+- Command: `open /Users/xulelong/2025/projects/LocalVoiceInput/dist/LocalVoiceInput.app --args --mock-asr --mock-transcript '版本是零点六B' --no-numeric-itn`, then Right Option hotkey smoke into TextEdit
+  Result: pass
+  Notes: TextEdit received `版本是零点六B。`.
+- Command: `open /Users/xulelong/2025/projects/LocalVoiceInput/dist/LocalVoiceInput.app --args --local-http-asr --asr-http-url http://127.0.0.1:18096 --numeric-itn`
+  Result: pass
+  Notes: final running App PID `30770` uses local HTTP ASR and `--numeric-itn`; Qwen3 segmented service PID `82353` was not restarted.
+- Command: `bash -n scripts/status_localvoiceinput.sh && bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: status output reports `App numericITN override: enabled (--numeric-itn)`, App PID `30770`, service PID `82353`, and healthy `/metadata`.
+- Command: `swift test --filter AppConfigTests`
+  Result: pass
+  Notes: executed `4` App config tests with `0` failures after adding status-script override reporting.
+- Command: `python3 -m json.tool specs/feature_matrix.json >/dev/null && git diff --check`
+  Result: pass
+  Notes: feature matrix JSON is valid and no whitespace errors were detected.
+
+### Blockers / open questions
+
+- None for the first conservative final-output numeric ITN feature.
+- Broader numeric domains and partial/floating-panel ITN remain separate follow-up candidates.
+
+### Next recommended action
+
+- No further action is required for the first conservative final-output numeric ITN feature. Track broader numeric domains and partial/floating-panel ITN only through separate follow-up features.

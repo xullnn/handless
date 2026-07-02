@@ -331,7 +331,8 @@ final class AppController {
             hotwords: config.hotwords,
             homophones: config.homophones,
             removeFillers: true,
-            ensureTerminalPunctuation: true
+            ensureTerminalPunctuation: true,
+            numericITNEnabled: config.numericITNEnabled
         )).correct(fallbackText)
         stateMachine.send(.correctionFinished)
 

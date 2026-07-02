@@ -1,0 +1,61 @@
+{
+  "active_duration_seconds": 0.0,
+  "active_segment_index": 4,
+  "cache_bytes": 3993600,
+  "cache_dir": "eval/asr_streaming/results/simple-numeric-itn-segmented-base-20260702-1718/spool/long_code_switch_001-1",
+  "committed_segments": [
+    {
+      "audio_end_ms": 30048.0,
+      "audio_start_ms": 0.0,
+      "cache_path": "eval/asr_streaming/results/simple-numeric-itn-segmented-base-20260702-1718/spool/long_code_switch_001-1/segment_001.f32le",
+      "committed_offset_ms": 33865.664,
+      "compute_wall_ms": 586.202,
+      "duration_ms": 30048.0,
+      "final_text": "这是一段中英混合的长文本测试，用来观察模型对 technical terms 和 product names 的处理能力。我们会比较 performer 三杠 ASR 三杠 Nano、千问三杠 ASR 和 Memo 二点五杠 ASR，评测。Harness 会记录 first partial latency、final latency、CER、WER、real time fact。",
+      "index": 1,
+      "mode": "generate",
+      "sample_count": 480768
+    },
+    {
+      "audio_end_ms": 60096.0,
+      "audio_start_ms": 30048.0,
+      "cache_path": "eval/asr_streaming/results/simple-numeric-itn-segmented-base-20260702-1718/spool/long_code_switch_001-1/segment_002.f32le",
+      "committed_offset_ms": 67739.612,
+      "compute_wall_ms": 547.758,
+      "duration_ms": 30048.0,
+      "final_text": "Partial event count 和 final event count。真实产品里还会涉及 focus detector, paste engine, clipboard manager, transcript buffer, web socket client 和 AV audio engine。模型不仅要识别中文，还要准确保留 Swift package, local voice input, MacBook Pro, Chrome, cursor, Obsidian, Notion, Chat GPT。",
+      "index": 2,
+      "mode": "generate",
+      "sample_count": 480768
+    },
+    {
+      "audio_end_ms": 62400.0,
+      "audio_start_ms": 60096.0,
+      "cache_path": "eval/asr_streaming/results/simple-numeric-itn-segmented-base-20260702-1718/spool/long_code_switch_001-1/segment_003.f32le",
+      "committed_offset_ms": 70625.258,
+      "compute_wall_ms": 115.065,
+      "duration_ms": 2304.0,
+      "final_text": "这些词。",
+      "index": 3,
+      "mode": "generate",
+      "sample_count": 36864
+    }
+  ],
+  "final_text": "这是一段中英混合的长文本测试，用来观察模型对 technical terms 和 product names 的处理能力。我们会比较 performer 三杠 ASR 三杠 Nano、千问三杠 ASR 和 Memo 二点五杠 ASR，评测。Harness 会记录 first partial latency、final latency、CER、WER、real time fact。Partial event count 和 final event count。真实产品里还会涉及 focus detector, paste engine, clipboard manager, transcript buffer, web socket client 和 AV audio engine。模型不仅要识别中文，还要准确保留 Swift package, local voice input, MacBook Pro, Chrome, cursor, Obsidian, Notion, Chat GPT。这些词。",
+  "merge_strategy": "zero_overlap_concat",
+  "sample_format": "float32_le",
+  "sample_rate": 16000,
+  "schema_version": "1.0",
+  "segment_policy": {
+    "max_partials_per_segment": 8,
+    "max_segment_sec": 30.0,
+    "min_segment_sec": 5.0,
+    "partial_step_sec": 1.0,
+    "soft_text_chars": 150
+  },
+  "session_audio_path": "eval/asr_streaming/results/simple-numeric-itn-segmented-base-20260702-1718/spool/long_code_switch_001-1/session.f32le",
+  "session_id": "long_code_switch_001",
+  "session_token": 1,
+  "status": "finalized",
+  "updated_epoch_ms": 1782984188001
+}

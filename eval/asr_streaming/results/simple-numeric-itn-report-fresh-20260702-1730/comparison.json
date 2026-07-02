@@ -1,0 +1,1238 @@
+{
+  "case_count": 37,
+  "cases": [
+    {
+      "case_id": "numeric_datetime_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "是二零二六年五月三十日。",
+      "itn_forbidden": [
+        "二零二六"
+      ],
+      "itn_missing": [
+        "2026",
+        "6",
+        "30"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "是二零二六年五月三十日。",
+      "raw_forbidden": [
+        "二零二六"
+      ],
+      "raw_missing": [
+        "2026",
+        "6",
+        "30"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_datetime"
+    },
+    {
+      "case_id": "numeric_datetime_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "会议安排在下午三点半开始。",
+      "itn_forbidden": [
+        "三点半"
+      ],
+      "itn_missing": [
+        "3 点半"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "会议安排在下午三点半开始。",
+      "raw_forbidden": [
+        "三点半"
+      ],
+      "raw_missing": [
+        "3 点半"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_datetime"
+    },
+    {
+      "case_id": "numeric_datetime_003",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "请在七月一日上午十点十五提醒我。",
+      "itn_forbidden": [
+        "七月一日",
+        "十点十五"
+      ],
+      "itn_missing": [
+        "7 月 1 日",
+        "10 点 15"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "请在七月一日上午十点十五提醒我。",
+      "raw_forbidden": [
+        "七月一日",
+        "十点十五"
+      ],
+      "raw_missing": [
+        "7 月 1 日",
+        "10 点 15"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_datetime"
+    },
+    {
+      "case_id": "numeric_datetime_004",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "任务预计二十四小时内完成。",
+      "itn_forbidden": [
+        "二十四小时"
+      ],
+      "itn_missing": [
+        "24 小时"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "任务预计二十四小时内完成。",
+      "raw_forbidden": [
+        "二十四小时"
+      ],
+      "raw_missing": [
+        "24 小时"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_datetime"
+    },
+    {
+      "case_id": "numeric_decimal_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这个版本的实时因子是0.208。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "这个版本的实时因子是零点二零八。",
+      "raw_forbidden": [
+        "零点二零八"
+      ],
+      "raw_missing": [
+        "0.208"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_decimal"
+    },
+    {
+      "case_id": "numeric_decimal_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "模型大小大约是0.6B。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "模型大小大约是零点六B。",
+      "raw_forbidden": [],
+      "raw_missing": [
+        "0.6B"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_decimal"
+    },
+    {
+      "case_id": "numeric_digits_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "订单编号是123456。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "订单编号是一二三四五六。",
+      "raw_forbidden": [
+        "一二三四五六"
+      ],
+      "raw_missing": [
+        "123456"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_digits"
+    },
+    {
+      "case_id": "numeric_digits_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "验证码是806219。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "验证码是八零六二一九。",
+      "raw_forbidden": [
+        "八零六二一九"
+      ],
+      "raw_missing": [
+        "806219"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_digits"
+    },
+    {
+      "case_id": "numeric_digits_003",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "测试编号是00732。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "测试编号是零零七三二。",
+      "raw_forbidden": [
+        "零零七三二"
+      ],
+      "raw_missing": [
+        "00732"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_digits"
+    },
+    {
+      "case_id": "numeric_digits_004",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这批样本的编号从1001开始。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "这批样本的编号从一零零一开始。",
+      "raw_forbidden": [
+        "一零零一"
+      ],
+      "raw_missing": [
+        "1001"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_digits"
+    },
+    {
+      "case_id": "numeric_index_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "请查看第十二条测试结果。",
+      "itn_forbidden": [
+        "第十二条"
+      ],
+      "itn_missing": [
+        "第 12 条"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "请查看第十二条测试结果。",
+      "raw_forbidden": [
+        "第十二条"
+      ],
+      "raw_missing": [
+        "第 12 条"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_index"
+    },
+    {
+      "case_id": "numeric_index_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这个问题对应第三组测试。",
+      "itn_forbidden": [
+        "第三组"
+      ],
+      "itn_missing": [
+        "第 3 组"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "这个问题对应第三组测试。",
+      "raw_forbidden": [
+        "第三组"
+      ],
+      "raw_missing": [
+        "第 3 组"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_index"
+    },
+    {
+      "case_id": "numeric_index_003",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "我们先处理 case 03。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "我们先处理 case 零三。",
+      "raw_forbidden": [
+        "case 零三"
+      ],
+      "raw_missing": [
+        "case 03"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_index"
+    },
+    {
+      "case_id": "numeric_index_004",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这是一百二十秒长语音测试。",
+      "itn_forbidden": [
+        "一百二十秒"
+      ],
+      "itn_missing": [
+        "120 秒"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "这是一百二十秒长语音测试。",
+      "raw_forbidden": [
+        "一百二十秒"
+      ],
+      "raw_missing": [
+        "120 秒"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_index"
+    },
+    {
+      "case_id": "numeric_mixed_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "QN三ASR0.6B的实时因子是0.208。",
+      "itn_forbidden": [],
+      "itn_missing": [
+        "Qwen3-ASR"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "QN三ASR零点六B的实时因子是零点二零八。",
+      "raw_forbidden": [
+        "零点二零八"
+      ],
+      "raw_missing": [
+        "Qwen3-ASR",
+        "0.6B",
+        "0.208"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_mixed_tech"
+    },
+    {
+      "case_id": "numeric_mixed_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "Local voice input，现在使用十六 K音频输入。",
+      "itn_forbidden": [],
+      "itn_missing": [
+        "LocalVoiceInput",
+        "16KB"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "Local voice input，现在使用十六 K音频输入。",
+      "raw_forbidden": [],
+      "raw_missing": [
+        "LocalVoiceInput",
+        "16KB"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_mixed_tech"
+    },
+    {
+      "case_id": "numeric_mixed_003",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "MLX版本模型大小接近0.94GB。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "MLX版本模型大小接近零点九四GB。",
+      "raw_forbidden": [],
+      "raw_missing": [
+        "0.94GB"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_mixed_tech"
+    },
+    {
+      "case_id": "numeric_mixed_004",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "CER是0.0758，WER是0.2236。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "CER是零点零七五八，WER是零点二二三六。",
+      "raw_forbidden": [
+        "零点零七五八",
+        "零点二二三六"
+      ],
+      "raw_missing": [
+        "0.0758",
+        "0.2236"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_mixed_tech"
+    },
+    {
+      "case_id": "numeric_money_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这次采购预算是一千二百八十元。",
+      "itn_forbidden": [
+        "一千二百八十元"
+      ],
+      "itn_missing": [
+        "1280 元"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "这次采购预算是一千二百八十元。",
+      "raw_forbidden": [
+        "一千二百八十元"
+      ],
+      "raw_missing": [
+        "1280 元"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_money"
+    },
+    {
+      "case_id": "numeric_money_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这张发票金额是三千零五十六元。",
+      "itn_forbidden": [
+        "三千零五十六元"
+      ],
+      "itn_missing": [
+        "3056 元"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "这张发票金额是三千零五十六元。",
+      "raw_forbidden": [
+        "三千零五十六元"
+      ],
+      "raw_missing": [
+        "3056 元"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_money"
+    },
+    {
+      "case_id": "numeric_negative_001",
+      "format_focus": "false_positive_guard",
+      "itn_final_text": "我有一点问题需要确认。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "我有一点问题需要确认。",
+      "raw_forbidden": [],
+      "raw_missing": [],
+      "raw_passed": true,
+      "scenario": "numbers_negative"
+    },
+    {
+      "case_id": "numeric_negative_002",
+      "format_focus": "false_positive_guard",
+      "itn_final_text": "这件事一点也不难。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "这件事一点也不难。",
+      "raw_forbidden": [],
+      "raw_missing": [],
+      "raw_passed": true,
+      "scenario": "numbers_negative"
+    },
+    {
+      "case_id": "numeric_negative_003",
+      "format_focus": "false_positive_guard",
+      "itn_final_text": "我想说三点建议。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "我想说三点建议。",
+      "raw_forbidden": [],
+      "raw_missing": [],
+      "raw_passed": true,
+      "scenario": "numbers_negative"
+    },
+    {
+      "case_id": "numeric_negative_004",
+      "format_focus": "false_positive_guard",
+      "itn_final_text": "第一，我想说明测试目标。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "第一，我想说明测试目标。",
+      "raw_forbidden": [],
+      "raw_missing": [],
+      "raw_passed": true,
+      "scenario": "numbers_negative"
+    },
+    {
+      "case_id": "numeric_negative_005",
+      "format_focus": "false_positive_guard",
+      "itn_final_text": "这个方案有两点需要调整。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "这个方案有两点需要调整。",
+      "raw_forbidden": [],
+      "raw_missing": [],
+      "raw_passed": true,
+      "scenario": "numbers_negative"
+    },
+    {
+      "case_id": "numeric_negative_006",
+      "format_focus": "false_positive_guard",
+      "itn_final_text": "我刚才说错了一点内容。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "我刚才说错了一点内容。",
+      "raw_forbidden": [],
+      "raw_missing": [],
+      "raw_passed": true,
+      "scenario": "numbers_negative"
+    },
+    {
+      "case_id": "numeric_negative_007",
+      "format_focus": "false_positive_guard",
+      "itn_final_text": "这是一段普通的说明文字。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "这是一段普通的说明文字。",
+      "raw_forbidden": [],
+      "raw_missing": [],
+      "raw_passed": true,
+      "scenario": "numbers_negative"
+    },
+    {
+      "case_id": "numeric_negative_008",
+      "format_focus": "false_positive_guard",
+      "itn_final_text": "我现在开始进行数字格式测试。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "我现在开始进行数字格式测试。",
+      "raw_forbidden": [],
+      "raw_missing": [],
+      "raw_passed": true,
+      "scenario": "numbers_negative"
+    },
+    {
+      "case_id": "numeric_percent_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这次错误率下降了百分之三点五。",
+      "itn_forbidden": [
+        "百分之三点五"
+      ],
+      "itn_missing": [
+        "3.5%"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "这次错误率下降了百分之三点五。",
+      "raw_forbidden": [
+        "百分之三点五"
+      ],
+      "raw_missing": [
+        "3.5%"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_percent"
+    },
+    {
+      "case_id": "numeric_percent_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "准确率提升到百分之九十二点八。",
+      "itn_forbidden": [
+        "百分之九十二点八"
+      ],
+      "itn_missing": [
+        "92.8%"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "准确率提升到百分之九十二点八。",
+      "raw_forbidden": [
+        "百分之九十二点八"
+      ],
+      "raw_missing": [
+        "92.8%"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_percent"
+    },
+    {
+      "case_id": "numeric_unit_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这台电脑有48GB内存。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "这台电脑有四十八GB内存。",
+      "raw_forbidden": [],
+      "raw_missing": [
+        "48GB"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_unit"
+    },
+    {
+      "case_id": "numeric_unit_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "模型文件大约占用九百六十四 MB。",
+      "itn_forbidden": [
+        "九百六十四 MB"
+      ],
+      "itn_missing": [
+        "964MB"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "模型文件大约占用九百六十四 MB。",
+      "raw_forbidden": [
+        "九百六十四 MB"
+      ],
+      "raw_missing": [
+        "964MB"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_unit"
+    },
+    {
+      "case_id": "numeric_unit_003",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这个服务监听18105端口。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "这个服务监听一八一零五端口。",
+      "raw_forbidden": [
+        "一八一零五"
+      ],
+      "raw_missing": [
+        "18105"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_unit"
+    },
+    {
+      "case_id": "numeric_version_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "当前版本是1.2.3。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "当前版本是一点二点三。",
+      "raw_forbidden": [
+        "一点二点三"
+      ],
+      "raw_missing": [
+        "1.2.3"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_version"
+    },
+    {
+      "case_id": "numeric_version_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "我们测试的是天问三 ASR 0.6B。",
+      "itn_forbidden": [],
+      "itn_missing": [
+        "Qwen3-ASR"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "我们测试的是天问三 ASR 零点六 B。",
+      "raw_forbidden": [
+        "零点六 B"
+      ],
+      "raw_missing": [
+        "Qwen3-ASR",
+        "0.6B"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_version"
+    },
+    {
+      "case_id": "numeric_version_003",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "下一个候选模型是一.点7B版本。",
+      "itn_forbidden": [],
+      "itn_missing": [
+        "1.7B"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "下一个候选模型是一.点七B版本。",
+      "raw_forbidden": [],
+      "raw_missing": [
+        "1.7B"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_version"
+    },
+    {
+      "case_id": "numeric_version_004",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这个接口使用一六K单声道音频。",
+      "itn_forbidden": [],
+      "itn_missing": [
+        "16KB"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "这个接口使用一六K单声道音频。",
+      "raw_forbidden": [],
+      "raw_missing": [
+        "16KB"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_version"
+    }
+  ],
+  "delta_pass_rate": 0.32432432432432434,
+  "improved_cases": [
+    {
+      "case_id": "numeric_decimal_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这个版本的实时因子是0.208。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "这个版本的实时因子是零点二零八。",
+      "raw_forbidden": [
+        "零点二零八"
+      ],
+      "raw_missing": [
+        "0.208"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_decimal"
+    },
+    {
+      "case_id": "numeric_decimal_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "模型大小大约是0.6B。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "模型大小大约是零点六B。",
+      "raw_forbidden": [],
+      "raw_missing": [
+        "0.6B"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_decimal"
+    },
+    {
+      "case_id": "numeric_digits_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "订单编号是123456。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "订单编号是一二三四五六。",
+      "raw_forbidden": [
+        "一二三四五六"
+      ],
+      "raw_missing": [
+        "123456"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_digits"
+    },
+    {
+      "case_id": "numeric_digits_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "验证码是806219。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "验证码是八零六二一九。",
+      "raw_forbidden": [
+        "八零六二一九"
+      ],
+      "raw_missing": [
+        "806219"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_digits"
+    },
+    {
+      "case_id": "numeric_digits_003",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "测试编号是00732。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "测试编号是零零七三二。",
+      "raw_forbidden": [
+        "零零七三二"
+      ],
+      "raw_missing": [
+        "00732"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_digits"
+    },
+    {
+      "case_id": "numeric_digits_004",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这批样本的编号从1001开始。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "这批样本的编号从一零零一开始。",
+      "raw_forbidden": [
+        "一零零一"
+      ],
+      "raw_missing": [
+        "1001"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_digits"
+    },
+    {
+      "case_id": "numeric_index_003",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "我们先处理 case 03。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "我们先处理 case 零三。",
+      "raw_forbidden": [
+        "case 零三"
+      ],
+      "raw_missing": [
+        "case 03"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_index"
+    },
+    {
+      "case_id": "numeric_mixed_003",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "MLX版本模型大小接近0.94GB。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "MLX版本模型大小接近零点九四GB。",
+      "raw_forbidden": [],
+      "raw_missing": [
+        "0.94GB"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_mixed_tech"
+    },
+    {
+      "case_id": "numeric_mixed_004",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "CER是0.0758，WER是0.2236。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "CER是零点零七五八，WER是零点二二三六。",
+      "raw_forbidden": [
+        "零点零七五八",
+        "零点二二三六"
+      ],
+      "raw_missing": [
+        "0.0758",
+        "0.2236"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_mixed_tech"
+    },
+    {
+      "case_id": "numeric_unit_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这台电脑有48GB内存。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "这台电脑有四十八GB内存。",
+      "raw_forbidden": [],
+      "raw_missing": [
+        "48GB"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_unit"
+    },
+    {
+      "case_id": "numeric_unit_003",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这个服务监听18105端口。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "这个服务监听一八一零五端口。",
+      "raw_forbidden": [
+        "一八一零五"
+      ],
+      "raw_missing": [
+        "18105"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_unit"
+    },
+    {
+      "case_id": "numeric_version_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "当前版本是1.2.3。",
+      "itn_forbidden": [],
+      "itn_missing": [],
+      "itn_passed": true,
+      "raw_final_text": "当前版本是一点二点三。",
+      "raw_forbidden": [
+        "一点二点三"
+      ],
+      "raw_missing": [
+        "1.2.3"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_version"
+    }
+  ],
+  "improved_count": 12,
+  "itn_analysis": "eval/asr_streaming/results/simple-numeric-itn-report-fresh-20260702-1730/itn_numeric_format_analysis.json",
+  "itn_pass_rate": 0.5405405405405406,
+  "itn_passed_count": 20,
+  "notes": [
+    "Numeric-format pass rate is the primary ITN metric.",
+    "ASR CER/WER are intentionally not recomputed here because raw references are spoken-form Chinese and can make useful Arabic-digit output look worse."
+  ],
+  "purpose": "Compare numeric-format pass rate before and after local NumericITN, separate from ASR CER/WER.",
+  "raw_analysis": "eval/asr_streaming/results/simple-numeric-itn-report-fresh-20260702-1730/raw_numeric_format_analysis.json",
+  "raw_pass_rate": 0.21621621621621623,
+  "raw_passed_count": 8,
+  "schema_version": "1.0",
+  "unchanged_failed_cases": [
+    {
+      "case_id": "numeric_datetime_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "是二零二六年五月三十日。",
+      "itn_forbidden": [
+        "二零二六"
+      ],
+      "itn_missing": [
+        "2026",
+        "6",
+        "30"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "是二零二六年五月三十日。",
+      "raw_forbidden": [
+        "二零二六"
+      ],
+      "raw_missing": [
+        "2026",
+        "6",
+        "30"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_datetime"
+    },
+    {
+      "case_id": "numeric_datetime_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "会议安排在下午三点半开始。",
+      "itn_forbidden": [
+        "三点半"
+      ],
+      "itn_missing": [
+        "3 点半"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "会议安排在下午三点半开始。",
+      "raw_forbidden": [
+        "三点半"
+      ],
+      "raw_missing": [
+        "3 点半"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_datetime"
+    },
+    {
+      "case_id": "numeric_datetime_003",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "请在七月一日上午十点十五提醒我。",
+      "itn_forbidden": [
+        "七月一日",
+        "十点十五"
+      ],
+      "itn_missing": [
+        "7 月 1 日",
+        "10 点 15"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "请在七月一日上午十点十五提醒我。",
+      "raw_forbidden": [
+        "七月一日",
+        "十点十五"
+      ],
+      "raw_missing": [
+        "7 月 1 日",
+        "10 点 15"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_datetime"
+    },
+    {
+      "case_id": "numeric_datetime_004",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "任务预计二十四小时内完成。",
+      "itn_forbidden": [
+        "二十四小时"
+      ],
+      "itn_missing": [
+        "24 小时"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "任务预计二十四小时内完成。",
+      "raw_forbidden": [
+        "二十四小时"
+      ],
+      "raw_missing": [
+        "24 小时"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_datetime"
+    },
+    {
+      "case_id": "numeric_index_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "请查看第十二条测试结果。",
+      "itn_forbidden": [
+        "第十二条"
+      ],
+      "itn_missing": [
+        "第 12 条"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "请查看第十二条测试结果。",
+      "raw_forbidden": [
+        "第十二条"
+      ],
+      "raw_missing": [
+        "第 12 条"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_index"
+    },
+    {
+      "case_id": "numeric_index_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这个问题对应第三组测试。",
+      "itn_forbidden": [
+        "第三组"
+      ],
+      "itn_missing": [
+        "第 3 组"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "这个问题对应第三组测试。",
+      "raw_forbidden": [
+        "第三组"
+      ],
+      "raw_missing": [
+        "第 3 组"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_index"
+    },
+    {
+      "case_id": "numeric_index_004",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这是一百二十秒长语音测试。",
+      "itn_forbidden": [
+        "一百二十秒"
+      ],
+      "itn_missing": [
+        "120 秒"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "这是一百二十秒长语音测试。",
+      "raw_forbidden": [
+        "一百二十秒"
+      ],
+      "raw_missing": [
+        "120 秒"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_index"
+    },
+    {
+      "case_id": "numeric_mixed_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "QN三ASR0.6B的实时因子是0.208。",
+      "itn_forbidden": [],
+      "itn_missing": [
+        "Qwen3-ASR"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "QN三ASR零点六B的实时因子是零点二零八。",
+      "raw_forbidden": [
+        "零点二零八"
+      ],
+      "raw_missing": [
+        "Qwen3-ASR",
+        "0.6B",
+        "0.208"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_mixed_tech"
+    },
+    {
+      "case_id": "numeric_mixed_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "Local voice input，现在使用十六 K音频输入。",
+      "itn_forbidden": [],
+      "itn_missing": [
+        "LocalVoiceInput",
+        "16KB"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "Local voice input，现在使用十六 K音频输入。",
+      "raw_forbidden": [],
+      "raw_missing": [
+        "LocalVoiceInput",
+        "16KB"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_mixed_tech"
+    },
+    {
+      "case_id": "numeric_money_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这次采购预算是一千二百八十元。",
+      "itn_forbidden": [
+        "一千二百八十元"
+      ],
+      "itn_missing": [
+        "1280 元"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "这次采购预算是一千二百八十元。",
+      "raw_forbidden": [
+        "一千二百八十元"
+      ],
+      "raw_missing": [
+        "1280 元"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_money"
+    },
+    {
+      "case_id": "numeric_money_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这张发票金额是三千零五十六元。",
+      "itn_forbidden": [
+        "三千零五十六元"
+      ],
+      "itn_missing": [
+        "3056 元"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "这张发票金额是三千零五十六元。",
+      "raw_forbidden": [
+        "三千零五十六元"
+      ],
+      "raw_missing": [
+        "3056 元"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_money"
+    },
+    {
+      "case_id": "numeric_percent_001",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这次错误率下降了百分之三点五。",
+      "itn_forbidden": [
+        "百分之三点五"
+      ],
+      "itn_missing": [
+        "3.5%"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "这次错误率下降了百分之三点五。",
+      "raw_forbidden": [
+        "百分之三点五"
+      ],
+      "raw_missing": [
+        "3.5%"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_percent"
+    },
+    {
+      "case_id": "numeric_percent_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "准确率提升到百分之九十二点八。",
+      "itn_forbidden": [
+        "百分之九十二点八"
+      ],
+      "itn_missing": [
+        "92.8%"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "准确率提升到百分之九十二点八。",
+      "raw_forbidden": [
+        "百分之九十二点八"
+      ],
+      "raw_missing": [
+        "92.8%"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_percent"
+    },
+    {
+      "case_id": "numeric_unit_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "模型文件大约占用九百六十四 MB。",
+      "itn_forbidden": [
+        "九百六十四 MB"
+      ],
+      "itn_missing": [
+        "964MB"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "模型文件大约占用九百六十四 MB。",
+      "raw_forbidden": [
+        "九百六十四 MB"
+      ],
+      "raw_missing": [
+        "964MB"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_unit"
+    },
+    {
+      "case_id": "numeric_version_002",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "我们测试的是天问三 ASR 0.6B。",
+      "itn_forbidden": [],
+      "itn_missing": [
+        "Qwen3-ASR"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "我们测试的是天问三 ASR 零点六 B。",
+      "raw_forbidden": [
+        "零点六 B"
+      ],
+      "raw_missing": [
+        "Qwen3-ASR",
+        "0.6B"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_version"
+    },
+    {
+      "case_id": "numeric_version_003",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "下一个候选模型是一.点7B版本。",
+      "itn_forbidden": [],
+      "itn_missing": [
+        "1.7B"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "下一个候选模型是一.点七B版本。",
+      "raw_forbidden": [],
+      "raw_missing": [
+        "1.7B"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_version"
+    },
+    {
+      "case_id": "numeric_version_004",
+      "format_focus": "arabic_numeric_preference",
+      "itn_final_text": "这个接口使用一六K单声道音频。",
+      "itn_forbidden": [],
+      "itn_missing": [
+        "16KB"
+      ],
+      "itn_passed": false,
+      "raw_final_text": "这个接口使用一六K单声道音频。",
+      "raw_forbidden": [],
+      "raw_missing": [
+        "16KB"
+      ],
+      "raw_passed": false,
+      "scenario": "numbers_version"
+    }
+  ],
+  "unchanged_failed_count": 17,
+  "worsened_cases": [],
+  "worsened_count": 0
+}

@@ -15,7 +15,7 @@ This package contains the Swift Package source, macOS app implementation, FunASR
 
 ## Important limitation
 
-The app must be validated on a real Mac because the product relies on macOS Accessibility, Input Monitoring, Microphone, pasteboard, and global event-tap behavior. The current local build has been validated with full Xcode selected and the Swift test suite runs 57 unit tests.
+The app must be validated on a real Mac because the product relies on macOS Accessibility, Input Monitoring, Microphone, pasteboard, and global event-tap behavior. The current local build has been validated with full Xcode selected and the Swift test suite passes locally.
 
 ## Requirements
 
@@ -100,19 +100,21 @@ open dist/LocalVoiceInput.app
 
 The first FunASR setup downloads models. After the models are cached locally, the ASR runtime can be used offline. The server defaults to CPU and uses cached local model paths when present. Punctuation and speaker verification are disabled by default for smoke testing; enable them explicitly with `FUNASR_PUNC_MODEL` or `FUNASR_SV_MODEL` if needed.
 
-## Real app smoke with Qwen3-ASR MLX HTTP
+## Real app smoke with Qwen3-ASR MLX segmented HTTP
 
-Qwen3-ASR MLX is optional and not the default backend. The smoke runner starts the local HTTP service, waits for `/health`, then launches the Swift app with the local HTTP backend selected:
+Qwen3-ASR MLX is optional and not the default backend. The active Qwen3 route is the segmented-cache local HTTP service. The older cumulative-recompute route has been retired from active code and config because long dictation became progressively slower and numeric prompting was not reliable in daily use.
+
+The smoke runner starts the segmented local HTTP service, waits for `/health`, then launches the Swift app with the local HTTP backend selected:
 
 ```bash
 bash scripts/setup_qwen3_mlx_runtime.sh
-bash scripts/run_qwen3_mlx_app_smoke.sh
+bash scripts/run_qwen3_mlx_segmented_app_smoke.sh
 ```
 
 `setup_qwen3_mlx_runtime.sh` creates `.venv-mimo` by default. On this machine it prefers a project-local conda Python 3.12 runtime when the default `python3` is not in the previously validated 3.10-3.12 range. If your MLX Python environment is somewhere else, set `PYTHON_BIN` for the smoke runner:
 
 ```bash
-PYTHON_BIN=/path/to/python bash scripts/run_qwen3_mlx_app_smoke.sh
+PYTHON_BIN=/path/to/python bash scripts/run_qwen3_mlx_segmented_app_smoke.sh
 ```
 
 Manual smoke must verify Right Option, Option+Space, Esc cancel, focused-input paste, no-input clipboard draft, secure-field clipboard fallback, focus-change downgrade, the configured clipboard policy after confirmed paste, and that partial text appears only in the floating panel.
@@ -123,7 +125,7 @@ Quickly inspect the current local App and ASR service state:
 bash scripts/status_localvoiceinput.sh
 ```
 
-The status script does not start or stop anything. It reports the running App process, Qwen3 HTTP service process, config, local model paths, and `/status` or `/health` output. Use `STRICT=1` when a non-zero exit code is useful for automation.
+The status script does not start or stop anything. It reports the running App process, Qwen3 segmented service process, config, local model paths, and `/metadata` or `/health` output. Use `STRICT=1` when a non-zero exit code is useful for automation.
 
 ## Configuration
 
@@ -151,7 +153,7 @@ Important options:
 {
   "asrURL": "ws://127.0.0.1:10095",
   "asrBackend": "funasr-websocket",
-  "asrHTTPURL": "http://127.0.0.1:18105",
+  "asrHTTPURL": "http://127.0.0.1:18096",
   "mockASR": false,
   "hotwords": {
     "qwen三": "Qwen3",
@@ -169,8 +171,16 @@ Important options:
     "forcePasteWhenFocusLowConfidenceForBundleIds": []
   },
   "correctionMode": "clean",
+  "numericITNEnabled": false,
   "historyMaxItems": 20
 }
+```
+
+For temporary App launches, command-line flags can override only the numeric ITN setting without rewriting the config file:
+
+```bash
+swift run LocalVoiceInputMac --numeric-itn
+swift run LocalVoiceInputMac --no-numeric-itn
 ```
 
 ## Architecture
@@ -259,5 +269,5 @@ This reviewed build fixes several MVP-level issues found during a full implement
 1. Build and run mock mode on the target Mac.
 2. Validate focus and clipboard behavior using `eval/focus_cases.md`.
 3. Run FunASR locally and validate ASR quality using `eval/asr_cases.md`.
-4. Run the Qwen3-ASR MLX HTTP app smoke with `bash scripts/run_qwen3_mlx_app_smoke.sh`.
+4. Run the Qwen3-ASR MLX segmented HTTP app smoke with `bash scripts/run_qwen3_mlx_segmented_app_smoke.sh`.
 5. Define service supervision, resource thresholds, and code-switch technical-term correction before making Qwen3 a default backend.

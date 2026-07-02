@@ -12,19 +12,22 @@ public struct CorrectionConfig: Codable, Equatable, Sendable {
     public var homophones: [String: String]
     public var removeFillers: Bool
     public var ensureTerminalPunctuation: Bool
+    public var numericITNEnabled: Bool
 
     public init(
         mode: CorrectionMode = .clean,
         hotwords: [String: String] = [:],
         homophones: [String: String] = [:],
         removeFillers: Bool = true,
-        ensureTerminalPunctuation: Bool = true
+        ensureTerminalPunctuation: Bool = true,
+        numericITNEnabled: Bool = false
     ) {
         self.mode = mode
         self.hotwords = hotwords
         self.homophones = homophones
         self.removeFillers = removeFillers
         self.ensureTerminalPunctuation = ensureTerminalPunctuation
+        self.numericITNEnabled = numericITNEnabled
     }
 
     public static let `default` = CorrectionConfig()
@@ -71,6 +74,14 @@ public struct CorrectionPipeline: Sendable {
         if homophoneText != text {
             rules.append("homophones")
             text = homophoneText
+        }
+
+        if config.numericITNEnabled {
+            let numericResult = NumericITN().normalize(text)
+            if numericResult.normalized != text {
+                rules.append("numeric_itn")
+                text = numericResult.normalized
+            }
         }
 
         let punctuationNormalized = normalizePunctuation(text)

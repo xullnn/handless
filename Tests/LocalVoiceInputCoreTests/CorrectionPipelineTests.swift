@@ -29,6 +29,16 @@ final class CorrectionPipelineTests: XCTestCase {
         XCTAssertEqual(result.corrected, "嗯 我想说一下")
     }
 
+    func testNumericITNIsConfigurable() {
+        let disabled = CorrectionPipeline(config: CorrectionConfig(numericITNEnabled: false)).correct("版本是零点六B")
+        XCTAssertEqual(disabled.corrected, "版本是零点六B。")
+        XCTAssertFalse(disabled.appliedRules.contains("numeric_itn"))
+
+        let enabled = CorrectionPipeline(config: CorrectionConfig(numericITNEnabled: true)).correct("版本是零点六B")
+        XCTAssertEqual(enabled.corrected, "版本是0.6B。")
+        XCTAssertTrue(enabled.appliedRules.contains("numeric_itn"))
+    }
+
     func testWhitespaceAndPunctuationNormalization() {
         let result = CorrectionPipeline().correct(" 我想测试,  这个功能?? ")
         XCTAssertEqual(result.corrected, "我想测试，这个功能？")

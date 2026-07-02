@@ -10,7 +10,7 @@ Stable responsibilities:
 - Output mode routing based on focus, session type, policy, secure fields, and focus changes.
 - ASR event disposition so online partials update the floating panel and offline segments do not finalize until user stop.
 - Transcript merging with stale-session and late-partial protection.
-- Rule-based correction, hotword correction, homophone correction, and history reduction.
+- Rule-based correction, hotword correction, homophone correction, simple final-output numeric ITN, and history reduction.
 
 Tests live under `Tests/LocalVoiceInputCoreTests` and cover most pure logic contracts.
 

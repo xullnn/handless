@@ -17,12 +17,13 @@ struct AppConfig: Codable {
     var homophones: [String: String]
     var outputPolicy: OutputPolicy
     var correctionMode: CorrectionMode
+    var numericITNEnabled: Bool
     var historyMaxItems: Int
 
     static let `default` = AppConfig(
         asrURL: "ws://127.0.0.1:10095",
         asrBackend: .funASRWebSocket,
-        asrHTTPURL: "http://127.0.0.1:18105",
+        asrHTTPURL: "http://127.0.0.1:18096",
         mockASR: false,
         mockTranscript: "这是一次本地语音输入测试，松开快捷键以后会自动粘贴或者复制到剪切板。",
         hotwords: [
@@ -34,6 +35,7 @@ struct AppConfig: Codable {
         homophones: [:],
         outputPolicy: .default,
         correctionMode: .clean,
+        numericITNEnabled: false,
         historyMaxItems: 20
     )
 
@@ -47,6 +49,7 @@ struct AppConfig: Codable {
         homophones: [String: String],
         outputPolicy: OutputPolicy,
         correctionMode: CorrectionMode,
+        numericITNEnabled: Bool,
         historyMaxItems: Int
     ) {
         self.asrURL = asrURL
@@ -58,6 +61,7 @@ struct AppConfig: Codable {
         self.homophones = homophones
         self.outputPolicy = outputPolicy
         self.correctionMode = correctionMode
+        self.numericITNEnabled = numericITNEnabled
         self.historyMaxItems = historyMaxItems
     }
 
@@ -71,6 +75,7 @@ struct AppConfig: Codable {
         case homophones
         case outputPolicy
         case correctionMode
+        case numericITNEnabled
         case historyMaxItems
     }
 
@@ -86,6 +91,7 @@ struct AppConfig: Codable {
         homophones = try values.decodeIfPresent([String: String].self, forKey: .homophones) ?? defaults.homophones
         outputPolicy = try values.decodeIfPresent(OutputPolicy.self, forKey: .outputPolicy) ?? defaults.outputPolicy
         correctionMode = try values.decodeIfPresent(CorrectionMode.self, forKey: .correctionMode) ?? defaults.correctionMode
+        numericITNEnabled = try values.decodeIfPresent(Bool.self, forKey: .numericITNEnabled) ?? defaults.numericITNEnabled
         historyMaxItems = try values.decodeIfPresent(Int.self, forKey: .historyMaxItems) ?? defaults.historyMaxItems
     }
 
@@ -95,28 +101,41 @@ struct AppConfig: Codable {
         if let data = try? Data(contentsOf: url), let decoded = try? JSONDecoder().decode(AppConfig.self, from: data) {
             config = decoded
         }
+        config.applyCommandLine(commandLine)
+        return config
+    }
+
+    mutating func applyCommandLine(_ commandLine: [String]) {
         if commandLine.contains("--mock-asr") {
-            config.mockASR = true
+            mockASR = true
         }
         if let idx = commandLine.firstIndex(of: "--asr-url"), commandLine.indices.contains(commandLine.index(after: idx)) {
-            config.asrURL = commandLine[commandLine.index(after: idx)]
+            asrURL = commandLine[commandLine.index(after: idx)]
         }
         if let idx = commandLine.firstIndex(of: "--asr-http-url"), commandLine.indices.contains(commandLine.index(after: idx)) {
-            config.asrHTTPURL = commandLine[commandLine.index(after: idx)]
+            asrHTTPURL = commandLine[commandLine.index(after: idx)]
         }
         if let idx = commandLine.firstIndex(of: "--asr-backend"), commandLine.indices.contains(commandLine.index(after: idx)) {
             let raw = commandLine[commandLine.index(after: idx)]
             if let backend = ASRBackend(rawValue: raw) {
-                config.asrBackend = backend
+                asrBackend = backend
             }
         }
         if commandLine.contains("--local-http-asr") {
-            config.asrBackend = .localHTTP
+            asrBackend = .localHTTP
         }
         if let idx = commandLine.firstIndex(of: "--mock-transcript"), commandLine.indices.contains(commandLine.index(after: idx)) {
-            config.mockTranscript = commandLine[commandLine.index(after: idx)]
+            mockTranscript = commandLine[commandLine.index(after: idx)]
         }
-        return config
+        if let enableIndex = commandLine.lastIndex(of: "--numeric-itn") {
+            if let disableIndex = commandLine.lastIndex(of: "--no-numeric-itn") {
+                numericITNEnabled = enableIndex > disableIndex
+            } else {
+                numericITNEnabled = true
+            }
+        } else if commandLine.contains("--no-numeric-itn") {
+            numericITNEnabled = false
+        }
     }
 }
 
