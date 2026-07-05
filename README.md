@@ -8,7 +8,7 @@ LocalVoiceInput is a local-first macOS voice input assistant designed around the
 - If no input field is focused, the final text is copied to the clipboard.
 - If paste is unsafe or fails, the final text remains on the clipboard.
 - Auto-paste keeps the dictated text as the newest clipboard item by default; restoring the previous clipboard is an optional policy.
-- `Option + Space` starts/stops long draft mode.
+- `Right Command + .` starts/stops long draft mode.
 - `Esc` cancels the current session.
 
 This package contains the Swift Package source, macOS app implementation, FunASR WebSocket integration, optional localhost HTTP ASR integration, mock ASR mode, correction pipeline, history store, and unit tests.
@@ -117,7 +117,7 @@ bash scripts/run_qwen3_mlx_segmented_app_smoke.sh
 PYTHON_BIN=/path/to/python bash scripts/run_qwen3_mlx_segmented_app_smoke.sh
 ```
 
-Manual smoke must verify Right Option, Option+Space, Esc cancel, focused-input paste, no-input clipboard draft, secure-field clipboard fallback, focus-change downgrade, the configured clipboard policy after confirmed paste, and that partial text appears only in the floating panel.
+Manual smoke must verify Right Option, Right Command + ., immediate re-record/replacement, Esc cancel, focused-input paste, no-input clipboard draft, secure-field clipboard fallback, focus-change downgrade, the configured clipboard policy after confirmed paste, and that partial text appears only in the floating panel.
 
 Quickly inspect the current local App and ASR service state:
 
@@ -247,7 +247,7 @@ eval/asr_cases.md
 ## Known MVP limitations
 
 - It is not yet an InputMethodKit input method, so realtime partial text appears in the floating panel, not directly inside the target input field.
-- Right Option detection uses a global event tap. Some keyboard layouts, remapped keys, or permission states may require changing the shortcut implementation.
+- Right Option and Right Command + . detection use a global event tap. Some keyboard layouts, remapped keys, app-level shortcut conflicts, or permission states may require changing the shortcut implementation.
 - Paste success detection is intentionally conservative. By default the app keeps the dictated text on the clipboard even after verified paste. If clipboard restoration is enabled, the app restores the previous clipboard only when Accessibility verification can confirm that the target text changed; otherwise it keeps the dictated text to avoid losing content.
 - The correction layer is rule-based in this MVP. A local LLM refiner can be added behind `CorrectionPipeline` later.
 - The FunASR runtime is local, but first setup still needs to download Python packages and model files. Keep the server running in a user terminal or a LaunchAgent for manual app testing.
@@ -261,7 +261,7 @@ This reviewed build fixes several MVP-level issues found during a full implement
 - Clipboard handling is safer: dictated text remains available for manual `⌘V` by default, and optional previous-clipboard restoration only happens after paste verification.
 - Clipboard snapshots now preserve multiple pasteboard items instead of flattening all types into one item.
 - Stale ASR events from old sessions are ignored.
-- Right Option push-to-talk is debounced so `Option + Space` can be used for long draft mode without accidentally starting a push-to-talk session.
+- Short and long input shortcuts are separated: hold Right Option for short push-to-talk, and press Right Command + . to start or stop long draft mode.
 - ASR/runtime errors attempt to salvage the latest partial transcript into clipboard fallback mode instead of leaving the app stuck in an active session.
 
 ## Suggested next steps

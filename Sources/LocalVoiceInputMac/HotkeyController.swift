@@ -6,18 +6,15 @@ import LocalVoiceInputCore
 final class HotkeyController {
     var onPushToTalkStart: (() -> Void)?
     var onPushToTalkStop: (() -> Void)?
-    var onToggleLongDraft: (() -> Void)?
-    var onConvertPushToTalkToLongDraft: (() -> Void)?
+    var onLongDraftStart: (() -> Void)?
+    var onLongDraftStop: (() -> Void)?
     var onCancel: (() -> Void)?
     var onError: ((String) -> Void)?
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
-    private var stateMachine = HotkeyStateMachine()
+    private var interpreter = HotkeyEventInterpreter()
     private var appSessionActive = false
-    private var appSessionType: SessionType?
-    private var pendingPushToTalk: DispatchWorkItem?
-    private let pushToTalkDebounce: TimeInterval = 0.14
 
     func start() {
         guard PermissionManager.accessibilityTrusted else {
@@ -56,7 +53,7 @@ final class HotkeyController {
     }
 
     func stop() {
-        let wasPushToTalk = stateMachine.mode == .pushToTalk
+        let wasPushToTalk = interpreter.mode == .pushToTalk
         resetSessionTracking()
         if wasPushToTalk { onPushToTalkStop?() }
         if let runLoopSource {
@@ -71,10 +68,7 @@ final class HotkeyController {
 
     func noteSessionStarted(type: SessionType) {
         appSessionActive = true
-        appSessionType = type
-        if type == .longDraft {
-            stateMachine = HotkeyStateMachine(mode: .longDraft, isRightOptionDown: stateMachine.isRightOptionDown)
-        }
+        interpreter.noteSessionStarted(type: type)
     }
 
     func noteSessionEnded() {
@@ -97,88 +91,39 @@ final class HotkeyController {
 
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
 
-        if type == .flagsChanged, keyCode == 61 { // right Option on Apple keyboards
-            let optionDown = event.flags.contains(.maskAlternate)
-            let actions = stateMachine.send(optionDown ? .rightOptionDown : .rightOptionUp)
-            perform(actions)
-            return nil
-        }
-
-        if type == .keyDown {
-            let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
-            if keyCode == 49 && event.flags.contains(.maskAlternate) { // Option + Space
-                if !isRepeat {
-                    if appSessionActive && appSessionType == .longDraft {
-                        stateMachine = HotkeyStateMachine()
-                        onToggleLongDraft?()
-                        return nil
-                    }
-                    if appSessionActive && appSessionType == .pushToTalk {
-                        stateMachine = HotkeyStateMachine(mode: .longDraft, isRightOptionDown: true)
-                        onConvertPushToTalkToLongDraft?()
-                        return nil
-                    }
-                    if appSessionActive {
-                        return nil
-                    }
-                    perform(stateMachine.send(.optionSpace))
-                }
-                return nil
-            }
-            if keyCode == 49 && appSessionActive && appSessionType == .longDraft { // Space stops long draft mode.
-                if !isRepeat {
-                    let actions = stateMachine.send(.space)
-                    if !actions.isEmpty {
-                        perform(actions)
-                    }
-                }
-                return nil
-            }
-            if keyCode == 53 { // Esc
-                if !isRepeat {
-                    let actions = stateMachine.send(.escape)
-                    if !actions.isEmpty {
-                        perform(actions)
-                        return nil
-                    }
-                    if appSessionActive {
-                        onCancel?()
-                        return nil
-                    }
-                }
-                return Unmanaged.passUnretained(event)
-            }
-        }
-
-        return Unmanaged.passUnretained(event)
+        let physicalEvent = HotkeyPhysicalEvent(
+            type: physicalEventType(from: type),
+            keyCode: keyCode,
+            flags: event.flags,
+            isRepeat: event.getIntegerValueField(.keyboardEventAutorepeat) != 0
+        )
+        let interpretation = interpreter.handle(physicalEvent, appSessionActive: appSessionActive)
+        perform(interpretation.actions)
+        return interpretation.consumesEvent ? nil : Unmanaged.passUnretained(event)
     }
 
-    private func armPushToTalkAfterDebounce() {
-        pendingPushToTalk?.cancel()
-        let item = DispatchWorkItem { [weak self] in
-            guard let self else { return }
-            self.perform(self.stateMachine.send(.pushToTalkDebounceFired))
+    private func physicalEventType(from type: CGEventType) -> HotkeyPhysicalEventType {
+        switch type {
+        case .flagsChanged:
+            return .flagsChanged
+        case .keyDown:
+            return .keyDown
+        default:
+            return .other
         }
-        pendingPushToTalk = item
-        DispatchQueue.main.asyncAfter(deadline: .now() + pushToTalkDebounce, execute: item)
     }
 
     private func perform(_ actions: [HotkeyAction]) {
         for action in actions {
             switch action {
-            case .armPushToTalk:
-                armPushToTalkAfterDebounce()
-            case .cancelPendingPushToTalk:
-                pendingPushToTalk?.cancel()
-                pendingPushToTalk = nil
             case .startPushToTalk:
                 onPushToTalkStart?()
             case .stopPushToTalk:
                 onPushToTalkStop?()
-            case .toggleLongDraft:
-                onToggleLongDraft?()
-            case .convertPushToTalkToLongDraft:
-                onConvertPushToTalkToLongDraft?()
+            case .startLongDraft:
+                onLongDraftStart?()
+            case .stopLongDraft:
+                onLongDraftStop?()
             case .cancelActiveSession:
                 onCancel?()
             case .consumeEvent:
@@ -188,11 +133,8 @@ final class HotkeyController {
     }
 
     private func resetSessionTracking() {
-        pendingPushToTalk?.cancel()
-        pendingPushToTalk = nil
-        _ = stateMachine.send(.externalSessionEnded)
+        interpreter.resetSessionTracking()
         appSessionActive = false
-        appSessionType = nil
     }
 }
 #endif

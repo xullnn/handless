@@ -14,8 +14,8 @@ Stable responsibilities:
 
 Current paste behavior:
 
-- `KeyboardSimulator` posts a clean Right Option key-up before Cmd+V, then posts Cmd+V to the detected target process when available.
-- `PasteEngine` verifies insertion using AX text/value/count/range evidence and polls briefly after paste.
+- `KeyboardSimulator` posts clean Right Option and Right Command key-up events before Cmd+V, then posts Cmd+V to the detected target process when available.
+- `PasteEngine` verifies insertion asynchronously using AX text/value/count/range evidence so paste confirmation does not block the main event loop or hotkey handling during immediate re-record.
 - `PasteRoutePlanner` decides whether a confirmed paste should keep the result or restore the previous clipboard from `OutputPolicy.restoreClipboardAfterPaste`.
 
 Go Deeper:

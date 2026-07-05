@@ -8,6 +8,24 @@ protocol KeyboardSimulating: AnyObject {
 }
 
 final class KeyboardSimulator: KeyboardSimulating {
+    struct KeyEventPlanStep: Equatable {
+        var keyCode: CGKeyCode
+        var keyDown: Bool
+        var flags: CGEventFlags
+        var pauseAfter: Bool
+    }
+
+    static func commandVPastePlan() -> [KeyEventPlanStep] {
+        [
+            KeyEventPlanStep(keyCode: 61, keyDown: false, flags: [], pauseAfter: false), // Right Option
+            KeyEventPlanStep(keyCode: 54, keyDown: false, flags: [], pauseAfter: true), // Right Command
+            KeyEventPlanStep(keyCode: 55, keyDown: true, flags: .maskCommand, pauseAfter: true), // Command
+            KeyEventPlanStep(keyCode: 9, keyDown: true, flags: .maskCommand, pauseAfter: true), // V
+            KeyEventPlanStep(keyCode: 9, keyDown: false, flags: .maskCommand, pauseAfter: true),
+            KeyEventPlanStep(keyCode: 55, keyDown: false, flags: [], pauseAfter: false)
+        ]
+    }
+
     func pressCommandV() {
         pressCommandV(targetPid: nil)
     }
@@ -16,18 +34,15 @@ final class KeyboardSimulator: KeyboardSimulating {
         guard let source = CGEventSource(stateID: .hidSystemState) else { return }
         source.localEventsSuppressionInterval = 0
 
-        // The trigger key is Right Option. Because the event tap consumes that
-        // flagsChanged event, explicitly publish a key-up before synthesizing
-        // Cmd+V so the target app does not receive Command-Option-V.
-        postKey(keyCode: 61, keyDown: false, flags: [], source: source, targetPid: targetPid) // Right Option
-        shortDelay()
-        postKey(keyCode: 55, keyDown: true, flags: .maskCommand, source: source, targetPid: targetPid) // Command
-        shortDelay()
-        postKey(keyCode: 9, keyDown: true, flags: .maskCommand, source: source, targetPid: targetPid) // V
-        shortDelay()
-        postKey(keyCode: 9, keyDown: false, flags: .maskCommand, source: source, targetPid: targetPid)
-        shortDelay()
-        postKey(keyCode: 55, keyDown: false, flags: [], source: source, targetPid: targetPid)
+        // Trigger keys can leave right-side modifiers physically down while the
+        // event tap consumes the shortcut. Publish clean key-up events before
+        // Cmd+V so the target app receives only the intended paste shortcut.
+        for step in Self.commandVPastePlan() {
+            postKey(keyCode: step.keyCode, keyDown: step.keyDown, flags: step.flags, source: source, targetPid: targetPid)
+            if step.pauseAfter {
+                shortDelay()
+            }
+        }
     }
 
     func pressReturn() {

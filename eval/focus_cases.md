@@ -16,9 +16,12 @@ Run these on macOS after launching LocalVoiceInput. Test both `--mock-asr` and r
 | 10 | Password field focused | Clipboard Draft Mode | Never auto-paste. |
 | 11 | Start in input field, switch app while recording | Clipboard Draft Mode | Downgrade to copy. |
 | 12 | Accessibility/Input Monitoring permission missing | Fallback behavior | Hotkey may fail with permission message; menu mock test should still show copy behavior. |
-| 13 | Long draft mode via Option+Space | Floating Draft Mode | Copy + save history. |
+| 13 | Long draft mode via Right Command + . | Floating Draft Mode | Copy + save history. |
 | 14 | Press Esc while recording | Cancelled | No copy, no paste. |
 | 15 | Paste target rejects Cmd+V | Fallback Copy Mode | Result remains on clipboard. |
 | 16 | Original clipboard contains multiple copied items/files | Cursor Mode | After confirmed paste, original clipboard should restore item grouping. |
 | 17 | FunASR emits offline segment while still holding shortcut | Recording continues | Do not paste/copy until shortcut is released. |
 | 18 | ASR connection fails after partial text | Fallback Copy Mode | Latest partial text is copied instead of leaving session stuck. |
+| 19 | Re-press Right Option while previous short input is finalizing | New Push-to-Talk Session | Previous unfinished session is abandoned; new recording starts immediately. |
+| 20 | Press Right Command + . while previous input is finalizing | New Long Draft Session | Previous unfinished session is abandoned; long draft starts immediately. |
+| 21 | Press Right Option while long draft is recording | New Push-to-Talk Session | Long draft is abandoned; short recording starts immediately and stops on Right Option release. |

@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-07-05-input-session-replacement-hotkeys",
+  "title": "Input session replacement hotkeys",
+  "kind": "feature",
+  "parent_id": null,
+  "created_from": "user_requested_daily_use_hotkey_ux_hardening",
+  "created_at": "2026-07-05",
+  "updated_at": "2026-07-05",
+  "follow_ups": [
+    {
+      "id": "FUP-001",
+      "title": "Configurable input hotkeys",
+      "kind": "feature",
+      "reason": "Right Command plus period is a better fixed default than Option plus Space, but productized distribution should allow users to resolve keyboard-layout or app-level shortcut conflicts.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    },
+    {
+      "id": "FUP-002",
+      "title": "Asynchronous paste verification",
+      "kind": "refactor",
+      "reason": "Manual physical-key testing showed that the previous synchronous paste verification could block the main event loop during the exact final-panel re-record window. This work was pulled into the current feature to keep Right Option replacement responsive while the prior output is still being verified.",
+      "source": "manual_smoke_bugfix",
+      "status": "implemented",
+      "suggested_next_step": "validate_in_current_feature",
+      "target_feature_id": null
+    },
+    {
+      "id": "FUP-003",
+      "title": "Dependency-injected AppController integration tests",
+      "kind": "test_hardening",
+      "reason": "The replacement feature now has automated coverage for the extracted audio session gate, hotkey event interpreter, paste event plan, and listening indicator. Full AppController replacement tests still require injectable audio, ASR, panel, paste, and history collaborators instead of the current concrete macOS-owned dependencies.",
+      "source": "test_hardening",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    }
+  ]
+}

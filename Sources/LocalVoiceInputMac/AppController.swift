@@ -10,6 +10,7 @@ final class AppController {
     private let focusDetector = FocusDetector()
     private let hotkeys = HotkeyController()
     private let audio = AudioCapture()
+    private let audioSessionGate = AudioSessionGate()
     private let clipboard = ClipboardManager()
     private let keyboard = KeyboardSimulator()
     private lazy var pasteEngine = PasteEngine(clipboard: clipboard, keyboard: keyboard, policy: config.outputPolicy)
@@ -30,6 +31,7 @@ final class AppController {
     private var focusMonitorTimer: Timer?
     private var activeASRClientId: ObjectIdentifier?
     private var activeSessionAudioMs = 0.0
+    private let minimumRoutableRealAudioMs = 1100.0
 
     init(config: AppConfig) {
         self.config = config
@@ -81,24 +83,27 @@ final class AppController {
             NSApplication.shared.terminate(nil)
         }
 
-        hotkeys.onPushToTalkStart = { [weak self] in self?.beginSession(type: .pushToTalk, forceMock: false) }
+        hotkeys.onPushToTalkStart = { [weak self] in self?.beginSession(type: .pushToTalk, forceMock: false, replacingExisting: true) }
         hotkeys.onPushToTalkStop = { [weak self] in self?.finishSession() }
-        hotkeys.onToggleLongDraft = { [weak self] in self?.toggleLongDraft() }
-        hotkeys.onConvertPushToTalkToLongDraft = { [weak self] in self?.convertActivePushToTalkToLongDraft() }
+        hotkeys.onLongDraftStart = { [weak self] in self?.beginSession(type: .longDraft, forceMock: false, replacingExisting: true) }
+        hotkeys.onLongDraftStop = { [weak self] in self?.finishSession() }
         hotkeys.onCancel = { [weak self] in self?.cancelSession() }
         hotkeys.onError = { [weak self] message in self?.panel.updateError(message) }
 
-        audio.onPCMChunk = { [weak self] data in
-            DispatchQueue.main.async { self?.sendPCMToActiveASR(data) }
+        audio.onPCMChunk = { [weak self] token, data in
+            DispatchQueue.main.async { self?.sendPCMToActiveASR(data, audioSessionToken: token) }
         }
         audio.onError = { [weak self] error in
             DispatchQueue.main.async { self?.handleError(error) }
         }
     }
 
-    private func beginSession(type: SessionType, forceMock: Bool) {
+    private func beginSession(type: SessionType, forceMock: Bool, replacingExisting: Bool = false) {
         DispatchQueue.main.async {
-            guard self.activeSessionId == nil else { return }
+            if self.activeSessionId != nil {
+                guard replacingExisting else { return }
+                self.abandonActiveSessionForReplacement()
+            }
             self.stateMachine = VoiceSessionStateMachine()
             self.stateMachine.send(.hotkeyDown)
             self.activeSessionType = type
@@ -109,6 +114,7 @@ final class AppController {
             self.activeSessionAudioMs = 0
             self.initialFocus = self.focusDetector.snapshot()
             self.focusTracker = FocusChangeTracker(initial: self.initialFocus)
+            let audioSessionToken = self.audioSessionGate.begin()
             self.activeOutputMode = OutputModeRouter.decide(
                 snapshot: self.initialFocus,
                 sessionType: type,
@@ -121,15 +127,33 @@ final class AppController {
             self.transcript = TranscriptBuffer(sessionId: sessionId)
             self.stateMachine.send(.focusChecked)
             self.hotkeys.noteSessionStarted(type: type)
-            self.panel.show(mode: self.activeOutputMode)
+            self.panel.showListening(mode: self.activeOutputMode)
             self.menu.setStatus("🔴")
             self.startFocusMonitoring(sessionId: sessionId)
             self.startASR(sessionId: sessionId, forceMock: forceMock)
             guard self.activeSessionId == sessionId else { return }
             if !(self.config.mockASR || forceMock) {
-                self.audio.start()
+                self.audio.start(sessionToken: audioSessionToken)
             }
         }
+    }
+
+    private func abandonActiveSessionForReplacement() {
+        stateMachine.send(.cancel)
+        audioSessionGate.end()
+        audio.cancel()
+        activeASR?.cancel()
+        activeASR = nil
+        activeASRClientId = nil
+        activeSessionId = nil
+        transcript = nil
+        didFinalize = false
+        userRequestedFinish = false
+        forceMockForCurrentSession = false
+        activeSessionAudioMs = 0
+        focusTracker = nil
+        stopFocusMonitoring()
+        menu.setStatus("🎙")
     }
 
     private func startASR(sessionId: String, forceMock: Bool) {
@@ -176,11 +200,11 @@ final class AppController {
                 return
             }
 
-            self.audio.stopAndFlush { [weak self, sessionId] remainingChunks in
+            self.audio.stopAndFlush { [weak self, sessionId] audioSessionToken, remainingChunks in
                 guard let self else { return }
                 guard self.activeSessionId == sessionId, self.userRequestedFinish else { return }
                 for chunk in remainingChunks {
-                    self.sendPCMToActiveASR(chunk)
+                    self.sendPCMToActiveASR(chunk, audioSessionToken: audioSessionToken)
                 }
                 self.activeASR?.finish()
                 self.scheduleFinalizeTimeout(seconds: self.finalizeTimeoutSeconds(), sessionId: sessionId)
@@ -198,6 +222,7 @@ final class AppController {
         DispatchQueue.main.async {
             guard self.activeSessionId != nil else { return }
             self.stateMachine.send(.cancel)
+            self.audioSessionGate.end()
             self.audio.cancel()
             self.activeASR?.cancel()
             self.activeASR = nil
@@ -213,30 +238,6 @@ final class AppController {
             self.hotkeys.noteSessionEnded()
             self.menu.setStatus("🎙")
             self.panel.updateDone(status: .cancelled, text: "", restoredClipboard: false)
-        }
-    }
-
-    private func toggleLongDraft() {
-        if activeSessionId == nil {
-            beginSession(type: .longDraft, forceMock: false)
-        } else if activeSessionType == .longDraft {
-            finishSession()
-        }
-    }
-
-    private func convertActivePushToTalkToLongDraft() {
-        DispatchQueue.main.async {
-            guard self.activeSessionId != nil, self.activeSessionType == .pushToTalk else { return }
-            self.activeSessionType = .longDraft
-            self.activeOutputMode = OutputModeRouter.decide(
-                snapshot: self.initialFocus,
-                sessionType: .longDraft,
-                focusChangedDuringRecording: self.focusTracker?.didChange ?? false,
-                policy: self.config.outputPolicy
-            )
-            self.hotkeys.noteSessionStarted(type: .longDraft)
-            self.panel.show(mode: self.activeOutputMode)
-            self.panel.updateDiagnostics(self.focusDiagnostic(self.initialFocus, mode: self.activeOutputMode, changed: self.focusTracker?.didChange ?? false))
         }
     }
 
@@ -315,11 +316,18 @@ final class AppController {
         activeASR?.cancel()
         activeASR = nil
         activeASRClientId = nil
+        audioSessionGate.end()
         audio.cancel()
         stopFocusMonitoring()
 
         let raw = transcript?.finalText.isEmpty == false ? transcript!.finalText : (transcript?.latestText ?? "")
         let fallbackText = raw.isEmpty && (config.mockASR || forceMockForCurrentSession) ? config.mockTranscript : raw
+        if !(config.mockASR || forceMockForCurrentSession),
+           activeSessionAudioMs < minimumRoutableRealAudioMs {
+            panel.updateError("录音太短，没有输出。请按住 Right Option 说完后再松开。")
+            cleanupSession(resetLastText: false)
+            return
+        }
         guard !fallbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             panel.updateError("没有识别到文本。")
             cleanupSession(resetLastText: false)
@@ -338,10 +346,32 @@ final class AppController {
 
         let finalText = correction.corrected
         lastFinalText = finalText
-        let output = pasteEngine.route(text: finalText, mode: activeOutputMode)
+        let outputMode = activeOutputMode
+        let appliedRules = correction.appliedRules
+        pasteEngine.routeAsync(text: finalText, mode: outputMode) { [weak self, currentSessionId, finalText, appliedRules] output in
+            DispatchQueue.main.async {
+                self?.completeFinalOutput(
+                    output: output,
+                    finalText: finalText,
+                    outputMode: outputMode,
+                    correctionRules: appliedRules,
+                    expectedSessionId: currentSessionId
+                )
+            }
+        }
+    }
+
+    private func completeFinalOutput(
+        output: OutputResult,
+        finalText: String,
+        outputMode: OutputMode,
+        correctionRules: [String],
+        expectedSessionId: String
+    ) {
+        guard activeSessionId == expectedSessionId, didFinalize else { return }
         panel.updateDiagnostics(outputDiagnostic(output))
         stateMachine.send(.outputRouted)
-        history.append(text: finalText, outputMode: activeOutputMode, correctionRules: correction.appliedRules)
+        history.append(text: finalText, outputMode: outputMode, correctionRules: correctionRules)
         panel.updateDone(status: output.status, text: finalText, restoredClipboard: output.restoredClipboard)
         cleanupSession(resetLastText: false)
     }
@@ -350,6 +380,7 @@ final class AppController {
         activeASR?.cancel()
         activeASR = nil
         activeASRClientId = nil
+        audioSessionGate.end()
         activeSessionId = nil
         transcript = nil
         didFinalize = false
@@ -370,8 +401,9 @@ final class AppController {
         panel.updateDone(status: .copied, text: latest.text, restoredClipboard: false)
     }
 
-    private func sendPCMToActiveASR(_ data: Data) {
+    private func sendPCMToActiveASR(_ data: Data, audioSessionToken: AudioSessionToken?) {
         guard activeSessionId != nil else { return }
+        guard audioSessionGate.accepts(audioSessionToken) else { return }
         activeSessionAudioMs += Double(data.count) / 2.0 / 16_000.0 * 1000.0
         activeASR?.sendPCM(data)
     }
@@ -398,12 +430,17 @@ final class AppController {
         }
         let salvage = transcript?.latestText.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if activeSessionId != nil, !salvage.isEmpty {
+            guard let sessionId = activeSessionId else { return }
             stateMachine.send(.error)
             lastFinalText = salvage
-            let output = pasteEngine.route(text: salvage, mode: .fallbackCopy)
-            history.append(text: salvage, outputMode: .fallbackCopy, correctionRules: ["error_salvage"])
-            panel.updateDone(status: output.status, text: salvage, restoredClipboard: output.restoredClipboard)
-            cleanupSession(resetLastText: false)
+            pasteEngine.routeAsync(text: salvage, mode: .fallbackCopy) { [weak self, sessionId, salvage] output in
+                DispatchQueue.main.async {
+                    guard let self, self.activeSessionId == sessionId else { return }
+                    self.history.append(text: salvage, outputMode: .fallbackCopy, correctionRules: ["error_salvage"])
+                    self.panel.updateDone(status: output.status, text: salvage, restoredClipboard: output.restoredClipboard)
+                    self.cleanupSession(resetLastText: false)
+                }
+            }
         } else {
             if activeSessionId != nil {
                 stateMachine.send(.error)

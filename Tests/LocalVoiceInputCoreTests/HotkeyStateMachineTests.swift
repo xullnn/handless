@@ -11,46 +11,40 @@ final class HotkeyStateMachineTests: XCTestCase {
         XCTAssertEqual(machine.mode, .idle)
     }
 
-    func testOptionSpaceConvertsActivePushToTalkToLongDraft() {
+    func testLongShortcutReplacesActivePushToTalkWithLongDraft() {
         var machine = HotkeyStateMachine()
 
         _ = machine.send(.rightOptionDown)
-        XCTAssertEqual(machine.send(.optionSpace), [.convertPushToTalkToLongDraft, .consumeEvent])
+        XCTAssertEqual(machine.send(.longShortcut), [.startLongDraft, .consumeEvent])
         XCTAssertEqual(machine.mode, .longDraft)
         XCTAssertEqual(machine.send(.rightOptionUp), [.consumeEvent])
         XCTAssertEqual(machine.mode, .longDraft)
     }
 
-    func testLongDraftIgnoresRightOptionRelease() {
+    func testRightOptionReplacesActiveLongDraftWithPushToTalk() {
         var machine = HotkeyStateMachine(mode: .longDraft)
 
-        XCTAssertEqual(machine.send(.rightOptionDown), [.consumeEvent])
-        XCTAssertEqual(machine.mode, .longDraft)
-        XCTAssertEqual(machine.send(.rightOptionUp), [.consumeEvent])
-        XCTAssertEqual(machine.mode, .longDraft)
-    }
-
-    func testOptionSpaceStopsLongDraft() {
-        var machine = HotkeyStateMachine(mode: .longDraft)
-
-        XCTAssertEqual(machine.send(.optionSpace), [.toggleLongDraft, .consumeEvent])
+        XCTAssertEqual(machine.send(.rightOptionDown), [.startPushToTalk, .consumeEvent])
+        XCTAssertEqual(machine.mode, .pushToTalk)
+        XCTAssertEqual(machine.send(.rightOptionUp), [.stopPushToTalk, .consumeEvent])
         XCTAssertEqual(machine.mode, .idle)
     }
 
-    func testSpaceStopsOnlyLongDraft() {
-        var idleMachine = HotkeyStateMachine()
-        XCTAssertEqual(idleMachine.send(.space), [])
-        XCTAssertEqual(idleMachine.mode, .idle)
+    func testLongShortcutStartsAndStopsLongDraft() {
+        var machine = HotkeyStateMachine(mode: .longDraft)
 
-        var longDraftMachine = HotkeyStateMachine(mode: .longDraft)
-        XCTAssertEqual(longDraftMachine.send(.space), [.toggleLongDraft, .consumeEvent])
-        XCTAssertEqual(longDraftMachine.mode, .idle)
+        XCTAssertEqual(machine.send(.longShortcut), [.stopLongDraft, .consumeEvent])
+        XCTAssertEqual(machine.mode, .idle)
+
+        var idleMachine = HotkeyStateMachine()
+        XCTAssertEqual(idleMachine.send(.longShortcut), [.startLongDraft, .consumeEvent])
+        XCTAssertEqual(idleMachine.mode, .longDraft)
     }
 
-    func testOptionSpaceDoesNotInterruptActivePushToTalk() {
+    func testLongShortcutDoesNotEmitOptionSpaceConversion() {
         var machine = HotkeyStateMachine(mode: .pushToTalk, isRightOptionDown: true)
 
-        XCTAssertEqual(machine.send(.optionSpace), [.convertPushToTalkToLongDraft, .consumeEvent])
+        XCTAssertEqual(machine.send(.longShortcut), [.startLongDraft, .consumeEvent])
         XCTAssertEqual(machine.mode, .longDraft)
     }
 

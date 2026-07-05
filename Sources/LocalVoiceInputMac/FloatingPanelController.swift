@@ -27,6 +27,8 @@ final class FloatingPanelController {
     private var presentationGeneration = 0
     private var pendingHideWorkItem: DispatchWorkItem?
     private var fadeTimer: DispatchSourceTimer?
+    private var listeningTimer: DispatchSourceTimer?
+    private var listeningFrame = 0
     private var isMouseInsidePanel = false
     private var autoDismissEnabled = false
     private let autoDismissHoldSeconds: TimeInterval = 2.0
@@ -47,6 +49,15 @@ final class FloatingPanelController {
             self.startNewPresentation()
             self.ensureVisible()
             self.updateMode(mode)
+        }
+    }
+
+    func showListening(mode: OutputMode) {
+        DispatchQueue.main.async {
+            self.startNewPresentation()
+            self.ensureVisible()
+            self.updateMode(mode)
+            self.startListeningIndicator()
         }
     }
 
@@ -74,13 +85,19 @@ final class FloatingPanelController {
     func updatePartial(_ text: String) {
         DispatchQueue.main.async {
             self.ensureVisible()
-            self.setTranscriptText(text.isEmpty ? "正在等待语音…" : text)
+            if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                self.startListeningIndicator()
+            } else {
+                self.stopListeningIndicator()
+                self.setTranscriptText(text)
+            }
             self.detailLabel.stringValue = self.withDiagnostics("实时转写中…")
         }
     }
 
     func updateFinalizing() {
         DispatchQueue.main.async {
+            self.stopListeningIndicator()
             self.ensureVisible()
             self.detailLabel.stringValue = self.withDiagnostics("🧠 正在修正文字和标点…")
         }
@@ -88,6 +105,7 @@ final class FloatingPanelController {
 
     func updateDone(status: PasteRouteStatus, text: String, restoredClipboard: Bool) {
         DispatchQueue.main.async {
+            self.stopListeningIndicator()
             self.ensureVisible()
             self.setTranscriptText(text)
             switch status {
@@ -111,6 +129,7 @@ final class FloatingPanelController {
 
     func updateError(_ message: String) {
         DispatchQueue.main.async {
+            self.stopListeningIndicator()
             self.startNewPresentation()
             self.ensureVisible()
             self.titleLabel.stringValue = "错误"
@@ -131,6 +150,7 @@ final class FloatingPanelController {
 
     func hide() {
         DispatchQueue.main.async {
+            self.stopListeningIndicator()
             self.cancelPendingHide()
             self.autoDismissEnabled = false
             self.presentationGeneration += 1
@@ -235,6 +255,7 @@ final class FloatingPanelController {
     }
 
     private func startNewPresentation() {
+        stopListeningIndicator()
         cancelPendingHide()
         autoDismissEnabled = false
         presentationGeneration += 1
@@ -246,6 +267,34 @@ final class FloatingPanelController {
         pendingHideWorkItem = nil
         fadeTimer?.cancel()
         fadeTimer = nil
+    }
+
+    private func startListeningIndicator() {
+        stopListeningIndicator()
+        listeningFrame = 0
+        renderListeningIndicator()
+        let generation = presentationGeneration
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now() + .milliseconds(280), repeating: .milliseconds(360))
+        timer.setEventHandler { [weak self] in
+            guard let self, self.presentationGeneration == generation else {
+                timer.cancel()
+                return
+            }
+            self.listeningFrame = ListeningIndicator.nextFrame(after: self.listeningFrame)
+            self.renderListeningIndicator()
+        }
+        listeningTimer = timer
+        timer.resume()
+    }
+
+    private func stopListeningIndicator() {
+        listeningTimer?.cancel()
+        listeningTimer = nil
+    }
+
+    private func renderListeningIndicator() {
+        setTranscriptText(ListeningIndicator.text(for: listeningFrame), alignment: .center)
     }
 
     private func ensureVisible() {
@@ -352,7 +401,8 @@ final class FloatingPanelController {
         return "\(message)\n\(diagnosticText)"
     }
 
-    private func setTranscriptText(_ text: String) {
+    private func setTranscriptText(_ text: String, alignment: NSTextAlignment = .left) {
+        transcriptTextView.alignment = alignment
         transcriptTextView.string = text
         transcriptTextView.layoutManager?.ensureLayout(for: transcriptTextView.textContainer!)
         transcriptTextView.scrollRangeToVisible(NSRange(location: (text as NSString).length, length: 0))

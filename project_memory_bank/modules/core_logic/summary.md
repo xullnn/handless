@@ -5,7 +5,7 @@
 Stable responsibilities:
 
 - Voice session state transitions.
-- Hotkey state machine for Right Option, Option+Space, and Esc behavior.
+- Hotkey state machine for Right Option, Right Command + `.`, cross-mode replacement, and Esc behavior.
 - Focus snapshot data model and sticky focus-change detection.
 - Output mode routing based on focus, session type, policy, secure fields, and focus changes.
 - ASR event disposition so online partials update the floating panel and offline segments do not finalize until user stop.

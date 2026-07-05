@@ -1,5 +1,56 @@
 # SDD Progress
 
+## 2026-07-05 — 2026-07-05-input-session-replacement-hotkeys
+
+### Summary
+
+- Implemented replacement-aware input hotkeys for daily-use dictation.
+- Short input remains hold-to-talk on `Right Option`.
+- Long input now uses `Right Command + .` instead of `Option + Space`.
+- New input intent abandons an unfinished active session and starts the requested new session instead of being silently ignored.
+- New sessions immediately replace stale floating-panel text with a non-text three-dot listening indicator.
+- Rebuilt and relaunched `dist/LocalVoiceInput.app` with the current production flags: `--local-http-asr --asr-http-url http://127.0.0.1:18096 --numeric-itn`.
+
+### Files changed
+
+- `Sources/LocalVoiceInputCore/HotkeyStateMachine.swift`
+- `Sources/LocalVoiceInputMac/HotkeyController.swift`
+- `Sources/LocalVoiceInputMac/AppController.swift`
+- `Sources/LocalVoiceInputMac/FloatingPanelController.swift`
+- `Sources/LocalVoiceInputMac/KeyboardSimulator.swift`
+- `Tests/LocalVoiceInputCoreTests/HotkeyStateMachineTests.swift`
+- `README.md`
+- `eval/focus_cases.md`
+- `specs/2026-07-05-input-session-replacement-hotkeys/*`
+- `specs/feature_matrix.json`
+
+### Validation
+
+- Command: `swift test`
+  Result: pass
+  Notes: 72 XCTest tests passed with 0 failures. Hotkey state-machine tests now cover `Right Option`, long shortcut start/stop, short-to-long replacement, and long-to-short replacement.
+- Command: `swift build`
+  Result: pass
+  Notes: Debug build completed successfully.
+- Command: `bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: Production build completed and `dist/LocalVoiceInput.app` was signed with `Apple Development: 290016537@qq.com (HVFY7KCG8C)`.
+- Command: `open -n dist/LocalVoiceInput.app --args --local-http-asr --asr-http-url http://127.0.0.1:18096 --numeric-itn && scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: App is running from `dist/LocalVoiceInput.app` and the Qwen3 segmented ASR service on `127.0.0.1:18096` reports healthy metadata.
+- Manual smoke: pending user verification
+  Result: skipped
+  Notes: Physical hotkey timing and microphone behavior require hands-on testing in the macOS UI. The feature remains `implemented` with `passes=false` until that smoke is confirmed.
+
+### Blockers / open questions
+
+- Manual verification is still needed for immediate short-input re-recording, `Right Command + .` long input start/stop, long-to-short replacement, and short-to-long replacement in the real UI.
+- Full asynchronous paste verification remains a follow-up candidate, not part of this pass.
+
+### Next recommended action
+
+- User should try the currently running app with the manual smoke cases in `eval/focus_cases.md`, especially cases 19-21.
+
 ## 2026-06-20 — ASR backend evaluation harness
 
 - Created feature contract for an independent ASR backend evaluation harness.
@@ -4325,3 +4376,199 @@ Latency and base regression guard:
 ### Next recommended action
 
 - Collect or record natural long-dictation cases that contain boundary-near speech, natural pauses, and no-pause continuous speech, then run the focused segmented regression against those real audio cases.
+
+## 2026-07-05 - 2026-07-05-input-session-replacement-hotkeys automated test hardening
+
+### Summary
+
+- Added an audio session token/generation gate and wired `AudioCapture` chunks through that gate before `AppController` sends PCM to ASR.
+- Tightened `AudioCapture` synchronization so capture state, session token, pending PCM, and pre-roll updates are guarded by the same lock.
+- Extracted `HotkeyEventInterpreter` from `HotkeyController` so physical keyCode/flags behavior is unit-testable without a live CGEvent tap.
+- Extracted `KeyboardSimulator.commandVPastePlan()` so modifier-release ordering before synthetic `Cmd+V` is testable.
+- Extracted `ListeningIndicator` frame generation so the floating-panel waiting state remains a non-word indicator.
+- Left the feature status as `implemented` / `passes=false` because manual smoke for real Input Monitoring, physical key handling, and floating-panel behavior is still required by `validation.md`.
+
+### Files changed
+
+- `Sources/LocalVoiceInputMac/AudioSessionGate.swift`
+- `Sources/LocalVoiceInputMac/AudioCapture.swift`
+- `Sources/LocalVoiceInputMac/AppController.swift`
+- `Sources/LocalVoiceInputMac/HotkeyEventInterpreter.swift`
+- `Sources/LocalVoiceInputMac/HotkeyController.swift`
+- `Sources/LocalVoiceInputMac/KeyboardSimulator.swift`
+- `Sources/LocalVoiceInputMac/ListeningIndicator.swift`
+- `Sources/LocalVoiceInputMac/FloatingPanelController.swift`
+- `Tests/LocalVoiceInputMacTests/AudioSessionGateTests.swift`
+- `Tests/LocalVoiceInputMacTests/HotkeyEventInterpreterTests.swift`
+- `Tests/LocalVoiceInputMacTests/KeyboardSimulatorTests.swift`
+- `Tests/LocalVoiceInputMacTests/ListeningIndicatorTests.swift`
+- `specs/2026-07-05-input-session-replacement-hotkeys/feature.json`
+- `specs/2026-07-05-input-session-replacement-hotkeys/validation.md`
+- `specs/progress.md`
+
+### Validation
+
+- Command: `swift test`
+  Result: pass
+  Notes: executed `82` tests with `0` failures. Added `10` macOS-side tests covering audio session token isolation, physical hotkey interpretation, paste event sequence, and listening indicator frames.
+- Command: `swift build`
+  Result: pass
+  Notes: debug build completed successfully after the test-hardening changes.
+- Command: `git diff --check`
+  Result: pass
+  Notes: no whitespace errors were detected.
+- Command: `python3 -m json.tool specs/feature_matrix.json >/dev/null`
+  Result: pass
+  Notes: feature matrix remains valid JSON.
+
+### Blockers / open questions
+
+- Manual smoke has not been run in this pass. The feature should remain `implemented` with `passes=false` until real key presses and floating-panel behavior are verified on the running app.
+- Full fake-driven `AppController` integration tests remain a follow-up because the current controller owns concrete macOS dependencies. The follow-up candidate is recorded in `feature.json` as `FUP-003`.
+
+### Next recommended action
+
+- Rebuild/relaunch the packaged app and run the manual smoke matrix from `validation.md`: short normal path, short replacement, short-to-long replacement, long normal path, long-to-short replacement, and stale-text-to-listening-indicator replacement.
+
+## 2026-07-05 - 2026-07-05-input-session-replacement-hotkeys packaged App smoke
+
+### Summary
+
+- Rebuilt `dist/LocalVoiceInput.app` from the current working tree and signed it with the stable Apple Development identity.
+- Relaunched the packaged App with production actual-use parameters: `--local-http-asr --asr-http-url http://127.0.0.1:18096 --numeric-itn`.
+- Confirmed the Qwen3 segmented local HTTP ASR service remained healthy on `http://127.0.0.1:18096`.
+- Ran a mock-ASR TextEdit smoke pass using synthesized key events to exercise the shortcut/output path without relying on live microphone speech.
+- Strict first-pass smoke showed event-tap/focus timing sensitivity immediately after App launch. After increasing wait time, the key failed cases retried successfully.
+- Left the feature status as `implemented` / `passes=false` because physical-key live microphone smoke is still required before marking the feature validated.
+
+### Files changed
+
+- `specs/progress.md`
+
+### Validation
+
+- Command: `bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: release build completed, rebuilt `dist/LocalVoiceInput.app`, and signed with `Apple Development: 290016537@qq.com (HVFY7KCG8C)`.
+- Command: `open /Users/xulelong/2025/projects/LocalVoiceInput/dist/LocalVoiceInput.app --args --local-http-asr --asr-http-url http://127.0.0.1:18096 --numeric-itn`
+  Result: pass
+  Notes: final running production App PID after smoke restore was `84990`.
+- Command: `bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: status reported App numeric ITN override enabled, Qwen3 segmented service PID `11399`, healthy `/metadata`, model `qwen3-asr-0.6b-mlx-8bit`, and overall `ok`.
+- Command: synthesized-key mock-ASR TextEdit smoke, first pass
+  Result: partial
+  Notes: `short-rerecord` passed and `short-to-long` passed. `short-normal` and `long-to-short` were inconclusive/failing under strict TextEdit insertion criteria; `left-option-space-noop` did not trigger the App but TextEdit received a pass-through option-space blank character, so the original no-change assertion was too strict.
+- Command: synthesized-key mock-ASR TextEdit smoke, retry with longer App/event-tap stabilization wait
+  Result: pass
+  Notes: `short-normal-retry` pasted to TextEdit; `long-to-short-retry` pasted to TextEdit.
+
+### Blockers / open questions
+
+- Physical-key live microphone smoke is still needed. Synthesized CGEvents are useful for regression evidence, but they do not fully replace real Input Monitoring behavior with the user's hands on the keyboard.
+- The first smoke script interrupted before restoring the pre-smoke clipboard; the clipboard was left with a smoke marker string. This was an automation-script issue, not an App behavior issue.
+
+### Next recommended action
+
+- Ask the user to perform the remaining physical smoke checks on the restored production App: short normal input, rapid short re-record, `Right Command + .` long input start/stop, short-to-long replacement, long-to-short replacement, and visual confirmation that stale final text is replaced by the listening dots.
+
+## 2026-07-05 - 2026-07-05-input-session-replacement-hotkeys final-panel re-record fix
+
+### Summary
+
+- Investigated the manual failure where pressing `Right Option` while the previous final floating panel was still visible did not reliably start a new recording.
+- Confirmed synthesized-key smoke could re-record after final panel display, which narrowed the likely problem to a real-use timing window rather than the abstract hotkey state machine.
+- Found that `PasteEngine` performed paste verification by sleeping on the main thread. During that window, the same main loop also owns AppKit UI work and the global hotkey event tap callback, so a physical `Right Option` press could be delayed or effectively miss the intended immediate-re-record interaction.
+- Changed cursor-paste verification to asynchronous `DispatchQueue.main.asyncAfter` polling. The app now posts paste immediately, keeps the main loop free, and completes output routing only after verification finishes.
+- Guarded asynchronous output completion by session id in `AppController`, so if a new recording replaces the old session while paste verification is still pending, the old completion is ignored and cannot update history, panel, or cleanup state.
+- Added focused `PasteEngineTests` for async cursor-paste completion, unknown-verification fallback, and immediate clipboard-draft completion.
+- Rebuilt and relaunched the packaged App with production local HTTP ASR parameters after the fix.
+
+### Files changed
+
+- `Sources/LocalVoiceInputMac/PasteEngine.swift`
+- `Sources/LocalVoiceInputMac/AppController.swift`
+- `Tests/LocalVoiceInputMacTests/PasteEngineTests.swift`
+- `specs/2026-07-05-input-session-replacement-hotkeys/feature.json`
+- `specs/2026-07-05-input-session-replacement-hotkeys/decisions.md`
+- `specs/2026-07-05-input-session-replacement-hotkeys/validation.md`
+- `specs/progress.md`
+
+### Validation
+
+- Command: `swift test`
+  Result: pass
+  Notes: executed `85` tests with `0` failures. Added `3` `PasteEngineTests` covering asynchronous verification behavior.
+- Command: `swift build`
+  Result: pass
+  Notes: debug build completed successfully after the async paste verification change.
+- Command: `git diff --check`
+  Result: pass
+  Notes: no whitespace errors were detected.
+- Command: `python3 -m json.tool specs/feature_matrix.json >/dev/null && python3 -m json.tool specs/2026-07-05-input-session-replacement-hotkeys/feature.json >/dev/null`
+  Result: pass
+  Notes: feature matrix and feature metadata remain valid JSON.
+- Command: `bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: release build completed, rebuilt `dist/LocalVoiceInput.app`, and signed with `Apple Development: 290016537@qq.com (HVFY7KCG8C)`.
+- Command: mock-ASR synthesized-key smoke for final-panel re-record
+  Result: pass
+  Notes: first short dictation inserted `浮窗未消失重录修复烟测。`; pressing `Right Option` again while the final panel should still be visible inserted the transcript a second time, proving the re-record path can run after the fix.
+- Command: `bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: final production App is running with `--local-http-asr --asr-http-url http://127.0.0.1:18096 --numeric-itn`; Qwen3 segmented service remains healthy on `18096`.
+
+### Blockers / open questions
+
+- The specific user-reported physical-key case still needs the user to retry on the restored production App. The automated smoke supports the fix, but physical Input Monitoring timing is the authoritative check.
+- Full fake-driven AppController integration tests remain a separate test-architecture follow-up.
+
+### Next recommended action
+
+- Retry the exact failing case manually: finish one short dictation, wait until the final floating panel is visible but not yet faded, then press and hold `Right Option` again. Expected result: stale final text is replaced by the listening dots and a new recording starts immediately.
+
+## 2026-07-05 - 2026-07-05-input-session-replacement-hotkeys validation closeout
+
+### Summary
+
+- User completed the remaining physical-key smoke checks and reported that the tested functions are normal.
+- Validated that `Right Option` short input still works, including immediate re-record while the previous final floating panel is still visible.
+- Validated the new `Right Command + .` long input path and cross-mode replacement behavior.
+- Kept `Option + Space` out of the default LocalVoiceInput long-input path.
+- Promoted the feature status to `validated` with `passes=true`.
+
+### Files changed
+
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+- `project_memory_bank/core/project_brief.md`
+- `project_memory_bank/modules/core_logic/summary.md`
+- `project_memory_bank/modules/macos_app/summary.md`
+- `project_memory_bank/modules/output_safety/summary.md`
+
+### Validation
+
+- Command: `swift test`
+  Result: pass
+  Notes: last automated run executed `85` tests with `0` failures, covering hotkey state, physical hotkey interpretation, audio session token isolation, paste event planning, listening indicator frames, and asynchronous paste verification.
+- Command: `swift build`
+  Result: pass
+  Notes: debug build completed successfully after the async paste verification change.
+- Command: `bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: packaged App rebuilt and signed with `Apple Development: 290016537@qq.com (HVFY7KCG8C)`.
+- Command: `bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: production App was restored with `--local-http-asr --asr-http-url http://127.0.0.1:18096 --numeric-itn`; Qwen3 segmented service was healthy on `18096`.
+- Command: user physical-key smoke
+  Result: pass
+  Notes: user reported that the feature set is normal after multiple manual tests, including the previously failing final-panel re-record case.
+
+### Blockers / open questions
+
+- No blocker remains for this feature.
+- Configurable shortcuts and dependency-injected AppController integration tests remain follow-up candidates.
+
+### Next recommended action
+
+- Commit the validated feature. Consider a separate follow-up feature for a fake-driven AppController/session coordinator test harness.

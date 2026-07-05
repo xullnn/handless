@@ -14,76 +14,93 @@ final class PasteEngine {
     private let keyboard: KeyboardSimulating
     private let verifier: PasteVerifying
     private let policy: OutputPolicy
+    private let verificationIntervals: [TimeInterval]
 
     init(
         clipboard: ClipboardManaging,
         keyboard: KeyboardSimulating,
         verifier: PasteVerifying = AXFocusTextVerifier(),
-        policy: OutputPolicy
+        policy: OutputPolicy,
+        verificationIntervals: [TimeInterval] = [0.12, 0.18, 0.25, 0.35, 0.45]
     ) {
         self.clipboard = clipboard
         self.keyboard = keyboard
         self.verifier = verifier
         self.policy = policy
+        self.verificationIntervals = verificationIntervals
     }
 
-    func route(text: String, mode: OutputMode) -> OutputResult {
+    func routeAsync(text: String, mode: OutputMode, completion: @escaping (OutputResult) -> Void) {
         switch mode {
         case .cursorPaste:
-            return pasteToCursor(text)
+            pasteToCursorAsync(text, completion: completion)
         case .clipboardDraft, .floatingDraft:
             let decision = PasteRoutePlanner.decisionForNonPasteMode(mode)
             _ = clipboard.capture()
             clipboard.writeString(text)
-            return OutputResult(
+            completion(OutputResult(
                 status: decision.status,
                 restoredClipboard: decision.shouldRestoreClipboard,
                 verification: decision.verification
-            )
+            ))
         case .fallbackCopy:
             let decision = PasteRoutePlanner.decisionForNonPasteMode(mode)
             _ = clipboard.capture()
             clipboard.writeString(text)
-            return OutputResult(
+            completion(OutputResult(
                 status: decision.status,
                 restoredClipboard: decision.shouldRestoreClipboard,
                 verification: decision.verification
-            )
+            ))
         }
     }
 
-    private func pasteToCursor(_ text: String) -> OutputResult {
+    private func pasteToCursorAsync(_ text: String, completion: @escaping (OutputResult) -> Void) {
         let original = clipboard.capture()
         let before = verifier.captureFocusedTextSnapshot()
         clipboard.writeString(text)
         keyboard.pressCommandV(targetPid: before.focusSignature?.pid)
 
-        let verification = waitForInsertion(of: text, before: before)
-        let decision = PasteRoutePlanner.decisionAfterCursorPaste(verification: verification, policy: policy)
-        if decision.shouldRestoreClipboard {
-            clipboard.restore(original)
-        } else if decision.shouldKeepResultOnClipboard {
-            // Do not restore the previous clipboard unless insertion is confirmed. This prevents
-            // losing the dictated text when the target rejected Cmd+V or AX verification is unavailable.
-            clipboard.writeString(text)
+        waitForInsertionAsync(of: text, before: before, attemptIndex: 0) { [policy, clipboard] verification in
+            let decision = PasteRoutePlanner.decisionAfterCursorPaste(verification: verification, policy: policy)
+            if decision.shouldRestoreClipboard {
+                clipboard.restore(original)
+            } else if decision.shouldKeepResultOnClipboard {
+                // Do not restore the previous clipboard unless insertion is confirmed. This prevents
+                // losing the dictated text when the target rejected Cmd+V or AX verification is unavailable.
+                clipboard.writeString(text)
+            }
+            completion(OutputResult(
+                status: decision.status,
+                restoredClipboard: decision.shouldRestoreClipboard,
+                verification: decision.verification
+            ))
         }
-        return OutputResult(
-            status: decision.status,
-            restoredClipboard: decision.shouldRestoreClipboard,
-            verification: decision.verification
-        )
     }
 
-    private func waitForInsertion(of text: String, before: PasteVerificationSnapshot) -> PasteVerificationStatus {
-        let intervals: [TimeInterval] = [0.12, 0.18, 0.25, 0.35, 0.45]
-        for interval in intervals {
-            Thread.sleep(forTimeInterval: interval)
+    private func waitForInsertionAsync(
+        of text: String,
+        before: PasteVerificationSnapshot,
+        attemptIndex: Int,
+        completion: @escaping (PasteVerificationStatus) -> Void
+    ) {
+        guard verificationIntervals.indices.contains(attemptIndex) else {
+            completion(.unknown)
+            return
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + verificationIntervals[attemptIndex]) { [weak self] in
+            guard let self else {
+                completion(.unknown)
+                return
+            }
             let verification = verifier.verifyInsertion(of: text, before: before)
             if verification == .confirmed {
-                return .confirmed
+                completion(.confirmed)
+            } else {
+                waitForInsertionAsync(of: text, before: before, attemptIndex: attemptIndex + 1, completion: completion)
             }
         }
-        return .unknown
     }
 }
 

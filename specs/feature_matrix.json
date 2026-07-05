@@ -469,6 +469,15 @@
       ],
       "passes": true,
       "updated_at": "2026-07-02"
+    },
+    {
+      "id": "2026-07-05-input-session-replacement-hotkeys",
+      "title": "Input session replacement hotkeys",
+      "status": "validated",
+      "spec_path": "specs/2026-07-05-input-session-replacement-hotkeys",
+      "depends_on": [],
+      "passes": true,
+      "updated_at": "2026-07-05"
     }
   ]
 }
