@@ -4621,3 +4621,44 @@ Latency and base regression guard:
 ### Next recommended action
 
 - Commit the validated test architecture change. Continue using the fake-driven session tests as the regression floor before future shortcut, panel, paste, focus, or ASR callback changes.
+
+## 2026-07-05 - Production physical-key P0 smoke after session test architecture
+
+### Summary
+
+- User completed the requested P0 real macOS physical-key smoke checks after the AppController dependency-seam and session integration test changes.
+- Confirmed the production App behavior remains normal for the six highest-priority workflows: short input, immediate short re-record while the panel is still visible, long input start/stop, long-to-short replacement, short-to-long replacement, and Esc cancellation.
+- This provides real system-level coverage for the parts fake-driven tests intentionally cannot prove: physical shortcut delivery, actual focus/paste behavior, and visible floating-panel behavior.
+
+### Files changed
+
+- `specs/progress.md`
+
+### Validation
+
+- Command: user physical-key smoke P0-1 short input normal path
+  Result: pass
+  Notes: user reported normal behavior.
+- Command: user physical-key smoke P0-2 immediate re-record while floating panel is still visible
+  Result: pass
+  Notes: user reported normal behavior.
+- Command: user physical-key smoke P0-3 `Right Command + .` long input start/stop
+  Result: pass
+  Notes: user reported normal behavior.
+- Command: user physical-key smoke P0-4 long input replaced by short input
+  Result: pass
+  Notes: user reported normal behavior.
+- Command: user physical-key smoke P0-5 short input replaced by long input
+  Result: pass
+  Notes: user reported normal behavior.
+- Command: user physical-key smoke P0-6 Esc cancellation
+  Result: pass
+  Notes: user reported normal behavior.
+
+### Blockers / open questions
+
+- No blocker remains for the current hotkey/session replacement and session test architecture work.
+
+### Next recommended action
+
+- Push the two implementation commits plus this validation evidence commit, or first decide how to handle unrelated local research/model-eval residual files.
