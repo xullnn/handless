@@ -192,7 +192,7 @@
         "2026-06-22-incremental-ux-asr-gate"
       ],
       "passes": false,
-      "updated_at": "2026-06-23"
+      "updated_at": "2026-07-05"
     },
     {
       "id": "2026-06-23-incremental-ux-real-backend-adapters",
@@ -248,7 +248,7 @@
     {
       "id": "2026-06-23-qwen3-mlx-real-app-smoke",
       "title": "Qwen3-ASR MLX real app smoke",
-      "status": "implemented",
+      "status": "blocked",
       "spec_path": "specs/2026-06-23-qwen3-mlx-real-app-smoke",
       "depends_on": [
         "2026-06-23-qwen3-mlx-swift-http-adapter",
@@ -256,7 +256,7 @@
         "2026-06-23-qwen3-mlx-http-resource-validation"
       ],
       "passes": false,
-      "updated_at": "2026-06-23"
+      "updated_at": "2026-07-05"
     },
     {
       "id": "2026-06-25-long-dictation-asr-evaluation",
@@ -362,7 +362,7 @@
       "spec_path": "specs/2026-06-29-input-trigger-abstraction",
       "depends_on": [],
       "passes": false,
-      "updated_at": "2026-06-29"
+      "updated_at": "2026-07-05"
     },
     {
       "id": "2026-06-29-asr-model-profile-management",

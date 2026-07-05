@@ -104,7 +104,7 @@ The final decision must not rely on public benchmark claims alone, file-level qu
 - R9: Memory/RSS, cold start, warm start, and long-session drift must be reported for all real backends; RSS must become a hard threshold before app integration.
 - R10: The roadmap must require model revision/path pinning and result directory evidence for reproducibility.
 - R11: A backend may enter Swift integration only after passing real process boundary validation, not just in-process probes.
-- R12: App integration may begin only after real microphone/control-flow validation is planned for Right Option, Option+Space, Esc cancel, focus change, fallback, and no-partial-in-input behavior.
+- R12: App integration may begin only after real microphone/control-flow validation is planned for Right Option, Right Command + `.`, Option+Space pass-through / non-default behavior, Esc cancel, focus change, fallback, and no-partial-in-input behavior.
 - R13: The roadmap must assign an initial role tier to every standalone candidate, including `fun-asr-nano-2512`, `qwen3-asr-0.6b`, and `qwen3-asr-1.7b`; no listed candidate may remain orphaned.
 - R14: The roadmap must distinguish gates with fixed thresholds from gates whose thresholds are intentionally deferred to an implementation feature.
 

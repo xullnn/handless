@@ -70,7 +70,8 @@
 
 1. Before Swift integration, run real microphone/control-flow validation for:
    - Right Option push-to-talk
-   - Option+Space long draft
+   - Right Command + `.` long draft
+   - Option+Space pass-through / non-default behavior
    - Esc cancel
    - focus change during recording
    - secure/password fields

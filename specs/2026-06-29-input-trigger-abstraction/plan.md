@@ -3,7 +3,7 @@
 ## Implementation sequence
 
 1. Introduce a small core trigger-action model that represents source-neutral actions and active-session conflict behavior.
-2. Refactor the current keyboard event path behind a keyboard trigger source without changing observable Right Option, Option+Space, or Esc behavior.
+2. Refactor the current keyboard event path behind a keyboard trigger source without changing observable Right Option, Right Command + `.`, Option+Space pass-through, or Esc behavior.
 3. Add a trigger coordinator in the macOS app that owns source registration, source health, and dispatch into existing `AppController` session methods.
 4. Add local configuration for enabled sources and gesture mappings, with all non-keyboard sources disabled by default.
 5. Add a mouse trigger source behind the configuration flag.

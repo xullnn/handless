@@ -9,7 +9,7 @@ LocalVoiceInput currently depends on keyboard shortcuts for all dictation entry 
 ### IN
 
 - Define a source-agnostic trigger action model for dictation actions.
-- Preserve existing keyboard behavior for Right Option push-to-talk, Option+Space long draft, and Esc cancel.
+- Preserve current keyboard behavior for Right Option push-to-talk, Right Command + `.` long draft, and Esc cancel.
 - Allow future mouse trigger sources to map hardware events to the same dictation actions.
 - Require non-keyboard triggers to be opt-in and configurable.
 - Define safety, conflict, debounce, and permission expectations for global event sources.
@@ -26,7 +26,7 @@ LocalVoiceInput currently depends on keyboard shortcuts for all dictation entry 
 
 ## Requirements
 
-- R1: The current keyboard contracts must remain unchanged: Right Option hold starts and releases push-to-talk, Option+Space toggles long draft, and Esc cancels an active session.
+- R1: The current keyboard contracts must remain unchanged: Right Option hold starts and releases push-to-talk, Right Command + `.` toggles long draft, Option+Space is not the default long-draft shortcut, and Esc cancels an active session.
 - R2: Trigger handling must normalize source-specific events into a small action set: `startPushToTalk`, `stopPushToTalk`, `toggleLongDraft`, and `cancel`.
 - R3: The session state machine must remain the authority for conflict handling. A trigger source cannot directly bypass active-session checks in `AppController` or core session logic.
 - R4: Push-to-talk and long draft remain mutually exclusive. A push-to-talk stop event from any source must not stop an active long-draft session.
@@ -58,3 +58,4 @@ LocalVoiceInput currently depends on keyboard shortcuts for all dictation entry 
 - `project_memory_bank/modules/core_logic/summary.md`
 - `project_memory_bank/modules/macos_app/summary.md`
 - `project_memory_bank/modules/output_safety/summary.md`
+- `specs/2026-07-05-input-session-replacement-hotkeys/`

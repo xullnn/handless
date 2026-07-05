@@ -6,7 +6,7 @@ This feature can be marked `passes=true` only when all required automated checks
 
 ## Acceptance criteria
 
-- A1: Existing keyboard behavior is unchanged for Right Option push-to-talk, Option+Space long draft, and Esc cancel.
+- A1: Existing keyboard behavior is unchanged for Right Option push-to-talk, Right Command + `.` long draft, Option+Space pass-through, and Esc cancel.
 - A2: Non-keyboard triggers are disabled by default.
 - A3: A configured mouse push-to-talk gesture can start and stop a normal dictation session without changing output safety behavior.
 - A4: A configured mouse long-draft gesture can start and stop long-draft mode without requiring the user to hold a keyboard key.
@@ -25,7 +25,8 @@ swift test
 Required test coverage:
 
 - Keyboard push-to-talk lifecycle remains unchanged.
-- Option+Space long-draft lifecycle remains unchanged.
+- Right Command + `.` long-draft lifecycle remains unchanged.
+- Option+Space remains non-default/pass-through for long draft.
 - Esc cancellation remains unchanged.
 - Mouse source disabled by default.
 - Mouse push-to-talk start/stop lifecycle through a fake event source.
@@ -40,7 +41,8 @@ Required test coverage:
 - Confirm the same gesture works in Apple Notes and writes final text through the existing output path.
 - Confirm a browser page with no focused input still routes to clipboard draft.
 - Confirm secure/password fields still route to clipboard draft.
-- Confirm Option+Space keyboard long draft still works after mouse triggers are enabled.
+- Confirm Right Command + `.` keyboard long draft still works after mouse triggers are enabled.
+- Confirm Option+Space does not become the default long-draft shortcut after mouse triggers are enabled.
 - Confirm Esc cancels both keyboard-started and mouse-started sessions.
 - Confirm the app shows clear diagnostics if Input Monitoring or Accessibility permission is missing.
 

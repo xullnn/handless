@@ -6,7 +6,7 @@
   "parent_id": "2026-06-22-asr-backend-selection-roadmap",
   "created_from": "2026-06-23-qwen3-mlx-swift-http-adapter:next-recommended-action",
   "created_at": "2026-06-23",
-  "updated_at": "2026-06-23",
+  "updated_at": "2026-07-05",
   "follow_ups": [
     {
       "id": "FUP-001",
@@ -27,6 +27,16 @@
       "status": "candidate",
       "suggested_next_step": "run_manual_smoke_and_close_feature",
       "target_feature_id": null
+    },
+    {
+      "id": "FUP-003",
+      "title": "Close or supersede early cumulative Qwen3 App smoke contract",
+      "kind": "docs",
+      "reason": "The original smoke script and cumulative HTTP service path are no longer present; the validated active path is the later segmented-cache App smoke feature.",
+      "source": "pmb-sdd-drift-audit",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec_or_closeout",
+      "target_feature_id": "2026-06-26-qwen3-mlx-segmented-app-smoke"
     }
   ]
 }

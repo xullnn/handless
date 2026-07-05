@@ -7,6 +7,7 @@
 - D3: Non-keyboard triggers are opt-in and disabled by default.
 - D4: Trigger sources dispatch into the same existing dictation actions instead of creating a separate mouse-only session path.
 - D5: Simultaneous left+right click is not a safe default because it may conflict with ordinary app interaction. It can only be treated as an experimental opt-in gesture.
+- D6: As of the validated `2026-07-05-input-session-replacement-hotkeys` baseline, long draft uses Right Command + `.` and Option+Space must not be treated as the default long-draft shortcut.
 
 ## Open questions / unresolved choices
 
