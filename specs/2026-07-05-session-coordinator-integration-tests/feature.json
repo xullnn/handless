@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-07-05-session-coordinator-integration-tests",
+  "title": "Session coordinator integration tests",
+  "kind": "test",
+  "parent_id": null,
+  "created_from": "2026-07-05-input-session-replacement-hotkeys",
+  "created_at": "2026-07-05",
+  "updated_at": "2026-07-05",
+  "follow_ups": []
+}

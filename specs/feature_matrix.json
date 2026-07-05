@@ -478,6 +478,17 @@
       "depends_on": [],
       "passes": true,
       "updated_at": "2026-07-05"
+    },
+    {
+      "id": "2026-07-05-session-coordinator-integration-tests",
+      "title": "Session coordinator integration tests",
+      "status": "validated",
+      "spec_path": "specs/2026-07-05-session-coordinator-integration-tests",
+      "depends_on": [
+        "2026-07-05-input-session-replacement-hotkeys"
+      ],
+      "passes": true,
+      "updated_at": "2026-07-05"
     }
   ]
 }

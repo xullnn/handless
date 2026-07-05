@@ -2,6 +2,12 @@
 
 Run these on macOS after launching LocalVoiceInput. Test both `--mock-asr` and real FunASR mode.
 
+## Automated coordinator coverage
+
+The session-coordinator lifecycle is now covered by `Tests/LocalVoiceInputMacTests/AppControllerSessionTests.swift` with fake hotkey, audio, ASR, focus, paste, panel, and history dependencies. Those tests cover delayed paste completion after replacement, stale ASR finals, stale audio chunks, short-to-long replacement, long-to-short replacement, Esc cancellation, focus-change downgrade, and too-short real-audio suppression.
+
+Keep this manual matrix focused on real macOS behavior that fake tests cannot prove: TCC permissions, global event taps, real AX focus detection, real Cmd+V delivery, real app-specific paste behavior, and physical shortcut ergonomics.
+
 | # | App / state | Expected mode | Expected output |
 |---|---|---|---|
 | 1 | Apple Notes text area focused | Cursor Mode | Auto-paste. If AX verification confirms insertion, original clipboard is restored; otherwise text remains on clipboard. |
@@ -25,3 +31,4 @@ Run these on macOS after launching LocalVoiceInput. Test both `--mock-asr` and r
 | 19 | Re-press Right Option while previous short input is finalizing | New Push-to-Talk Session | Previous unfinished session is abandoned; new recording starts immediately. |
 | 20 | Press Right Command + . while previous input is finalizing | New Long Draft Session | Previous unfinished session is abandoned; long draft starts immediately. |
 | 21 | Press Right Option while long draft is recording | New Push-to-Talk Session | Long draft is abandoned; short recording starts immediately and stops on Right Option release. |
+| 22 | Press Right Command + . while short input is recording | New Long Draft Session | Short input is abandoned; long draft starts immediately and stops on the next Right Command + . press. |

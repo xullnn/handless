@@ -19,6 +19,7 @@ protocol ClipboardManaging: AnyObject {
     func capture() -> ClipboardSnapshot
     @discardableResult func writeString(_ text: String) -> Int
     @discardableResult func restore(_ snapshot: ClipboardSnapshot) -> Int
+    func restoreLastSavedSnapshot()
 }
 
 final class ClipboardManager: ClipboardManaging {

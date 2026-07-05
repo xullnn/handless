@@ -4,17 +4,48 @@ import AppKit
 import LocalVoiceInputCore
 
 final class AppController {
+    struct Dependencies {
+        let menu: MenuBarControlling
+        let panel: FloatingPanelPresenting
+        let focusDetector: FocusDetecting
+        let hotkeys: HotkeyControlling
+        let audio: AudioCapturing
+        let clipboard: ClipboardManaging
+        let pasteRouter: PasteRouting
+        let history: HistoryRecording
+        let asrClientFactory: ASRClientMaking
+        let focusMonitoringEnabled: Bool
+
+        static func production(config: AppConfig) -> Dependencies {
+            let clipboard = ClipboardManager()
+            let keyboard = KeyboardSimulator()
+            return Dependencies(
+                menu: MenuBarController(),
+                panel: FloatingPanelController(),
+                focusDetector: FocusDetector(),
+                hotkeys: HotkeyController(),
+                audio: AudioCapture(),
+                clipboard: clipboard,
+                pasteRouter: PasteEngine(clipboard: clipboard, keyboard: keyboard, policy: config.outputPolicy),
+                history: HistoryStore(policy: HistoryPolicy(maxItems: config.historyMaxItems)),
+                asrClientFactory: DefaultASRClientFactory(),
+                focusMonitoringEnabled: true
+            )
+        }
+    }
+
     private let config: AppConfig
-    private let menu = MenuBarController()
-    private let panel = FloatingPanelController()
-    private let focusDetector = FocusDetector()
-    private let hotkeys = HotkeyController()
-    private let audio = AudioCapture()
+    private let menu: MenuBarControlling
+    private let panel: FloatingPanelPresenting
+    private let focusDetector: FocusDetecting
+    private let hotkeys: HotkeyControlling
+    private let audio: AudioCapturing
     private let audioSessionGate = AudioSessionGate()
-    private let clipboard = ClipboardManager()
-    private let keyboard = KeyboardSimulator()
-    private lazy var pasteEngine = PasteEngine(clipboard: clipboard, keyboard: keyboard, policy: config.outputPolicy)
-    private lazy var history = HistoryStore(policy: HistoryPolicy(maxItems: config.historyMaxItems))
+    private let clipboard: ClipboardManaging
+    private let pasteRouter: PasteRouting
+    private let history: HistoryRecording
+    private let asrClientFactory: ASRClientMaking
+    private let focusMonitoringEnabled: Bool
 
     private var activeASR: ASRClientProtocol?
     private var stateMachine = VoiceSessionStateMachine()
@@ -35,6 +66,33 @@ final class AppController {
 
     init(config: AppConfig) {
         self.config = config
+        let dependencies = Dependencies.production(config: config)
+        self.menu = dependencies.menu
+        self.panel = dependencies.panel
+        self.focusDetector = dependencies.focusDetector
+        self.hotkeys = dependencies.hotkeys
+        self.audio = dependencies.audio
+        self.clipboard = dependencies.clipboard
+        self.pasteRouter = dependencies.pasteRouter
+        self.history = dependencies.history
+        self.asrClientFactory = dependencies.asrClientFactory
+        self.focusMonitoringEnabled = dependencies.focusMonitoringEnabled
+        setupCallbacks()
+    }
+
+    init(config: AppConfig, dependencies: Dependencies) {
+        self.config = config
+        self.menu = dependencies.menu
+        self.panel = dependencies.panel
+        self.focusDetector = dependencies.focusDetector
+        self.hotkeys = dependencies.hotkeys
+        self.audio = dependencies.audio
+        self.clipboard = dependencies.clipboard
+        self.pasteRouter = dependencies.pasteRouter
+        self.history = dependencies.history
+        self.asrClientFactory = dependencies.asrClientFactory
+        self.focusMonitoringEnabled = dependencies.focusMonitoringEnabled
+        setupCallbacks()
     }
 
     func start() {
@@ -46,7 +104,6 @@ final class AppController {
         if !PermissionManager.inputMonitoringTrusted {
             PermissionManager.requestInputMonitoringIfNeeded()
         }
-        setupCallbacks()
         audio.prewarm()
         hotkeys.start()
         menu.setStatus("🎙")
@@ -157,17 +214,7 @@ final class AppController {
     }
 
     private func startASR(sessionId: String, forceMock: Bool) {
-        let client: ASRClientProtocol
-        if config.mockASR || forceMock {
-            client = MockASRClient(transcript: config.mockTranscript)
-        } else {
-            switch config.asrBackend {
-            case .funASRWebSocket:
-                client = FunASRClient(urlString: config.asrURL)
-            case .localHTTP:
-                client = LocalHTTPASRClient(serviceURLString: config.asrHTTPURL)
-            }
-        }
+        let client = asrClientFactory.makeClient(config: config, forceMock: forceMock)
         let clientId = ObjectIdentifier(client)
         client.onEvent = { [weak self, sessionId, clientId] event in
             DispatchQueue.main.async {
@@ -287,6 +334,7 @@ final class AppController {
     }
 
     private func startFocusMonitoring(sessionId: String) {
+        guard focusMonitoringEnabled else { return }
         stopFocusMonitoring()
         focusMonitorTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
             self?.recordFocusSample(sessionId: sessionId)
@@ -348,7 +396,7 @@ final class AppController {
         lastFinalText = finalText
         let outputMode = activeOutputMode
         let appliedRules = correction.appliedRules
-        pasteEngine.routeAsync(text: finalText, mode: outputMode) { [weak self, currentSessionId, finalText, appliedRules] output in
+        pasteRouter.routeAsync(text: finalText, mode: outputMode) { [weak self, currentSessionId, finalText, appliedRules] output in
             DispatchQueue.main.async {
                 self?.completeFinalOutput(
                     output: output,
@@ -433,7 +481,7 @@ final class AppController {
             guard let sessionId = activeSessionId else { return }
             stateMachine.send(.error)
             lastFinalText = salvage
-            pasteEngine.routeAsync(text: salvage, mode: .fallbackCopy) { [weak self, sessionId, salvage] output in
+            pasteRouter.routeAsync(text: salvage, mode: .fallbackCopy) { [weak self, sessionId, salvage] output in
                 DispatchQueue.main.async {
                     guard let self, self.activeSessionId == sessionId else { return }
                     self.history.append(text: salvage, outputMode: .fallbackCopy, correctionRules: ["error_salvage"])

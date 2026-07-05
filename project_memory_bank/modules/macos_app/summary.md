@@ -11,6 +11,7 @@ Stable responsibilities:
 - `FloatingPanelController` shows rounded, non-key, non-activating realtime UI and includes controls to copy, restore clipboard, cancel, and quit the app. New recording sessions clear stale final text and show a non-word listening indicator. Completed output holds briefly, fades out over time, and pauses dismissal while the pointer is over the panel.
 - `MenuBarController` provides a status-item menu and quit path.
 - `PermissionManager` prompts for microphone, Accessibility, and Input Monitoring permissions.
+- `AppController` has internal dependency seams for coordinator integration tests, allowing fake hotkey, audio, ASR, focus, paste, panel, and history collaborators without changing production wiring.
 
 The app is intentionally an LSUIElement menu-bar utility rather than a normal foreground app or InputMethodKit input method.
 

@@ -103,6 +103,8 @@ private final class FakeClipboardManager: ClipboardManaging {
         changeCount += 1
         return changeCount
     }
+
+    func restoreLastSavedSnapshot() {}
 }
 
 private final class FakeKeyboardSimulator: KeyboardSimulating {

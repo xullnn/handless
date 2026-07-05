@@ -4572,3 +4572,52 @@ Latency and base regression guard:
 ### Next recommended action
 
 - Commit the validated feature. Consider a separate follow-up feature for a fake-driven AppController/session coordinator test harness.
+
+## 2026-07-05 - 2026-07-05-session-coordinator-integration-tests validation closeout
+
+### Summary
+
+- Added an SDD feature contract for fake-driven AppController session coordinator integration coverage.
+- Added internal AppController dependency seams while preserving production `AppController(config:)` wiring through a default production dependency factory.
+- Added fake-driven macOS app tests that exercise session lifecycle without real microphone input, real Accessibility focus detection, real CGEvent paste, or a real ASR service.
+- Covered delayed paste completion after session replacement, stale ASR final isolation, stale audio chunk isolation, short-to-long replacement, long-to-short replacement, Esc cancellation, focus-change downgrade, and too-short real-audio suppression.
+- Updated the manual focus/output matrix to separate automated coordinator coverage from physical macOS smoke checks.
+- Promoted the feature to `validated` with `passes=true`.
+
+### Files changed
+
+- `Sources/LocalVoiceInputMac/AppController.swift`
+- `Sources/LocalVoiceInputMac/AppControllerDependencies.swift`
+- `Sources/LocalVoiceInputMac/ClipboardManager.swift`
+- `Tests/LocalVoiceInputMacTests/AppControllerSessionTests.swift`
+- `Tests/LocalVoiceInputMacTests/PasteEngineTests.swift`
+- `eval/focus_cases.md`
+- `specs/2026-07-05-session-coordinator-integration-tests/*`
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+- `project_memory_bank/modules/macos_app/summary.md`
+- `project_memory_bank/modules/output_safety/summary.md`
+
+### Validation
+
+- Command: `swift test`
+  Result: pass
+  Notes: executed `92` tests with `0` failures. This adds `7` `AppControllerSessionTests` on top of the previous suite.
+- Command: `swift build`
+  Result: pass
+  Notes: debug build completed successfully after dependency injection and test additions.
+- Command: `python3 -m json.tool specs/feature_matrix.json >/dev/null && python3 -m json.tool specs/2026-07-05-session-coordinator-integration-tests/feature.json >/dev/null`
+  Result: pass
+  Notes: feature matrix and feature metadata are valid JSON.
+- Command: `git diff --check`
+  Result: pass
+  Notes: no whitespace errors were detected.
+
+### Blockers / open questions
+
+- No blocker remains for this testability feature.
+- Real macOS smoke remains valuable for TCC permissions, global event taps, AX focus behavior, real Cmd+V insertion, and physical shortcut ergonomics; those are intentionally kept in `eval/focus_cases.md`.
+
+### Next recommended action
+
+- Commit the validated test architecture change. Continue using the fake-driven session tests as the regression floor before future shortcut, panel, paste, focus, or ASR callback changes.
