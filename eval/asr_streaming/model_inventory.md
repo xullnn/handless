@@ -1,6 +1,6 @@
 # Local ASR Model Inventory
 
-Updated: 2026-06-23
+Updated: 2026-07-05
 
 This inventory records the model/cache files currently present on this Mac for LocalVoiceInput ASR evaluation. Sizes are from `du -sh` and are approximate on APFS.
 
@@ -9,6 +9,8 @@ This inventory records the model/cache files currently present on this Mac for L
 The current first integration candidate is `mlx-community__Qwen3-ASR-0.6B-8bit` through the validated segmented-cache local HTTP service boundary. It is not native model streaming, but it has passed the current segmented incremental UX gates and resource smoke checks. The older cumulative-wrapper route is retired from active code/config and kept only as historical evidence.
 
 MiMo-V2.5-ASR MLX remains useful as an offline quality reference. It is not the first floating-panel partial backend unless a chunked/session API is proven or a separate wrapper is validated.
+
+On 2026-07-05, Qwen3-ASR 0.6B MLX `4bit`, `5bit`, and `6bit` snapshots were downloaded and compared against the current `8bit` baseline. The durable conclusion is to keep `8bit` as the production/default model. `4bit` had catastrophic long/synthetic over-generation, `5bit` was the only plausible low-footprint candidate but still worse than `8bit` on local aggregate CER, and `6bit` was too close to `8bit` to justify a switch. The compact preserved report is `eval/asr_streaming/qwen3_0_6b_quant_comparison_20260705.md`; raw per-case output and the `4bit`/`5bit`/`6bit` model caches were removed after recording the summary.
 
 ## Model Cache
 
@@ -23,6 +25,8 @@ MiMo-V2.5-ASR MLX remains useful as an offline quality reference. It is not the 
 | `.external/models/fsmn-vad` | 3.9M | FunASR VAD cache. | Keep, although some Nano paths currently avoid VAD. |
 
 Current `.external` total size after cleanup: about 10G.
+
+After the 2026-07-05 quantization cleanup, `.external/models` intentionally does not keep Qwen3-ASR 0.6B `4bit`, `5bit`, or `6bit` snapshots.
 
 ## Local Runtime Repos
 
@@ -63,3 +67,10 @@ Later on 2026-06-23, removed additional non-mainline local caches:
 - Original non-MLX Qwen3 caches `.external/models/Qwen3-ASR-0.6B` and `.external/models/Qwen3-ASR-1.7B`.
 - Non-selected eval caches `.external/models/GLM-ASR-Nano-2512`, `.external/models/FireRedASR2-AED`, `.external/models/mlx-community__Fun-ASR-Nano-2512-4bit`, and `.external/models/mlx-community__nemotron-3.5-asr-streaming-0.6b-8bit`.
 - ModelScope cache `~/.cache/modelscope/hub/models/FunAudioLLM/Fun-ASR-Nano-2512`.
+
+On 2026-07-05, removed Qwen3-ASR 0.6B quantization experiment artifacts after preserving `eval/asr_streaming/qwen3_0_6b_quant_comparison_20260705.md`:
+
+- `.external/models/mlx-community__Qwen3-ASR-0.6B-4bit` after it showed catastrophic over-generation on long/synthetic local cases.
+- `.external/models/mlx-community__Qwen3-ASR-0.6B-5bit` after it failed to beat the `8bit` baseline on aggregate local accuracy.
+- `.external/models/mlx-community__Qwen3-ASR-0.6B-6bit` after it failed to provide enough benefit over `8bit`.
+- `eval/asr_streaming/results/qwen3-0.6b-quant-comparison-20260705-135018` raw result directory.
