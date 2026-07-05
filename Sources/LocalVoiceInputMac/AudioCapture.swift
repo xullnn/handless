@@ -15,9 +15,28 @@ final class AudioCapture {
     private var isRunning = false
     private var isCapturingSession = false
     private var currentSessionToken: AudioSessionToken?
+    private var configurationObserver: NSObjectProtocol?
+    private var configurationRestartScheduled = false
+    private var suppressConfigurationChangesUntil = Date.distantPast
 
     var onPCMChunk: ((AudioSessionToken, Data) -> Void)?
     var onError: ((Error) -> Void)?
+
+    init() {
+        configurationObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: engine,
+            queue: nil
+        ) { [weak self] _ in
+            self?.handleEngineConfigurationChange()
+        }
+    }
+
+    deinit {
+        if let configurationObserver {
+            NotificationCenter.default.removeObserver(configurationObserver)
+        }
+    }
 
     func prewarm() {
         queue.async { [weak self] in
@@ -83,6 +102,7 @@ final class AudioCapture {
             outputFormat = outFormat
             converter = AVAudioConverter(from: inputFormat, to: outFormat)
 
+            suppressConfigurationChangesUntil = Date().addingTimeInterval(1.0)
             input.removeTap(onBus: 0)
             input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
                 self?.handle(buffer: buffer, inputFormat: inputFormat)
@@ -98,9 +118,54 @@ final class AudioCapture {
 
     private func stopEngineIfNeeded() {
         guard isRunning || engine.isRunning else { return }
+        suppressConfigurationChangesUntil = Date().addingTimeInterval(1.0)
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         isRunning = false
+    }
+
+    private func handleEngineConfigurationChange() {
+        queue.async { [weak self] in
+            guard let self,
+                  Date() >= self.suppressConfigurationChangesUntil,
+                  !self.configurationRestartScheduled
+            else { return }
+            self.configurationRestartScheduled = true
+            self.queue.asyncAfter(deadline: .now() + .milliseconds(300)) { [weak self] in
+                guard let self else { return }
+                self.configurationRestartScheduled = false
+                guard Date() >= self.suppressConfigurationChangesUntil else { return }
+                self.handleDeferredEngineConfigurationChange()
+            }
+        }
+    }
+
+    private func handleDeferredEngineConfigurationChange() {
+        pendingLock.lock()
+        let wasCapturing = isCapturingSession
+        isCapturingSession = false
+        currentSessionToken = nil
+        pendingPCM.removeAll(keepingCapacity: true)
+        preRollPCM.removeAll(keepingCapacity: true)
+        pendingLock.unlock()
+
+        if wasCapturing {
+            DispatchQueue.main.async {
+                self.onError?(NSError(
+                    domain: "LocalVoiceInput.Audio",
+                    code: 2,
+                    userInfo: [NSLocalizedDescriptionKey: "音频输入设备发生变化，已停止本次录音。请确认麦克风连接后重新开始。"]
+                ))
+            }
+        }
+
+        tearDownEngineAfterConfigurationChange()
+    }
+
+    private func tearDownEngineAfterConfigurationChange() {
+        stopEngineIfNeeded()
+        converter = nil
+        outputFormat = nil
     }
 
     private func handle(buffer: AVAudioPCMBuffer, inputFormat: AVAudioFormat) {
