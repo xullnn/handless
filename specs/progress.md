@@ -4662,3 +4662,60 @@ Latency and base regression guard:
 ### Next recommended action
 
 - Push the two implementation commits plus this validation evidence commit, or first decide how to handle unrelated local research/model-eval residual files.
+
+## 2026-07-05 - 2026-07-05-output-audio-ducking implementation closeout
+
+### Summary
+
+- Added an SDD feature contract for recording-time output audio ducking.
+- Added `AudioDuckingConfig` with backward-compatible JSON decoding and temporary command-line overrides.
+- Added `CoreAudioOutputDucker`, a macOS CoreAudio-backed output controller that records the default output device volume/mute state, lowers or mutes output, and restores idempotently.
+- Wired output ducking into `AppController` session lifecycle for real short/long recording sessions, cancellation, replacement, errors, cleanup, explicit stop, and app quit best-effort restore.
+- Added fake-driven AppController tests for duck/restore lifecycle behavior without mutating real system audio.
+- Updated config examples, default config writer, status script output, and README documentation.
+
+### Files changed
+
+- `Sources/LocalVoiceInputMac/AppConfig.swift`
+- `Sources/LocalVoiceInputMac/AppController.swift`
+- `Sources/LocalVoiceInputMac/AppControllerDependencies.swift`
+- `Sources/LocalVoiceInputMac/CoreAudioOutputDucker.swift`
+- `Tests/LocalVoiceInputMacTests/AppConfigTests.swift`
+- `Tests/LocalVoiceInputMacTests/AppControllerSessionTests.swift`
+- `configs/config.example.json`
+- `scripts/write_default_config.sh`
+- `scripts/status_localvoiceinput.sh`
+- `README.md`
+- `specs/2026-07-05-output-audio-ducking/*`
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+
+### Validation
+
+- Command: `bash scripts/test.sh`
+  Result: pass
+  Notes: executed `107` tests with `0` failures. Added config coverage and AppController duck/restore lifecycle coverage, including CLI last-override order, ASR-error salvage fallback copy with ducking restore, and stale old-session ASR error isolation after replacement.
+- Command: `swift build`
+  Result: pass
+  Notes: debug build completed successfully after adding the CoreAudio output ducker.
+- Command: `python3 -m json.tool specs/feature_matrix.json >/dev/null && python3 -m json.tool specs/2026-07-05-output-audio-ducking/feature.json >/dev/null && python3 -m json.tool configs/config.example.json >/dev/null`
+  Result: pass
+  Notes: feature matrix, feature metadata, and config example are valid JSON.
+- Command: `git diff --check`
+  Result: pass
+  Notes: no whitespace errors were detected.
+- Command: `bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: packaged App rebuilt and signed with `Apple Development: 290016537@qq.com (HVFY7KCG8C)`.
+- Command: `bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: status output now reports `audioDucking`; current App process is running with `--local-http-asr --asr-http-url http://127.0.0.1:18096 --numeric-itn --audio-ducking --audio-ducking-volume 0.08`, and the Qwen3 segmented ASR service is healthy on `127.0.0.1:18096`.
+
+### Blockers / open questions
+
+- Manual macOS smoke is still required before validation: the user needs to confirm real playback volume lowers during recording and restores afterward.
+- Open tuning choice: the user's preferred personal setting may be `targetVolume=0.05`, `0.08`, or full mute after smoke testing.
+
+### Next recommended action
+
+- Run the manual playback smoke checks from `validation.md`, starting with short input and long input while local music/video is playing.

@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-07-05-output-audio-ducking",
+  "title": "Output audio ducking during recording",
+  "kind": "feature",
+  "parent_id": null,
+  "created_from": "user request to suppress Mac playback audio while dictating",
+  "created_at": "2026-07-05",
+  "updated_at": "2026-07-05",
+  "follow_ups": [
+    {
+      "id": "FUP-001",
+      "title": "Expose audio ducking controls in a settings panel",
+      "kind": "architecture",
+      "reason": "The first implementation uses JSON/config defaults; a future app panel should allow non-technical users to change the setting.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    },
+    {
+      "id": "FUP-002",
+      "title": "Evaluate voice processing or echo cancellation capture modes",
+      "kind": "investigation",
+      "reason": "Playback ducking reduces self-playback leakage but does not handle room noise or true acoustic echo cancellation.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    }
+  ]
+}

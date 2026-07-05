@@ -489,6 +489,17 @@
       ],
       "passes": true,
       "updated_at": "2026-07-05"
+    },
+    {
+      "id": "2026-07-05-output-audio-ducking",
+      "title": "Output audio ducking during recording",
+      "status": "implemented",
+      "spec_path": "specs/2026-07-05-output-audio-ducking",
+      "depends_on": [
+        "2026-07-05-session-coordinator-integration-tests"
+      ],
+      "passes": false,
+      "updated_at": "2026-07-05"
     }
   ]
 }
