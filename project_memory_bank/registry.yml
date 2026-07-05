@@ -18,6 +18,7 @@ modules:
     purpose: AppKit menu-bar app, global hotkeys, floating panel, permissions, focus detection, paste execution, and history persistence.
   asr_audio:
     summary: modules/asr_audio/summary.md
+    eval_assets: modules/asr_audio/eval_assets.md
     purpose: AVAudioEngine capture, 16 kHz mono int16 PCM conversion, FunASR WebSocket 2-pass client, optional local HTTP ASR client, and mock ASR client.
   output_safety:
     summary: modules/output_safety/summary.md

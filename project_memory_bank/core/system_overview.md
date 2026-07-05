@@ -14,13 +14,14 @@ High-level runtime flow:
 5. `AudioCapture` streams 16 kHz mono int16 PCM to the active ASR client.
 6. The configured ASR client (`FunASRClient`, `LocalHTTPASRClient`, or `MockASRClient`) emits `ASREvent` values into `TranscriptBuffer`.
 7. `ASREventRouter` updates partials while recording and only allows finalization after user stop.
-8. `CorrectionPipeline` applies local rule-based cleanup, hotword fixes, and homophone fixes.
+8. `CorrectionPipeline` applies local rule-based cleanup, hotword fixes, homophone fixes, and the optional final-output NumericITN pass.
 9. `PasteEngine` routes final text through `ClipboardManager` and `KeyboardSimulator`.
 10. `HistoryStore` persists recent final results.
 
 Important safety properties:
 
 - Active ASR callbacks are guarded by session id and ASR client identity; the local HTTP ASR client also filters backend events by session token.
+- A new input intent replaces any unfinished active session; late audio, ASR, and paste callbacks from the replaced session are ignored.
 - Focus is tracked during recording; any meaningful App/window/element/security change is sticky and downgrades output to clipboard draft.
 - Secure text fields never auto-paste by default.
 - Confirmed paste keeps the dictated result on the clipboard by default. If `restoreClipboardAfterPaste` is enabled, restoration happens only after paste verification confirms insertion.

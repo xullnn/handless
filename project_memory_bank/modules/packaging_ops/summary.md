@@ -10,6 +10,9 @@ Stable responsibilities:
 - `scripts/write_default_config.sh` writes the default config under `~/Library/Application Support/LocalVoiceInput/config.json`.
 - `scripts/status_localvoiceinput.sh` reports the current App process, Qwen3 segmented ASR service process, config, local runtime paths, and local service diagnostics without starting or stopping anything. It prefers `/metadata` and falls back to `/health`.
 - `scripts/cleanup_localvoiceinput_cache.sh` inspects and cleans generated ASR runtime artifacts with dry-run defaults and model-cache protection.
+- `scripts/setup_qwen3_mlx_runtime.sh` prepares the project-local `.venv-mimo` runtime for the active Qwen3 MLX service path and verifies the local model and `mlx-audio` source paths.
+- `scripts/run_qwen3_mlx_segmented_app_smoke.sh` starts the active segmented Qwen3 HTTP service and launches the macOS app against it for manual smoke testing.
+- `scripts/run_qwen3_mlx_segmented_regression_gate.sh` starts the segmented service, runs the HTTP adapter regression gate, and records resource samples and run metadata.
 - `scripts/setup_funasr_venv.sh` and `scripts/run_funasr_python_server.sh` prepare and run the local FunASR server path.
 - `scripts/download_funasr_smoke_models.sh` downloads repeatable local smoke-test models into `.external/models/`.
 - `scripts/run_funasr_python_server.sh` prefers cached local model directories when present, defaults to CPU, and keeps punctuation and speaker verification disabled unless explicitly requested with environment variables.

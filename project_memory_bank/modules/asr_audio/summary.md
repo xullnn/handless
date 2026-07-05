@@ -11,8 +11,10 @@ Stable responsibilities:
 - `ASRClientProtocol` keeps the app controller independent of the concrete ASR source.
 - The local FunASR websocket runtime can run against cached smoke-test model directories under `.external/models/` for offline ASR, online ASR, and VAD.
 - `eval/asr_streaming/` is the independent backend evaluation harness for replaying 16 kHz mono int16 WAV files before changing the macOS app runtime.
+- `project_memory_bank/modules/asr_audio/eval_assets.md` is the durable PMB pointer map for ASR evaluation assets: runnable manifests, ignored local audio, the video subtitle pilot corpus, and current decision-bearing report entrypoints.
 - `eval/asr_streaming/realtime_gate.py` is the stricter realtime backend gate: it sends timed PCM chunks, requires partials before simulated user stop, requires final/offline output after stop, and rejects late partials after final.
 - `scripts/record_asr_cases.sh` starts the guided local recording flow for ASR eval cases and saves case-aligned WAV files under `eval/asr_streaming/audio/`.
+- `scripts/run_full_asr_model_benchmark.sh`, `scripts/run_qwen3_06b_prompt_ab_benchmark.sh`, and `scripts/run_numeric_itn_report.sh` are the repeatable report entrypoints for current model comparison, prompt A/B, and NumericITN evidence.
 - `eval/asr_streaming/run_eval.py` also supports a local Fun-ASR-Nano file-level adapter for model comparison on the same WAV cases without touching macOS hotkey, focus, paste, or floating-panel code.
 - `eval/asr_streaming/qwen3_mlx_realtime_probe.py` checks whether Qwen3-ASR MLX exposes true session streaming or only file/token streaming.
 - Qwen3-ASR MLX 0.6B and 1.7B expose `generate`, `stream_transcribe`, and `stream_generate`, but not `create_streaming_session`; they are not realtime-gate eligible without a custom session wrapper.
@@ -53,4 +55,5 @@ Go Deeper:
 
 - See `../../core/system_overview.md` for end-to-end flow.
 - See `../../core/current_focus.md` for current real-ASR setup status.
+- See `eval_assets.md` for ASR test-case categories, local audio retention posture, video-subtitle pilot rules, and current evaluation evidence pointers.
 - See `../../insights/funasr_local_runtime.md` for local FunASR and Fun-ASR-Nano operating notes.
