@@ -9,6 +9,7 @@ MODEL="${MODEL:-.external/models/mlx-community__Qwen3-ASR-0.6B-8bit}"
 MLX_AUDIO_SOURCE="${MLX_AUDIO_SOURCE:-.external/repos/mlx-audio}"
 HTTP_TIMEOUT="${HTTP_TIMEOUT:-2}"
 STRICT="${STRICT:-0}"
+APP_PROCESS_PATTERN='LocalVoiceInput\.app/Contents/MacOS/LocalVoiceInput|\.build/.*/LocalVoiceInputMac'
 
 overall=0
 
@@ -60,14 +61,21 @@ if command -v git >/dev/null 2>&1; then
 fi
 
 section "Processes"
-print_processes "App" 'LocalVoiceInput\.app/Contents/MacOS/LocalVoiceInput|LocalVoiceInputMac'
-app_process_lines="$(pgrep -fl 'LocalVoiceInput\.app/Contents/MacOS/LocalVoiceInput|LocalVoiceInputMac' || true)"
+print_processes "App" "$APP_PROCESS_PATTERN"
+app_process_lines="$(pgrep -fl "$APP_PROCESS_PATTERN" || true)"
 if printf '%s\n' "$app_process_lines" | grep -q -- '--numeric-itn'; then
   printf 'App numericITN override: enabled (--numeric-itn)\n'
 elif printf '%s\n' "$app_process_lines" | grep -q -- '--no-numeric-itn'; then
   printf 'App numericITN override: disabled (--no-numeric-itn)\n'
 else
   printf 'App numericITN override: none (config/default applies)\n'
+fi
+if printf '%s\n' "$app_process_lines" | grep -q -- '--audio-ducking'; then
+  printf 'App audioDucking override: enabled (--audio-ducking*)\n'
+elif printf '%s\n' "$app_process_lines" | grep -q -- '--no-audio-ducking'; then
+  printf 'App audioDucking override: disabled (--no-audio-ducking)\n'
+else
+  printf 'App audioDucking override: none (config/default applies)\n'
 fi
 print_processes "Qwen3 segmented ASR service" 'qwen3_mlx_segmented_cache_service\.py'
 
@@ -98,8 +106,15 @@ defaults = {
     "correctionMode": "clean",
     "numericITNEnabled": False,
     "historyMaxItems": 20,
+    "audioDucking": {
+        "enabled": False,
+        "targetVolume": 0.08,
+        "muteInsteadOfDuck": False,
+    },
 }
 for key, default in defaults.items():
+    if key == "audioDucking":
+        continue
     source = "config" if key in data else "default"
     print(f"{key}: {data.get(key, default)} ({source})")
 policy = data.get("outputPolicy")
@@ -108,6 +123,19 @@ if isinstance(policy, dict):
     restore = policy.get("restoreClipboardAfterPaste")
     low_conf = policy.get("preferClipboardForLowConfidence")
     print(f"outputPolicy: autoPaste={auto_paste} restoreClipboardAfterPaste={restore} preferClipboardForLowConfidence={low_conf}")
+audio_ducking = data.get("audioDucking")
+if isinstance(audio_ducking, dict):
+    enabled = audio_ducking.get("enabled", False)
+    target = audio_ducking.get("targetVolume", 0.08)
+    mute = audio_ducking.get("muteInsteadOfDuck", False)
+    print(f"audioDucking: enabled={enabled} targetVolume={target} muteInsteadOfDuck={mute}")
+else:
+    d = defaults["audioDucking"]
+    print(
+        "audioDucking: "
+        f"enabled={d['enabled']} targetVolume={d['targetVolume']} "
+        f"muteInsteadOfDuck={d['muteInsteadOfDuck']} (default)"
+    )
 PY
 
 section "Runtime Paths"

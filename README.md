@@ -172,16 +172,31 @@ Important options:
   },
   "correctionMode": "clean",
   "numericITNEnabled": false,
+  "audioDucking": {
+    "enabled": false,
+    "targetVolume": 0.08,
+    "muteInsteadOfDuck": false
+  },
   "historyMaxItems": 20
 }
 ```
 
-For temporary App launches, command-line flags can override only the numeric ITN setting without rewriting the config file:
+For temporary App launches, command-line flags can override numeric ITN and output ducking settings without rewriting the config file:
 
 ```bash
 swift run LocalVoiceInputMac --numeric-itn
 swift run LocalVoiceInputMac --no-numeric-itn
 ```
+
+Recording-time output ducking can lower local Mac playback while the microphone is active. It is disabled by default; enable it in config or with temporary launch flags:
+
+```bash
+swift run LocalVoiceInputMac --audio-ducking --audio-ducking-volume 0.08
+swift run LocalVoiceInputMac --audio-ducking-mute
+swift run LocalVoiceInputMac --no-audio-ducking
+```
+
+When enabled, the app stores the default output device volume/mute state, lowers or mutes playback during real microphone recording, and restores it when recording stops, is cancelled, is replaced, or errors.
 
 ## Architecture
 

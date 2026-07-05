@@ -57,6 +57,11 @@ protocol AudioCapturing: AnyObject {
     func stopAndFlush(completion: @escaping (AudioSessionToken?, [Data]) -> Void)
 }
 
+protocol SystemAudioDuckingControlling: AnyObject {
+    func beginDucking(sessionId: String)
+    func restoreDucking(sessionId: String?)
+}
+
 protocol PasteRouting: AnyObject {
     func routeAsync(text: String, mode: OutputMode, completion: @escaping (OutputResult) -> Void)
 }

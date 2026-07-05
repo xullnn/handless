@@ -19,6 +19,7 @@ struct AppConfig: Codable {
     var correctionMode: CorrectionMode
     var numericITNEnabled: Bool
     var historyMaxItems: Int
+    var audioDucking: AudioDuckingConfig
 
     static let `default` = AppConfig(
         asrURL: "ws://127.0.0.1:10095",
@@ -36,7 +37,8 @@ struct AppConfig: Codable {
         outputPolicy: .default,
         correctionMode: .clean,
         numericITNEnabled: false,
-        historyMaxItems: 20
+        historyMaxItems: 20,
+        audioDucking: .default
     )
 
     init(
@@ -50,7 +52,8 @@ struct AppConfig: Codable {
         outputPolicy: OutputPolicy,
         correctionMode: CorrectionMode,
         numericITNEnabled: Bool,
-        historyMaxItems: Int
+        historyMaxItems: Int,
+        audioDucking: AudioDuckingConfig
     ) {
         self.asrURL = asrURL
         self.asrBackend = asrBackend
@@ -63,6 +66,7 @@ struct AppConfig: Codable {
         self.correctionMode = correctionMode
         self.numericITNEnabled = numericITNEnabled
         self.historyMaxItems = historyMaxItems
+        self.audioDucking = audioDucking
     }
 
     enum CodingKeys: String, CodingKey {
@@ -77,6 +81,7 @@ struct AppConfig: Codable {
         case correctionMode
         case numericITNEnabled
         case historyMaxItems
+        case audioDucking
     }
 
     init(from decoder: Decoder) throws {
@@ -93,6 +98,7 @@ struct AppConfig: Codable {
         correctionMode = try values.decodeIfPresent(CorrectionMode.self, forKey: .correctionMode) ?? defaults.correctionMode
         numericITNEnabled = try values.decodeIfPresent(Bool.self, forKey: .numericITNEnabled) ?? defaults.numericITNEnabled
         historyMaxItems = try values.decodeIfPresent(Int.self, forKey: .historyMaxItems) ?? defaults.historyMaxItems
+        audioDucking = try values.decodeIfPresent(AudioDuckingConfig.self, forKey: .audioDucking) ?? defaults.audioDucking
     }
 
     static func loadFromDefaultLocation(commandLine: [String]) -> AppConfig {
@@ -136,6 +142,70 @@ struct AppConfig: Codable {
         } else if commandLine.contains("--no-numeric-itn") {
             numericITNEnabled = false
         }
+        var idx = commandLine.startIndex
+        while idx < commandLine.endIndex {
+            switch commandLine[idx] {
+            case "--audio-ducking":
+                audioDucking.enabled = true
+            case "--no-audio-ducking":
+                audioDucking.enabled = false
+            case "--audio-ducking-volume":
+                let valueIndex = commandLine.index(after: idx)
+                if commandLine.indices.contains(valueIndex), let value = Double(commandLine[valueIndex]) {
+                    audioDucking.enabled = true
+                    audioDucking.targetVolume = AudioDuckingConfig.clampVolume(value)
+                    idx = valueIndex
+                }
+            case "--audio-ducking-mute":
+                audioDucking.enabled = true
+                audioDucking.muteInsteadOfDuck = true
+            case "--no-audio-ducking-mute":
+                audioDucking.muteInsteadOfDuck = false
+            default:
+                break
+            }
+            idx = commandLine.index(after: idx)
+        }
+    }
+}
+
+struct AudioDuckingConfig: Codable, Equatable {
+    var enabled: Bool
+    var targetVolume: Double
+    var muteInsteadOfDuck: Bool
+
+    static let `default` = AudioDuckingConfig(
+        enabled: false,
+        targetVolume: 0.08,
+        muteInsteadOfDuck: false
+    )
+
+    init(
+        enabled: Bool = false,
+        targetVolume: Double = 0.08,
+        muteInsteadOfDuck: Bool = false
+    ) {
+        self.enabled = enabled
+        self.targetVolume = Self.clampVolume(targetVolume)
+        self.muteInsteadOfDuck = muteInsteadOfDuck
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case enabled
+        case targetVolume
+        case muteInsteadOfDuck
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = AudioDuckingConfig.default
+        enabled = try values.decodeIfPresent(Bool.self, forKey: .enabled) ?? defaults.enabled
+        targetVolume = Self.clampVolume(try values.decodeIfPresent(Double.self, forKey: .targetVolume) ?? defaults.targetVolume)
+        muteInsteadOfDuck = try values.decodeIfPresent(Bool.self, forKey: .muteInsteadOfDuck) ?? defaults.muteInsteadOfDuck
+    }
+
+    static func clampVolume(_ value: Double) -> Double {
+        min(1.0, max(0.0, value))
     }
 }
 

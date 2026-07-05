@@ -147,8 +147,164 @@ final class AppControllerSessionTests: XCTestCase {
         XCTAssertTrue(harness.panel.errors.contains { $0.contains("录音太短") })
     }
 
-    private func makeHarness(autoCompletePaste: Bool = true) -> AppControllerHarness {
-        AppControllerHarness(autoCompletePaste: autoCompletePaste)
+    func testDuckingStartsForRealShortSessionAndRestoresOnStopBeforeFinal() {
+        let harness = makeHarness(audioDuckingEnabled: true)
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+
+        XCTAssertEqual(harness.audioDucker.beginSessionIds.count, 1)
+        let sessionId = tryUnwrap(harness.audioDucker.beginSessionIds.first)
+        let client = harness.asrFactory.clients[0]
+        harness.audio.emitPCM(twoSecondsOfPCM())
+        drainMainQueue()
+
+        harness.hotkeys.triggerPushToTalkStop()
+        drainMainQueue()
+
+        XCTAssertEqual(harness.audioDucker.effectiveRestoreSessionIds, [sessionId])
+        XCTAssertEqual(client.finishCallCount, 1)
+
+        client.emitFinal("完成文本")
+        drainMainQueue(times: 2)
+        XCTAssertEqual(harness.audioDucker.effectiveRestoreSessionIds, [sessionId])
+    }
+
+    func testDuckingStartsForLongSessionAndRestoresOnStop() {
+        let harness = makeHarness(audioDuckingEnabled: true)
+        harness.hotkeys.triggerLongDraftStart()
+        drainMainQueue()
+
+        XCTAssertEqual(harness.audioDucker.beginSessionIds.count, 1)
+        let sessionId = tryUnwrap(harness.audioDucker.beginSessionIds.first)
+        harness.audio.emitPCM(twoSecondsOfPCM())
+        drainMainQueue()
+
+        harness.hotkeys.triggerLongDraftStop()
+        drainMainQueue()
+
+        XCTAssertEqual(harness.audioDucker.effectiveRestoreSessionIds, [sessionId])
+    }
+
+    func testCancelRestoresDucking() {
+        let harness = makeHarness(audioDuckingEnabled: true)
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+        let sessionId = tryUnwrap(harness.audioDucker.beginSessionIds.first)
+
+        harness.hotkeys.triggerCancel()
+        drainMainQueue()
+
+        XCTAssertEqual(harness.audioDucker.effectiveRestoreSessionIds, [sessionId])
+        XCTAssertEqual(harness.panel.doneEvents.map(\.status), [.cancelled])
+    }
+
+    func testReplacementRestoresOldDuckingBeforeStartingNewDucking() {
+        let harness = makeHarness(audioDuckingEnabled: true)
+        harness.hotkeys.triggerLongDraftStart()
+        drainMainQueue()
+        let oldSessionId = tryUnwrap(harness.audioDucker.beginSessionIds.first)
+
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+
+        XCTAssertEqual(harness.audioDucker.beginSessionIds.count, 2)
+        XCTAssertEqual(harness.audioDucker.effectiveRestoreSessionIds, [oldSessionId])
+        XCTAssertEqual(harness.audioDucker.events, [
+            "begin:\(oldSessionId)",
+            "restore:\(oldSessionId)",
+            "begin:\(harness.audioDucker.beginSessionIds[1])"
+        ])
+    }
+
+    func testASRErrorRestoresDucking() {
+        let harness = makeHarness(audioDuckingEnabled: true)
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+        let sessionId = tryUnwrap(harness.audioDucker.beginSessionIds.first)
+
+        harness.asrFactory.clients[0].emitError()
+        drainMainQueue(times: 2)
+
+        XCTAssertEqual(harness.audioDucker.effectiveRestoreSessionIds, [sessionId])
+        XCTAssertTrue(harness.panel.errors.contains { $0.contains("Synthetic ASR error") })
+    }
+
+    func testAudioErrorRestoresDucking() {
+        let harness = makeHarness(audioDuckingEnabled: true)
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+        let sessionId = tryUnwrap(harness.audioDucker.beginSessionIds.first)
+
+        harness.audio.emitError()
+        drainMainQueue(times: 2)
+
+        XCTAssertEqual(harness.audioDucker.effectiveRestoreSessionIds, [sessionId])
+        XCTAssertTrue(harness.panel.errors.contains { $0.contains("Synthetic audio error") })
+    }
+
+    func testErrorWithPartialRestoresDuckingAndFallbackCopiesSalvage() {
+        let harness = makeHarness(audioDuckingEnabled: true)
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+        let sessionId = tryUnwrap(harness.audioDucker.beginSessionIds.first)
+
+        harness.asrFactory.clients[0].emitPartial("已经识别的部分文本")
+        drainMainQueue()
+        harness.asrFactory.clients[0].emitError()
+        drainMainQueue(times: 2)
+
+        XCTAssertEqual(harness.audioDucker.effectiveRestoreSessionIds, [sessionId])
+        XCTAssertEqual(harness.paste.calls.map(\.mode), [.fallbackCopy])
+        XCTAssertEqual(harness.paste.calls.first?.text, "已经识别的部分文本")
+        XCTAssertEqual(harness.history.items.first?.text, "已经识别的部分文本")
+        XCTAssertEqual(harness.panel.doneEvents.first?.status, .copiedFallback)
+    }
+
+    func testStaleASRErrorAfterReplacementDoesNotRestoreNewDucking() {
+        let harness = makeHarness(audioDuckingEnabled: true)
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+        let oldSessionId = tryUnwrap(harness.audioDucker.beginSessionIds.first)
+        let oldClient = harness.asrFactory.clients[0]
+
+        harness.hotkeys.triggerLongDraftStart()
+        drainMainQueue()
+        let newSessionId = tryUnwrap(harness.audioDucker.beginSessionIds.last)
+        XCTAssertNotEqual(oldSessionId, newSessionId)
+
+        oldClient.emitError()
+        drainMainQueue(times: 2)
+
+        XCTAssertEqual(harness.audioDucker.effectiveRestoreSessionIds, [oldSessionId])
+        XCTAssertEqual(harness.audioDucker.beginSessionIds, [oldSessionId, newSessionId])
+        XCTAssertEqual(harness.panel.errors.count, 0)
+    }
+
+    func testMockSessionDoesNotDuckOutput() {
+        let harness = makeHarness(audioDuckingEnabled: true)
+        harness.menu.onStartMock?()
+        drainMainQueue()
+
+        XCTAssertTrue(harness.audioDucker.beginSessionIds.isEmpty)
+        XCTAssertTrue(harness.audioDucker.effectiveRestoreSessionIds.isEmpty)
+        XCTAssertTrue(harness.audio.startedTokens.isEmpty)
+    }
+
+    func testControllerStopRestoresDuckingBestEffort() {
+        let harness = makeHarness(audioDuckingEnabled: true)
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+        let sessionId = tryUnwrap(harness.audioDucker.beginSessionIds.first)
+
+        harness.controller.stop()
+        drainMainQueue()
+
+        XCTAssertEqual(harness.audioDucker.effectiveRestoreSessionIds, [sessionId])
+        XCTAssertEqual(harness.hotkeys.stopCallCount, 1)
+    }
+
+    private func makeHarness(autoCompletePaste: Bool = true, audioDuckingEnabled: Bool = false) -> AppControllerHarness {
+        AppControllerHarness(autoCompletePaste: autoCompletePaste, audioDuckingEnabled: audioDuckingEnabled)
     }
 
     private func drainMainQueue(times: Int = 1, file: StaticString = #filePath, line: UInt = #line) {
@@ -174,23 +330,26 @@ private final class AppControllerHarness {
     let focus = FakeFocusDetector(current: editableFocus())
     let hotkeys = FakeHotkeyController()
     let audio = FakeAudioCapture()
+    let audioDucker = FakeSystemAudioDucker()
     let clipboard = FakeClipboard()
     let paste: FakePasteRouter
     let history = FakeHistoryRecorder()
     let asrFactory = FakeASRClientFactory()
     let controller: AppController
 
-    init(autoCompletePaste: Bool) {
+    init(autoCompletePaste: Bool, audioDuckingEnabled: Bool) {
         paste = FakePasteRouter(autoComplete: autoCompletePaste)
         var config = AppConfig.default
         config.mockASR = false
         config.asrBackend = .funASRWebSocket
+        config.audioDucking.enabled = audioDuckingEnabled
         let dependencies = AppController.Dependencies(
             menu: menu,
             panel: panel,
             focusDetector: focus,
             hotkeys: hotkeys,
             audio: audio,
+            audioDucker: audioDucker,
             clipboard: clipboard,
             pasteRouter: paste,
             history: history,
@@ -368,6 +527,36 @@ private final class FakeAudioCapture: AudioCapturing {
         guard let token = explicitToken ?? currentToken else { return }
         onPCMChunk?(token, data)
     }
+
+    func emitError() {
+        onError?(NSError(domain: "test.audio", code: 1, userInfo: [NSLocalizedDescriptionKey: "Synthetic audio error"]))
+    }
+}
+
+private final class FakeSystemAudioDucker: SystemAudioDuckingControlling {
+    private(set) var beginSessionIds: [String] = []
+    private(set) var restoreCalls: [String?] = []
+    private(set) var effectiveRestoreSessionIds: [String] = []
+    private(set) var events: [String] = []
+    private var activeSessionId: String?
+
+    func beginDucking(sessionId: String) {
+        beginSessionIds.append(sessionId)
+        activeSessionId = sessionId
+        events.append("begin:\(sessionId)")
+    }
+
+    func restoreDucking(sessionId: String?) {
+        restoreCalls.append(sessionId)
+        guard let activeSessionId else { return }
+        if let sessionId, sessionId != activeSessionId {
+            events.append("ignore:\(sessionId)")
+            return
+        }
+        self.activeSessionId = nil
+        effectiveRestoreSessionIds.append(activeSessionId)
+        events.append("restore:\(activeSessionId)")
+    }
 }
 
 private final class FakePasteRouter: PasteRouting {
@@ -476,6 +665,10 @@ private final class FakeASRClient: ASRClientProtocol {
     func emitPartial(_ text: String) {
         guard let startedSessionId else { return }
         onEvent?(ASREvent(sessionId: startedSessionId, mode: .online, text: text, isFinal: false))
+    }
+
+    func emitError() {
+        onError?(NSError(domain: "test.asr", code: 1, userInfo: [NSLocalizedDescriptionKey: "Synthetic ASR error"]))
     }
 }
 

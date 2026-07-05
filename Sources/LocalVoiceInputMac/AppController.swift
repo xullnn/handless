@@ -10,6 +10,7 @@ final class AppController {
         let focusDetector: FocusDetecting
         let hotkeys: HotkeyControlling
         let audio: AudioCapturing
+        let audioDucker: SystemAudioDuckingControlling
         let clipboard: ClipboardManaging
         let pasteRouter: PasteRouting
         let history: HistoryRecording
@@ -25,6 +26,7 @@ final class AppController {
                 focusDetector: FocusDetector(),
                 hotkeys: HotkeyController(),
                 audio: AudioCapture(),
+                audioDucker: CoreAudioOutputDucker(config: config.audioDucking),
                 clipboard: clipboard,
                 pasteRouter: PasteEngine(clipboard: clipboard, keyboard: keyboard, policy: config.outputPolicy),
                 history: HistoryStore(policy: HistoryPolicy(maxItems: config.historyMaxItems)),
@@ -40,6 +42,7 @@ final class AppController {
     private let focusDetector: FocusDetecting
     private let hotkeys: HotkeyControlling
     private let audio: AudioCapturing
+    private let audioDucker: SystemAudioDuckingControlling
     private let audioSessionGate = AudioSessionGate()
     private let clipboard: ClipboardManaging
     private let pasteRouter: PasteRouting
@@ -72,6 +75,7 @@ final class AppController {
         self.focusDetector = dependencies.focusDetector
         self.hotkeys = dependencies.hotkeys
         self.audio = dependencies.audio
+        self.audioDucker = dependencies.audioDucker
         self.clipboard = dependencies.clipboard
         self.pasteRouter = dependencies.pasteRouter
         self.history = dependencies.history
@@ -87,12 +91,17 @@ final class AppController {
         self.focusDetector = dependencies.focusDetector
         self.hotkeys = dependencies.hotkeys
         self.audio = dependencies.audio
+        self.audioDucker = dependencies.audioDucker
         self.clipboard = dependencies.clipboard
         self.pasteRouter = dependencies.pasteRouter
         self.history = dependencies.history
         self.asrClientFactory = dependencies.asrClientFactory
         self.focusMonitoringEnabled = dependencies.focusMonitoringEnabled
         setupCallbacks()
+    }
+
+    deinit {
+        audioDucker.restoreDucking(sessionId: nil)
     }
 
     func start() {
@@ -111,6 +120,7 @@ final class AppController {
 
     func stop() {
         hotkeys.stop()
+        audioDucker.restoreDucking(sessionId: nil)
         cancelSession()
     }
 
@@ -136,7 +146,8 @@ final class AppController {
         }
         panel.onRestoreClipboard = { [weak self] in self?.clipboard.restoreLastSavedSnapshot() }
         panel.onFinish = { [weak self] in self?.finishSession() }
-        panel.onQuit = {
+        panel.onQuit = { [weak self] in
+            self?.audioDucker.restoreDucking(sessionId: nil)
             NSApplication.shared.terminate(nil)
         }
 
@@ -190,15 +201,18 @@ final class AppController {
             self.startASR(sessionId: sessionId, forceMock: forceMock)
             guard self.activeSessionId == sessionId else { return }
             if !(self.config.mockASR || forceMock) {
+                self.audioDucker.beginDucking(sessionId: sessionId)
                 self.audio.start(sessionToken: audioSessionToken)
             }
         }
     }
 
     private func abandonActiveSessionForReplacement() {
+        let sessionId = activeSessionId
         stateMachine.send(.cancel)
         audioSessionGate.end()
         audio.cancel()
+        audioDucker.restoreDucking(sessionId: sessionId)
         activeASR?.cancel()
         activeASR = nil
         activeASRClientId = nil
@@ -250,6 +264,7 @@ final class AppController {
             self.audio.stopAndFlush { [weak self, sessionId] audioSessionToken, remainingChunks in
                 guard let self else { return }
                 guard self.activeSessionId == sessionId, self.userRequestedFinish else { return }
+                self.audioDucker.restoreDucking(sessionId: sessionId)
                 for chunk in remainingChunks {
                     self.sendPCMToActiveASR(chunk, audioSessionToken: audioSessionToken)
                 }
@@ -267,10 +282,11 @@ final class AppController {
 
     private func cancelSession() {
         DispatchQueue.main.async {
-            guard self.activeSessionId != nil else { return }
+            guard let sessionId = self.activeSessionId else { return }
             self.stateMachine.send(.cancel)
             self.audioSessionGate.end()
             self.audio.cancel()
+            self.audioDucker.restoreDucking(sessionId: sessionId)
             self.activeASR?.cancel()
             self.activeASR = nil
             self.activeASRClientId = nil
@@ -366,6 +382,7 @@ final class AppController {
         activeASRClientId = nil
         audioSessionGate.end()
         audio.cancel()
+        audioDucker.restoreDucking(sessionId: currentSessionId)
         stopFocusMonitoring()
 
         let raw = transcript?.finalText.isEmpty == false ? transcript!.finalText : (transcript?.latestText ?? "")
@@ -425,10 +442,12 @@ final class AppController {
     }
 
     private func cleanupSession(resetLastText: Bool) {
+        let sessionId = activeSessionId
         activeASR?.cancel()
         activeASR = nil
         activeASRClientId = nil
         audioSessionGate.end()
+        audioDucker.restoreDucking(sessionId: sessionId)
         activeSessionId = nil
         transcript = nil
         didFinalize = false
@@ -476,6 +495,8 @@ final class AppController {
         if let expectedSessionId, let clientId, !isCurrentASR(sessionId: expectedSessionId, clientId: clientId) {
             return
         }
+        let sessionIdForRestore = activeSessionId
+        audioDucker.restoreDucking(sessionId: sessionIdForRestore)
         let salvage = transcript?.latestText.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if activeSessionId != nil, !salvage.isEmpty {
             guard let sessionId = activeSessionId else { return }

@@ -25,6 +25,11 @@ cat > "$CONFIG_DIR/config.json" <<'JSON'
   },
   "correctionMode": "clean",
   "numericITNEnabled": false,
+  "audioDucking": {
+    "enabled": false,
+    "targetVolume": 0.08,
+    "muteInsteadOfDuck": false
+  },
   "historyMaxItems": 20
 }
 JSON

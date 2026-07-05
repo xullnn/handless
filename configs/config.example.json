@@ -23,5 +23,10 @@
   },
   "correctionMode": "clean",
   "numericITNEnabled": false,
+  "audioDucking": {
+    "enabled": false,
+    "targetVolume": 0.08,
+    "muteInsteadOfDuck": false
+  },
   "historyMaxItems": 20
 }
