@@ -1,0 +1,21 @@
+{
+  "cpu_percent": {
+    "last": 17.0,
+    "mean": 8.545367412140575,
+    "peak": 87.1
+  },
+  "duration_seconds": 316.566,
+  "finished_epoch_ms": 1783322523843,
+  "label": "qwen3_mlx_segmented_cache_service",
+  "pid": 71295,
+  "process_scope": "single_process",
+  "rss_mb": {
+    "last": 1349.171875,
+    "mean": 1270.41892971246,
+    "peak": 1351.046875
+  },
+  "sample_count": 313,
+  "schema_version": "1.0",
+  "started_epoch_ms": 1783322207277,
+  "stop_reason": "signal_15"
+}

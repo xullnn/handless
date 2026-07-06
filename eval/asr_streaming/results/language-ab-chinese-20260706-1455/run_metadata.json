@@ -1,0 +1,36 @@
+{
+  "cases": "eval/asr_streaming/cases.local.jsonl",
+  "chunk_ms": 96,
+  "duration_seconds": 316.637,
+  "finished_epoch_ms": 1783322523886,
+  "gate_exit_code": 0,
+  "input_realtime_pacing": true,
+  "mlx_audio_source": ".external/repos/mlx-audio",
+  "model": ".external/models/mlx-community__Qwen3-ASR-0.6B-8bit",
+  "model_id": "qwen3-asr-0.6b-mlx-8bit",
+  "out_dir": "eval/asr_streaming/results/language-ab-chinese-20260706-1455",
+  "paths": {
+    "gate_summary": "eval/asr_streaming/results/language-ab-chinese-20260706-1455/summary.json",
+    "resource_monitor_log": "eval/asr_streaming/results/language-ab-chinese-20260706-1455/resource_monitor.log",
+    "resource_samples": "eval/asr_streaming/results/language-ab-chinese-20260706-1455/resource_samples.jsonl",
+    "resource_summary": "eval/asr_streaming/results/language-ab-chinese-20260706-1455/resource_summary.json",
+    "service_log": "eval/asr_streaming/results/language-ab-chinese-20260706-1455/service.log",
+    "spool_dir": "eval/asr_streaming/results/language-ab-chinese-20260706-1455/spool"
+  },
+  "request_timeout_sec": 240.0,
+  "runner": "run_qwen3_mlx_segmented_regression_gate.sh",
+  "schema_version": "1.0",
+  "segment_policy": {
+    "max_partials_per_segment": 8,
+    "max_segment_sec": 30.0,
+    "min_segment_sec": 5.0,
+    "partial_step_sec": 1.0,
+    "soft_text_chars": 150
+  },
+  "service_pid": 71295,
+  "service_url": "http://127.0.0.1:18131",
+  "started_epoch_ms": 1783322207249,
+  "system_prompt_enabled": false,
+  "system_prompt_file": "",
+  "warn_only": true
+}
