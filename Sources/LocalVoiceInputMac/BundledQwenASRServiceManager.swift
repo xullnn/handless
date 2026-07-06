@@ -31,6 +31,7 @@ final class BundledQwenASRServiceManager: LocalASRServiceManaging {
     private let queue = DispatchQueue(label: "LocalVoiceInput.BundledQwenASRServiceManager")
     private let fileManager: FileManager
     private var managedProcess: Process?
+    private var managedServiceURL: URL?
     private var lastPrepareFailed = false
 
     init(fileManager: FileManager = .default) {
@@ -56,15 +57,27 @@ final class BundledQwenASRServiceManager: LocalASRServiceManaging {
 
     func stopManagedService() {
         queue.sync {
-            guard let process = managedProcess else { return }
+            guard let process = managedProcess else {
+                managedServiceURL = nil
+                return
+            }
             if process.isRunning {
+                if let managedServiceURL {
+                    _ = Self.postShutdownRequest(serviceURL: managedServiceURL)
+                    if Self.waitForProcessExit(process, timeout: 2.0) {
+                        managedProcess = nil
+                        self.managedServiceURL = nil
+                        return
+                    }
+                }
+
                 process.terminate()
-                Thread.sleep(forTimeInterval: 0.2)
-                if process.isRunning {
+                if !Self.waitForProcessExit(process, timeout: 0.8) {
                     process.interrupt()
                 }
             }
             managedProcess = nil
+            managedServiceURL = nil
         }
     }
 
@@ -238,9 +251,43 @@ final class BundledQwenASRServiceManager: LocalASRServiceManaging {
         do {
             try process.run()
             managedProcess = process
+            managedServiceURL = serviceURL
         } catch {
             throw BundledQwenASRServiceError.launchFailed(error.localizedDescription)
         }
+    }
+
+    static func shutdownURL(for serviceURL: URL) -> URL {
+        serviceURL.appendingPathComponent("shutdown")
+    }
+
+    static func postShutdownRequest(serviceURL: URL, timeout: TimeInterval = 2.0) -> Bool {
+        var request = URLRequest(url: shutdownURL(for: serviceURL), timeoutInterval: timeout)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Data("{}".utf8)
+
+        let semaphore = DispatchSemaphore(value: 0)
+        var succeeded = false
+        let task = URLSession.shared.dataTask(with: request) { _, response, _ in
+            defer { semaphore.signal() }
+            guard let http = response as? HTTPURLResponse else { return }
+            succeeded = (200..<300).contains(http.statusCode)
+        }
+        task.resume()
+        if semaphore.wait(timeout: .now() + timeout + 0.5) == .timedOut {
+            task.cancel()
+            return false
+        }
+        return succeeded
+    }
+
+    private static func waitForProcessExit(_ process: Process, timeout: TimeInterval) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while process.isRunning && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+        return !process.isRunning
     }
 
     private func logURL() -> URL {

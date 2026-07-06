@@ -1,5 +1,85 @@
 # SDD Progress
 
+## 2026-07-06 — 2026-07-06-audio-stop-boundary-and-service-shutdown
+
+### Summary
+
+- Fixed the recording stop boundary after closed-alpha testing showed that a short tail from the previous utterance could appear at the start of the next input.
+- Disabled idle microphone pre-roll in `AudioCapture`; the app now starts the audio engine only for an active recording session.
+- Updated stop/cancel handling so `AudioCapture` drains already buffered stop-time PCM, then tears down the audio engine and clears capture buffers.
+- Closed the live `AudioSessionGate` as soon as the user stops recording, while still allowing the trusted `stopAndFlush` chunks to reach ASR.
+- Added regression coverage for late live PCM after stop and for old-session PCM not reaching a newly started session.
+- Added a `/shutdown` endpoint to the Qwen3 segmented service and made the app-managed bundled service request graceful shutdown before falling back to process termination.
+- Aligned Qwen3 segmented service entrypoints and runner scripts by removing the no-longer-supported `--max-tokens` runtime argument from this service route.
+- Rebuilt the signed `.app`, closed-alpha DMG, and relaunched the host app from the rebuilt bundle with the daily Qwen3/NumericITN/audio-ducking arguments.
+
+### Files changed
+
+- `Sources/LocalVoiceInputMac/AudioCapture.swift`
+- `Sources/LocalVoiceInputMac/AppController.swift`
+- `Sources/LocalVoiceInputMac/BundledQwenASRServiceManager.swift`
+- `Tests/LocalVoiceInputMacTests/AppControllerSessionTests.swift`
+- `Tests/LocalVoiceInputMacTests/BundledQwenASRServiceManagerTests.swift`
+- `eval/asr_streaming/qwen3_mlx_segmented_cache_service.py`
+- `eval/asr_streaming/qwen3_mlx_service_common.py`
+- `scripts/run_qwen3_mlx_segmented_app_smoke.sh`
+- `scripts/run_qwen3_mlx_segmented_regression_gate.sh`
+- `specs/2026-07-06-audio-stop-boundary-and-service-shutdown/*`
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+
+### Validation
+
+- Command: `python3 -m json.tool specs/2026-07-06-audio-stop-boundary-and-service-shutdown/feature.json >/dev/null && python3 -m json.tool specs/feature_matrix.json >/dev/null`
+  Result: pass
+  Notes: Feature metadata and feature matrix are valid JSON.
+- Command: `python3 -m py_compile eval/asr_streaming/qwen3_mlx_segmented_cache_service.py eval/asr_streaming/qwen3_mlx_service_common.py && python3 eval/asr_streaming/qwen3_mlx_segmented_cache_service.py self-test`
+  Result: pass
+  Notes: Python service syntax is valid; segmented-service self-test passed, including the new `/shutdown` serve-loop exit check.
+- Command: `bash -n scripts/run_qwen3_mlx_segmented_app_smoke.sh scripts/run_qwen3_mlx_segmented_regression_gate.sh`
+  Result: pass
+  Notes: Qwen3 segmented app-smoke and regression-gate runner scripts are syntactically valid after removing the retired `--max-tokens` service argument.
+- Command: `swift test --filter AppControllerSessionTests/testLateLiveAudioAfterUserStopIsRejectedButFlushedAudioIsSent --filter AppControllerSessionTests/testLateAudioFromStoppedSessionDoesNotReachNextSession --filter BundledQwenASRServiceManagerTests`
+  Result: pass
+  Notes: 7 selected XCTest cases passed, including new stop-boundary and shutdown-request tests.
+- Command: `bash scripts/test.sh`
+  Result: pass
+  Notes: 120 XCTest tests passed with 0 failures.
+- Command: `swift build`
+  Result: pass
+  Notes: Debug build completed successfully.
+- Command: `bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: Rebuilt `dist/LocalVoiceInput.app`; output reported Dock-visible app with menu-bar controls and signed with `Apple Development: 290016537@qq.com (HVFY7KCG8C)`.
+- Command: `codesign --verify --deep --strict --verbose=2 dist/LocalVoiceInput.app`
+  Result: pass
+  Notes: The rebuilt app is valid on disk and satisfies its designated requirement.
+- Command: `bash scripts/package_macos_alpha.sh --closed-alpha`
+  Result: pass
+  Notes: Rebuilt `dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`, approximately `1.1G`.
+- Command: `bash scripts/package_macos_alpha.sh --verify-staged-runtime`
+  Result: pass
+  Notes: Staged runtime started on `http://127.0.0.1:18196`; metadata reported `ok=true`, service `qwen3-mlx-segmented-cache-service`, model id `qwen3-asr-0.6b-mlx-8bit`, fake backend `false`, model load about `6710 ms`.
+- Command: `hdiutil verify dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`
+  Result: pass
+  Notes: Disk image checksum is valid.
+- Command: `open -n dist/LocalVoiceInput.app --args --local-http-asr --asr-http-url http://127.0.0.1:18096 --numeric-itn --audio-ducking --audio-ducking-volume 0.08 && bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: Host app relaunched from the rebuilt bundle as PID `11260`; status script reported `overall: ok` with Qwen3 segmented service healthy on `127.0.0.1:18096`.
+- Manual smoke: physical hotkey dictation after rebuild
+  Result: skipped
+  Notes: Marked optional in this feature because Codex cannot reliably generate live microphone speech input. User should still run one short back-to-back speech smoke in normal use.
+
+### Blockers / open questions
+
+- No blocker remains for the automated stop-boundary and app-managed service-shutdown hardening.
+- Future work remains for broader service supervision: restart policy, resource ceilings, runtime visibility, and user-facing recovery.
+
+### Next recommended action
+
+- Use the rebuilt app locally and run one manual back-to-back speech smoke to confirm the second recording no longer starts with the previous utterance tail.
+- Send the rebuilt DMG for the next friend/colleague test only after that quick host smoke feels normal.
+
 ## 2026-07-06 — 2026-07-06-closed-alpha-lifecycle-ergonomics
 
 ### Summary

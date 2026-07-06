@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import http.client
 import json
 import math
 import re
@@ -755,7 +756,7 @@ class SegmentedHttpState:
             "asr_context": self.asr_context,
             "model_load_wall_ms": self.model_load_wall_ms,
             "started_epoch_ms": self.started_epoch_ms,
-            "contract": ["start", "chunk", "finish", "cancel"],
+            "contract": ["start", "chunk", "finish", "cancel", "shutdown"],
             "segment_policy": policy_dict(self.service.policy),
         }
 
@@ -838,6 +839,14 @@ class SegmentedHttpHandler(BaseHTTPRequestHandler):
                 events = self.state.finish(payload)
             elif self.path == "/cancel":
                 events = self.state.cancel(payload)
+            elif self.path == "/shutdown":
+                self._write_json({"ok": True, "shutdown": "scheduled", "metadata": self.state.metadata()})
+                threading.Thread(
+                    target=self.server.shutdown,
+                    name="qwen3-segmented-http-shutdown",
+                    daemon=True,
+                ).start()
+                return
             else:
                 self._write_json({"error": f"unknown path: {self.path}"}, status=404)
                 return
@@ -1026,7 +1035,6 @@ def command_run(args: argparse.Namespace) -> int:
         backend = MLXBackend(
             model,
             language=args.language.strip() or None,
-            max_tokens=args.max_tokens,
             system_prompt=system_prompt,
         )
         model_surface = classify_model_surface(model)
@@ -1268,6 +1276,48 @@ def command_self_test(args: argparse.Namespace) -> int:
         if any(event.get("kind") == "final" and event.get("accepted") is True for event in cancel_service.events):
             raise AssertionError(f"cancel leaked final output: {cancel_service.events}")
 
+        shutdown_backend = ExpectedTextFakeBackend()
+        shutdown_service = SegmentedCacheService(
+            backend=shutdown_backend,
+            policy=policy,
+            spool_dir=Path(tmp) / "shutdown",
+        )
+        shutdown_state = SegmentedHttpState(
+            service=shutdown_service,
+            backend=shutdown_backend,
+            model_info={"id": "qwen3-asr-0.6b-mlx-8bit"},
+            model_surface={"fake_backend": True},
+            fake_backend=True,
+            model_load_wall_ms=0.0,
+            asr_context={},
+        )
+        SegmentedHttpHandler.state = shutdown_state
+        shutdown_server = HTTPServer(("127.0.0.1", 0), SegmentedHttpHandler)
+        shutdown_thread = threading.Thread(target=shutdown_server.serve_forever, daemon=True)
+        shutdown_thread.start()
+        try:
+            connection = http.client.HTTPConnection(
+                "127.0.0.1",
+                shutdown_server.server_port,
+                timeout=2,
+            )
+            connection.request(
+                "POST",
+                "/shutdown",
+                body=b"{}",
+                headers={"Content-Type": "application/json"},
+            )
+            response = connection.getresponse()
+            response_body = response.read()
+            payload = json.loads(response_body.decode("utf-8"))
+            if response.status != 200 or payload.get("ok") is not True or payload.get("shutdown") != "scheduled":
+                raise AssertionError(f"unexpected shutdown response: status={response.status} body={payload}")
+            shutdown_thread.join(timeout=2.0)
+            if shutdown_thread.is_alive():
+                raise AssertionError("shutdown request did not stop serve_forever")
+        finally:
+            shutdown_server.server_close()
+
     print("Qwen3 MLX segmented-cache service self-test passed.")
     return 0
 
@@ -1312,7 +1362,6 @@ def build_http_state(args: argparse.Namespace) -> SegmentedHttpState:
         backend = MLXBackend(
             model,
             language=args.language.strip() or None,
-            max_tokens=args.max_tokens,
             system_prompt=system_prompt,
         )
         model_surface = classify_model_surface(model)
@@ -1586,7 +1635,6 @@ def add_common_runtime_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--mlx-audio-source", default=".external/repos/mlx-audio")
     parser.add_argument("--registry", default="eval/asr_streaming/model_registry.json")
     parser.add_argument("--language", default="Chinese")
-    parser.add_argument("--max-tokens", type=int, default=256)
     parser.add_argument("--system-prompt", default="")
     parser.add_argument("--system-prompt-file", default="")
     parser.add_argument("--fake-backend", action="store_true")

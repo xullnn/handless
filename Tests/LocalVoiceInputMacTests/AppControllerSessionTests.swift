@@ -76,6 +76,51 @@ final class AppControllerSessionTests: XCTestCase {
         XCTAssertEqual(newClient.sentPCM, [Data([5, 6, 7, 8])])
     }
 
+    func testLateLiveAudioAfterUserStopIsRejectedButFlushedAudioIsSent() {
+        let harness = makeHarness()
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+
+        let token = tryUnwrap(harness.audio.startedTokens.first)
+        let client = harness.asrFactory.clients[0]
+        let flushed = Data([9, 9, 9, 9])
+        harness.audio.flushChunks = [flushed]
+
+        harness.hotkeys.triggerPushToTalkStop()
+        drainMainQueue()
+        harness.audio.emitPCM(Data([1, 2, 3, 4]), token: token)
+        drainMainQueue()
+
+        XCTAssertEqual(client.sentPCM, [flushed])
+        XCTAssertEqual(client.finishCallCount, 1)
+    }
+
+    func testLateAudioFromStoppedSessionDoesNotReachNextSession() {
+        let harness = makeHarness()
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+
+        let oldToken = tryUnwrap(harness.audio.startedTokens.first)
+        harness.hotkeys.triggerPushToTalkStop()
+        drainMainQueue()
+
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+
+        XCTAssertEqual(harness.asrFactory.clients.count, 2)
+        let newClient = harness.asrFactory.clients[1]
+        let newToken = tryUnwrap(harness.audio.startedTokens.last)
+        XCTAssertNotEqual(oldToken, newToken)
+
+        harness.audio.emitPCM(Data([1, 2, 3, 4]), token: oldToken)
+        drainMainQueue()
+        XCTAssertTrue(newClient.sentPCM.isEmpty)
+
+        harness.audio.emitPCM(Data([5, 6, 7, 8]), token: newToken)
+        drainMainQueue()
+        XCTAssertEqual(newClient.sentPCM, [Data([5, 6, 7, 8])])
+    }
+
     func testLongToShortReplacementStartsPushToTalkAndCancelsLongSession() {
         let harness = makeHarness()
         harness.hotkeys.triggerLongDraftStart()

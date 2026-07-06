@@ -44,12 +44,10 @@ class MLXBackend:
         model: Any,
         *,
         language: str | None,
-        max_tokens: int,
         system_prompt: str | None = None,
     ) -> None:
         self.model = model
         self.language = language
-        self.max_tokens = max_tokens
         self.system_prompt = (system_prompt or "").strip() or None
 
     def partial(self, audio: np.ndarray) -> ServiceResult:
@@ -57,7 +55,6 @@ class MLXBackend:
             model=self.model,
             audio=audio,
             language=self.language,
-            max_tokens=self.max_tokens,
             system_prompt=self.system_prompt,
         )
         return ServiceResult(
@@ -71,7 +68,6 @@ class MLXBackend:
             model=self.model,
             audio=audio,
             language=self.language,
-            max_tokens=self.max_tokens,
             system_prompt=self.system_prompt,
         )
         return ServiceResult(
@@ -163,7 +159,6 @@ def call_stream_or_generate(
     model: Any,
     audio: np.ndarray,
     language: str | None,
-    max_tokens: int,
     system_prompt: str | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
@@ -176,7 +171,6 @@ def call_stream_or_generate(
         for item in model.stream_transcribe(
             audio,
             language=language,
-            max_tokens=max_tokens,
             system_prompt=system_prompt,
         ):
             text = extract_text(item)
@@ -199,7 +193,6 @@ def call_stream_or_generate(
         result = model.generate(
             audio,
             language=language,
-            max_tokens=max_tokens,
             system_prompt=system_prompt,
         )
         text = filter_system_prompt_leak(extract_text(result).strip(), system_prompt)
@@ -229,14 +222,12 @@ def call_final_generate(
     model: Any,
     audio: np.ndarray,
     language: str | None,
-    max_tokens: int,
     system_prompt: str | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     result = model.generate(
         audio,
         language=language,
-        max_tokens=max_tokens,
         system_prompt=system_prompt,
     )
     finished = time.perf_counter()

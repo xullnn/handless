@@ -526,6 +526,20 @@
       ],
       "passes": true,
       "updated_at": "2026-07-06"
+    },
+    {
+      "id": "2026-07-06-audio-stop-boundary-and-service-shutdown",
+      "title": "Audio stop boundary and service shutdown hardening",
+      "status": "validated",
+      "spec_path": "specs/2026-07-06-audio-stop-boundary-and-service-shutdown",
+      "depends_on": [
+        "2026-07-05-session-coordinator-integration-tests",
+        "2026-07-05-output-audio-ducking",
+        "2026-07-05-macos-alpha-distribution",
+        "2026-07-06-closed-alpha-lifecycle-ergonomics"
+      ],
+      "passes": true,
+      "updated_at": "2026-07-06"
     }
   ]
 }

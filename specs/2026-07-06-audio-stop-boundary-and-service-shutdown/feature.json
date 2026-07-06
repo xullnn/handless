@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-07-06-audio-stop-boundary-and-service-shutdown",
+  "title": "Audio stop boundary and service shutdown hardening",
+  "kind": "feature",
+  "parent_id": "2026-07-05-macos-alpha-distribution",
+  "created_from": "closed-alpha tester feedback on tail audio leakage and qwen3-service shutdown warning",
+  "created_at": "2026-07-06",
+  "updated_at": "2026-07-06",
+  "follow_ups": [
+    {
+      "id": "FUP-001",
+      "title": "Service supervision restart and resource ceilings",
+      "kind": "architecture",
+      "reason": "This pass only makes app-owned service shutdown graceful. Broader restart policy, user-facing runtime health, and memory/CPU thresholds need a separate service-supervision feature.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    }
+  ]
+}

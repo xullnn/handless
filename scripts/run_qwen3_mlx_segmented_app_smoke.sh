@@ -9,7 +9,6 @@ MODEL_ID="${MODEL_ID:-qwen3-asr-0.6b-mlx-8bit}"
 MODEL="${MODEL:-.external/models/mlx-community__Qwen3-ASR-0.6B-8bit}"
 MLX_AUDIO_SOURCE="${MLX_AUDIO_SOURCE:-.external/repos/mlx-audio}"
 LANGUAGE="${LANGUAGE:-Chinese}"
-MAX_TOKENS="${MAX_TOKENS:-1024}"
 MAX_SEGMENT_SEC="${MAX_SEGMENT_SEC:-30}"
 MIN_SEGMENT_SEC="${MIN_SEGMENT_SEC:-5}"
 SOFT_TEXT_CHARS="${SOFT_TEXT_CHARS:-150}"
@@ -38,7 +37,6 @@ SERVICE_CMD=(
   --model "$MODEL"
   --mlx-audio-source "$MLX_AUDIO_SOURCE"
   --language "$LANGUAGE"
-  --max-tokens "$MAX_TOKENS"
   --max-segment-sec "$MAX_SEGMENT_SEC"
   --min-segment-sec "$MIN_SEGMENT_SEC"
   --soft-text-chars "$SOFT_TEXT_CHARS"
@@ -195,7 +193,6 @@ metadata = {
     "model_id": "$MODEL_ID",
     "model": "$MODEL",
     "mlx_audio_source": "$MLX_AUDIO_SOURCE",
-    "max_tokens": int("$MAX_TOKENS"),
     "segment_policy": {
         "max_segment_sec": float("$MAX_SEGMENT_SEC"),
         "min_segment_sec": float("$MIN_SEGMENT_SEC"),

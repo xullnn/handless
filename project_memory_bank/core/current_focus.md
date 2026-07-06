@@ -17,6 +17,8 @@ Stable status:
 - The floating panel is non-key and non-activating, has rounded visual chrome, keeps text readable for long partials, and fades after final output with hover pause.
 - Confirmed auto-paste now keeps the dictated result as the newest clipboard item by default. Restoring the previous clipboard is an optional policy and must only happen after paste verification.
 - Qwen3 segmented HTTP service resource governance exists: terminal sessions release audio state, segmented spool files are governed by cleanup tooling, `/metadata` and `/health` report service state, and cleanup tooling targets generated ASR artifacts while protecting model caches.
+- Audio capture is session-bound in the closed-alpha runtime: the app does not keep the microphone engine running while idle for pre-roll, and stop/cancel paths tear capture down so post-release audio cannot be prepended to the next session.
+- App-managed bundled Qwen3 service shutdown is graceful-first: the app requests the local `/shutdown` endpoint for processes it launched before falling back to forced process termination.
 - Local model cache is intentionally lean: keep Qwen3-ASR MLX 0.6B/1.7B, MiMo-V2.5-ASR MLX plus tokenizer for offline reference, and FunASR Paraformer/VAD baseline assets. Detailed cache paths live in `eval/asr_streaming/model_inventory.md`.
 
 Immediate next focus:

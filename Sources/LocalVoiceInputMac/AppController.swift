@@ -282,6 +282,7 @@ final class AppController {
             }
             self.panel.updateFinalizing()
             self.recomputeOutputModeForFocusChange()
+            self.audioSessionGate.end()
 
             if self.config.mockASR || self.forceMockForCurrentSession {
                 self.activeASR?.finish()
@@ -294,7 +295,7 @@ final class AppController {
                 guard self.activeSessionId == sessionId, self.userRequestedFinish else { return }
                 self.audioDucker.restoreDucking(sessionId: sessionId)
                 for chunk in remainingChunks {
-                    self.sendPCMToActiveASR(chunk, audioSessionToken: audioSessionToken)
+                    self.sendFlushedPCMToActiveASR(chunk)
                 }
                 self.activeASR?.finish()
                 self.scheduleFinalizeTimeout(seconds: self.finalizeTimeoutSeconds(), sessionId: sessionId)
@@ -499,6 +500,15 @@ final class AppController {
     private func sendPCMToActiveASR(_ data: Data, audioSessionToken: AudioSessionToken?) {
         guard activeSessionId != nil else { return }
         guard audioSessionGate.accepts(audioSessionToken) else { return }
+        sendPCMToActiveASR(data)
+    }
+
+    private func sendFlushedPCMToActiveASR(_ data: Data) {
+        guard activeSessionId != nil else { return }
+        sendPCMToActiveASR(data)
+    }
+
+    private func sendPCMToActiveASR(_ data: Data) {
         activeSessionAudioMs += Double(data.count) / 2.0 / 16_000.0 * 1000.0
         activeASR?.sendPCM(data)
     }

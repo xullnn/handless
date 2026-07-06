@@ -4,7 +4,7 @@ The ASR/audio path is local-first and supports mock validation, real FunASR WebS
 
 Stable responsibilities:
 
-- `AudioCapture` records microphone input with `AVAudioEngine`, converts to 16 kHz mono int16 PCM, batches chunks, and flushes pending PCM before ASR finish.
+- `AudioCapture` records microphone input with `AVAudioEngine`, converts to 16 kHz mono int16 PCM, batches chunks, and flushes pending PCM before ASR finish. Closed-alpha capture is session-bound: it does not run the microphone engine while idle for pre-roll, and stop/cancel tears the engine down to prevent post-release audio from leaking into the next input.
 - `FunASRClient` connects to a local WebSocket endpoint, sends a 2-pass start message, streams PCM data, and sends `is_speaking=false` after audio flush.
 - `LocalHTTPASRClient` connects to an explicitly selected loopback HTTP service, posts `/start`, `/chunk`, `/finish`, and `/cancel`, transfers PCM as base64 JSON, and filters backend events by session token before emitting `ASREvent` values.
 - `MockASRClient` provides deterministic partial and final events for interaction testing without a server.
@@ -18,10 +18,11 @@ Stable responsibilities:
 - `eval/asr_streaming/run_eval.py` also supports a local Fun-ASR-Nano file-level adapter for model comparison on the same WAV cases without touching macOS hotkey, focus, paste, or floating-panel code.
 - `eval/asr_streaming/qwen3_mlx_realtime_probe.py` checks whether Qwen3-ASR MLX exposes true session streaming or only file/token streaming.
 - Qwen3-ASR MLX 0.6B and 1.7B expose `generate`, `stream_transcribe`, and `stream_generate`, but not `create_streaming_session`; they are not realtime-gate eligible without a custom session wrapper.
-- `eval/asr_streaming/qwen3_mlx_segmented_cache_service.py` is the active Qwen3-ASR MLX local HTTP service route. It accepts timed PCM chunks, emits user-visible partial/final events, writes durable local audio cache files, and commits bounded segments so long dictation does not require whole-session final recompute. Its validated boundary policy prefers continuous low-energy cut points near the segment limit, then falls back to the hard duration cap plus bounded overlap and exact overlap de-duplication.
+- `eval/asr_streaming/qwen3_mlx_segmented_cache_service.py` is the active Qwen3-ASR MLX local HTTP service route. It accepts timed PCM chunks, emits user-visible partial/final events, writes durable local audio cache files, commits bounded segments so long dictation does not require whole-session final recompute, and exposes a local `/shutdown` endpoint for app-managed graceful teardown. Its validated boundary policy prefers continuous low-energy cut points near the segment limit, then falls back to the hard duration cap plus bounded overlap and exact overlap de-duplication.
 - `eval/asr_streaming/qwen3_mlx_service_common.py` owns shared active Qwen3 service helpers such as MLX backend calls, system prompt metadata/filtering, the fixed 16 kHz sample rate, and service-gate evaluation.
 - The older Qwen3 cumulative-recompute probe/service/HTTP route has been retired from active code/config. Historical specs and result artifacts remain as evidence, but new runtime work should use the segmented service route.
 - `eval/asr_streaming/monitor_pid_resources.py` and `scripts/run_qwen3_mlx_segmented_regression_gate.sh` provide repeatable RSS/CPU sampling while the segmented Qwen3 HTTP gate runs.
+- The active Qwen3 segmented service route keeps its runtime argument surface narrow; runner scripts should not pass an app-level `--max-tokens` option to this service.
 - `eval/asr_streaming/cleanup_localvoiceinput_cache.py` and `scripts/cleanup_localvoiceinput_cache.sh` safely inspect/delete generated ASR runtime artifacts while protecting model caches; eval audio cleanup is opt-in.
 - `eval/asr_streaming/segment_cache_eval.py` prepares bounded segment WAVs and analyzes segment-final results as source-case plus strategy reports. Its first validated runs support using hybrid segmented caching for long dictation instead of whole-session cumulative final recompute.
 - Qwen3-ASR MLX 0.6B has validated segmented-route evidence across base and numeric regression suites, plus a validated optional Swift local HTTP client path and ongoing manual actual-use evidence. It is still opt-in rather than the default replacement for the existing FunASR app backend until service supervision is formalized.
@@ -38,6 +39,7 @@ Important constraints:
 - FunASR offline segment results can update transcript state while recording but must not finalize the whole user session until user stop.
 - The websocket server must flush remaining PCM to offline ASR when `is_speaking=false` arrives, because the macOS app sends that control message after all PCM has been flushed.
 - Old ASR sessions must not affect the active session.
+- Audio captured after user stop must not affect the stopped or next session; only chunks returned by the stop-flush path are trusted after the live session gate closes.
 - Real ASR setup should remain local; no audio or text is uploaded by default.
 - Public ASR benchmark results are shortlist evidence only; final backend selection must be validated with local harness runs and project/user-specific recordings.
 - Fun-ASR-Nano local file-level results are backend-selection evidence only. They do not validate realtime partial display, WebSocket session behavior, or macOS app insertion behavior.

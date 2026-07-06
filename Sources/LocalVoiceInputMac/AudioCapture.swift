@@ -7,11 +7,9 @@ final class AudioCapture {
     private var converter: AVAudioConverter?
     private var outputFormat: AVAudioFormat?
     private var pendingPCM = Data()
-    private var preRollPCM = Data()
     private let pendingLock = NSLock()
     private let queue = DispatchQueue(label: "localvoiceinput.audio.capture")
     private let chunkBytes = 16000 * 2 * 480 / 1000 // 480ms, 16kHz, int16 mono
-    private let preRollBytes = 16000 * 2 * 900 / 1000 // 900ms local in-memory pre-roll
     private var isRunning = false
     private var isCapturingSession = false
     private var currentSessionToken: AudioSessionToken?
@@ -39,9 +37,8 @@ final class AudioCapture {
     }
 
     func prewarm() {
-        queue.async { [weak self] in
-            self?.startEngineIfNeeded(capturing: false)
-        }
+        // Keep microphone capture session-bound. Closed-alpha builds favor a clean stop
+        // boundary over idle pre-roll so post-release audio cannot leak into the next input.
     }
 
     func start(sessionToken: AudioSessionToken) {
@@ -49,7 +46,6 @@ final class AudioCapture {
             guard let self else { return }
             self.pendingLock.lock()
             self.pendingPCM.removeAll(keepingCapacity: true)
-            self.pendingPCM.append(self.preRollPCM)
             self.currentSessionToken = sessionToken
             self.isCapturingSession = true
             self.pendingLock.unlock()
@@ -65,6 +61,7 @@ final class AudioCapture {
             self.currentSessionToken = nil
             self.pendingPCM.removeAll(keepingCapacity: true)
             self.pendingLock.unlock()
+            self.tearDownEngineAfterSession()
         }
     }
 
@@ -80,6 +77,7 @@ final class AudioCapture {
             self.currentSessionToken = nil
             let remaining = self.drainPendingChunksLocked(includePartial: true)
             self.pendingLock.unlock()
+            self.tearDownEngineAfterSession()
             DispatchQueue.main.async { completion(sessionToken, remaining) }
         }
     }
@@ -146,7 +144,6 @@ final class AudioCapture {
         isCapturingSession = false
         currentSessionToken = nil
         pendingPCM.removeAll(keepingCapacity: true)
-        preRollPCM.removeAll(keepingCapacity: true)
         pendingLock.unlock()
 
         if wasCapturing {
@@ -159,10 +156,14 @@ final class AudioCapture {
             }
         }
 
-        tearDownEngineAfterConfigurationChange()
+        tearDownEngine()
     }
 
-    private func tearDownEngineAfterConfigurationChange() {
+    private func tearDownEngineAfterSession() {
+        tearDownEngine()
+    }
+
+    private func tearDownEngine() {
         stopEngineIfNeeded()
         converter = nil
         outputFormat = nil
@@ -203,7 +204,6 @@ final class AudioCapture {
     private func appendOrBuffer(_ data: Data) {
         pendingLock.lock()
         guard isCapturingSession, let sessionToken = currentSessionToken else {
-            appendPreRollLocked(data)
             pendingLock.unlock()
             return
         }
@@ -218,13 +218,6 @@ final class AudioCapture {
 
         for chunk in chunks {
             DispatchQueue.main.async { self.onPCMChunk?(sessionToken, chunk) }
-        }
-    }
-
-    private func appendPreRollLocked(_ data: Data) {
-        preRollPCM.append(data)
-        if preRollPCM.count > preRollBytes {
-            preRollPCM.removeFirst(preRollPCM.count - preRollBytes)
         }
     }
 
