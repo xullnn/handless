@@ -4,7 +4,7 @@ Packaging and local operations are script-driven.
 
 Stable responsibilities:
 
-- `scripts/build_macos_app.sh` builds `LocalVoiceInputMac`, creates `dist/LocalVoiceInput.app`, copies `Resources/AppIcon.icns`, writes `Info.plist` including `CFBundleIconFile=AppIcon`, and signs the app.
+- `scripts/build_macos_app.sh` builds `LocalVoiceInputMac`, creates `dist/LocalVoiceInput.app`, copies `Resources/AppIcon.icns`, writes `Info.plist` including `CFBundleIconFile=AppIcon`, omits `LSUIElement` by default for a Dock-visible closed-alpha app, and signs the app. `LOCALVOICEINPUT_MENU_BAR_ONLY=1` writes `LSUIElement=true` for developer-only menu-bar-agent builds.
 - `scripts/package_macos_alpha.sh` builds the Phase 1 unnotarized closed-alpha DMG for trusted Apple Silicon testers. It stages allowlisted runtime assets, verifies the staged Qwen3 segmented service outside the repo, embeds `AlphaRuntime` into the app, re-signs the bundle, and creates the DMG under `dist/`.
 - `configs/alpha.local-qwen3.json` is the closed-alpha config path for double-click use: local HTTP ASR on `127.0.0.1:18096`, NumericITN enabled, and output audio ducking enabled.
 - `scripts/write_alpha_config.sh` writes the alpha config into the user config location when an alpha tester or local smoke needs that explicit runtime state.

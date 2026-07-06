@@ -12,6 +12,7 @@ Phase 1 target:
 - bundled Python/MLX runtime and `mlx-audio` source;
 - app-managed local Qwen3 segmented service;
 - no terminal setup for testers;
+- Dock-visible app entry for closed-alpha launch and quit;
 - expected first-launch Gatekeeper friction handled through macOS Privacy & Security "Open Anyway" by trusted testers.
 
 Future Phase 2:
@@ -86,23 +87,23 @@ Expected first launch:
 3. macOS may block it because it is not notarized.
 4. Open System Settings > Privacy & Security and choose Open Anyway / Still Open.
 5. Grant Microphone, Accessibility, and Input Monitoring when prompted.
-6. After launch, find the `LVI` item in the macOS menu bar. This is the LocalVoiceInput control.
+6. After launch, LocalVoiceInput appears as a normal running app in the Dock. It also has a menu-bar control when macOS displays it.
 7. Use Right Option for short dictation or Right Command + `.` for long dictation.
 
-The yellow/orange microphone privacy dot shown by macOS is only a system privacy indicator. It is not the LocalVoiceInput menu or quit button.
+The yellow/orange microphone icon shown by macOS is only a system privacy and microphone-mode panel. It is not the LocalVoiceInput menu or quit button.
 
 ## Launch, Find, And Quit
 
 - Launch: open `LocalVoiceInput.app` from Applications or use Spotlight search for `LocalVoiceInput`.
-- Find the running app: look for the `LVI` menu-bar item. During recording it changes to `REC`; if attention is needed it changes to `LVI!`.
-- Quit: click the `LVI` menu-bar item and choose `退出 LocalVoiceInput`.
+- Find the running app: look for the LocalVoiceInput Dock icon first. If the app-owned menu-bar item is visible, it shows `LVI`, `REC`, or `LVI!`.
+- Quit: use the Dock icon's Quit action, press Command-Q while LocalVoiceInput is active, or click the app-owned menu-bar item and choose `退出 LocalVoiceInput` when that item is visible.
 - Reopen: launch it again from Applications or Spotlight.
 
-The app remains a menu-bar utility, so it does not appear as a normal Dock window after launch.
+The closed-alpha build intentionally keeps a normal Dock-visible app entry because menu-bar-only utilities can be hard for non-technical testers to find and quit.
 
 ## Menu Diagnostics
 
-The `LVI` menu includes tester-facing support actions:
+When visible, the app-owned menu-bar menu includes tester-facing support actions:
 
 - `检查/申请权限`: opens or requests the macOS permission prompts where possible.
 - `打开日志文件夹`: opens `~/Library/Logs/LocalVoiceInput`.

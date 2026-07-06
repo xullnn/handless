@@ -8,7 +8,7 @@ Stable status:
 - The packaged app is signed with a stable Apple Development identity so macOS TCC permissions can survive rebuilds when bundle id and signing identity stay stable.
 - The app is being used through the packaged `dist/LocalVoiceInput.app` path with an explicit local HTTP ASR URL when Qwen3 is needed. FunASR WebSocket remains the default config path; Qwen3-ASR MLX is opt-in.
 - A Phase 1 closed-alpha DMG path exists for trusted tester distribution. It is unnotarized, bundles Qwen3-ASR MLX 0.6B plus the Python/MLX runtime assets needed for the segmented service, and uses specs/progress.md as the source of truth for validation evidence.
-- The closed-alpha app has an app-owned `LVI` menu-bar item with recording/warning state labels, explicit quit, permission, logs, and diagnostics actions, plus an app icon for Finder, Applications, Spotlight, and Gatekeeper prompts.
+- The closed-alpha app is Dock-visible by default for reliable launch/quit, keeps an app-owned `LVI`/`REC`/`LVI!` menu-bar control as an auxiliary lifecycle/diagnostics entry, and has an app icon for Finder, Applications, Spotlight, and Gatekeeper prompts.
 - Mock ASR mode remains the fast shell validation path for hotkeys, focus routing, floating panel, clipboard, paste verification, and cancel behavior.
 - Qwen3-ASR MLX 0.6B behind the segmented-cache local HTTP wrapper is the current first-choice ASR candidate for actual-use experiments. It is still a local wrapper around file-level model calls, not a native streaming session API.
 - The older Qwen3 cumulative-recompute route is retired from active code/config. It remains historical evidence only because daily use showed worse long-dictation responsiveness and unreliable numeric-format prompting.
@@ -22,7 +22,7 @@ Stable status:
 Immediate next focus:
 
 - Continue small-step hardening around daily-use issues rather than broad rewrites.
-- Improve the next layer of closed-alpha tester ergonomics after the basic `LVI` lifecycle menu: optional start-at-login, first-run onboarding, and settings/runtime visibility.
+- Improve the next layer of closed-alpha tester ergonomics after the Dock-visible lifecycle baseline: optional start-at-login, first-run onboarding, and settings/runtime visibility.
 - Continue hardening service supervision beyond the validated closed-alpha baseline: restart/fallback behavior, resource ceilings, and clearer user-facing failures.
 - Keep mouse/other-device trigger abstraction and model profile management as SDD-planned future features until the core runtime path is more stable.
 

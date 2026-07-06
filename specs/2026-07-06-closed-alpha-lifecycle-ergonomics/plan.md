@@ -11,7 +11,8 @@
 7. Update `scripts/build_macos_app.sh` to copy the icon and write `CFBundleIconFile`.
 8. Update closed-alpha documentation with launch, find, quit, and diagnostic instructions.
 9. Add focused tests for the new pure helper(s).
-10. Build and validate the app and closed-alpha package.
+10. Convert the closed-alpha default launch shape to Dock-visible while preserving a menu-bar-only developer override.
+11. Build and validate the app and closed-alpha package.
 
 ## Touched areas
 
@@ -21,13 +22,14 @@
 - `Sources/LocalVoiceInputMac/*Diagnostics*`
 - `Resources/AppIcon.icns`
 - `scripts/build_macos_app.sh`
+- `Sources/LocalVoiceInputMac/main.swift`
 - `docs/macos-alpha-distribution.md`
 - `Tests/LocalVoiceInputMacTests/*`
 
 ## Validation implementation notes
 
 - Unit tests should cover menu-bar presentation and diagnostics string safety.
-- Manual validation should focus on whether the app can be found and quit from the menu-bar item after launch.
+- Manual validation should focus on whether the app can be found and quit from Dock/Application menu after launch, with the menu-bar item treated as an auxiliary control.
 
 ## PMB promotion candidates
 
@@ -40,6 +42,8 @@
   Mitigation: Use short labels such as `LVI`, `REC`, and `LVI!`.
 - Risk: A custom icon is confused with the macOS microphone privacy dot.
   Mitigation: Use visible app text in the status item instead of a standalone microphone glyph.
+- Risk: The menu-bar item is still hidden, visually compressed, or confused with macOS system microphone UI on a crowded host menu bar.
+  Mitigation: Make the closed-alpha app Dock-visible by default and keep the status item as an auxiliary control.
 - Risk: Diagnostics accidentally expose user content.
   Mitigation: Keep diagnostics to paths, config flags, backend type, URL, and service/log locations; do not include transcripts or audio.
 - Risk: App icon generation adds toolchain fragility.

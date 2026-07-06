@@ -2,7 +2,7 @@
 
 ## Completion rule
 
-This feature can be marked `passes=true` only when required automated checks pass, the built app contains the icon resource and updated `Info.plist`, the closed-alpha package rebuilds successfully, and a local manual smoke confirms the menu-bar item is identifiable and can quit the app.
+This feature can be marked `passes=true` only when required automated checks pass, the built app contains the icon resource and updated `Info.plist`, the closed-alpha package rebuilds successfully, and a local manual smoke confirms the app is findable/quittable through Dock/Application-menu paths even if the menu-bar item is not obvious on a crowded host menu bar.
 
 ## Acceptance criteria
 
@@ -13,6 +13,8 @@ This feature can be marked `passes=true` only when required automated checks pas
 - A5: The closed-alpha docs explain launch, menu-bar location, quit, logs, diagnostics, and the distinction between the app item and macOS microphone privacy dot.
 - A6: Existing dictation session behavior, output routing, cancel behavior, and audio ducking are unchanged.
 - A7: The closed-alpha DMG can be rebuilt with the updated app resources.
+- A8: The default built app is Dock-visible and does not include `LSUIElement=true`.
+- A9: A developer can still produce/launch a menu-bar-only build when explicitly requested.
 
 ## Automated checks
 
@@ -24,6 +26,10 @@ swift build
 bash scripts/build_macos_app.sh
 /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' dist/LocalVoiceInput.app/Contents/Info.plist
 test -f dist/LocalVoiceInput.app/Contents/Resources/AppIcon.icns
+if /usr/libexec/PlistBuddy -c 'Print :LSUIElement' dist/LocalVoiceInput.app/Contents/Info.plist >/tmp/localvoiceinput-lsuielement.txt 2>&1; then
+  cat /tmp/localvoiceinput-lsuielement.txt
+  exit 1
+fi
 codesign --verify --deep --strict --verbose=2 dist/LocalVoiceInput.app
 bash scripts/package_macos_alpha.sh --closed-alpha
 bash scripts/package_macos_alpha.sh --verify-staged-runtime
@@ -33,7 +39,9 @@ hdiutil verify dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg
 ## Manual smoke checks
 
 - Launch the rebuilt app.
-- Confirm the menu bar shows a visible `LVI`-style app-owned item.
+- Confirm the app appears as a normal running app in the Dock after launch.
+- Confirm Command-Q or the Dock Quit action exits the app.
+- If the menu-bar item is visible, confirm it shows a LocalVoiceInput-owned marker and opens the lifecycle menu.
 - Open the menu and confirm the permission, logs, diagnostics, and quit actions are present.
 - Use `Copy Diagnostics Summary` and confirm the clipboard contains safe app/runtime metadata, not dictated text.
 - Use `Open Logs Folder` and confirm Finder opens the LocalVoiceInput log directory.

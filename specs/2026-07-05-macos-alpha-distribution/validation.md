@@ -16,7 +16,7 @@ Gatekeeper acceptance is not required for Phase 1. An unnotarized/Gatekeeper war
 - A6: Repo-external staged runtime validation starts the Qwen3 segmented service using only staged paths and confirms `/metadata` or `/health`.
 - A7: The app-managed service path starts or reuses the local Qwen3 service when `asrBackend=local-http`.
 - A8: The service uses user-writable spool/cache/log directories and does not write mutable files into the app bundle.
-- A9: The app bundle still has the intended `LSUIElement` menu-bar shape and required microphone/input-monitoring usage strings.
+- A9: The original packaging baseline preserved the then-intended `LSUIElement` menu-bar shape and required microphone/input-monitoring usage strings. The `LSUIElement` launch shape is superseded for closed-alpha tester builds by `2026-07-06-closed-alpha-lifecycle-ergonomics`.
 - A10: Alpha double-click configuration makes local HTTP ASR, NumericITN, and audio ducking behavior explicit and inspectable.
 - A11: Permission guidance explains Microphone, Accessibility, and Input Monitoring, and does not imply scripts can grant them automatically.
 - A12: Short input produces text through Qwen3 local HTTP ASR.

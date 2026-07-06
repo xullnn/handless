@@ -10,6 +10,11 @@ CONTENTS="$APP_DIR/Contents"
 MACOS="$CONTENTS/MacOS"
 RESOURCES="$CONTENTS/Resources"
 APP_ICON_SRC="$PWD/Resources/AppIcon.icns"
+MENU_BAR_ONLY="${LOCALVOICEINPUT_MENU_BAR_ONLY:-0}"
+LSUIELEMENT_ENTRY=""
+if [[ "$MENU_BAR_ONLY" == "1" ]]; then
+  LSUIELEMENT_ENTRY="  <key>LSUIElement</key><true/>"
+fi
 
 swift build -c release --product "$PRODUCT"
 rm -rf "$APP_DIR"
@@ -36,7 +41,7 @@ cat > "$CONTENTS/Info.plist" <<PLIST
   <key>CFBundleShortVersionString</key><string>0.1.0</string>
   <key>CFBundleVersion</key><string>1</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
-  <key>LSUIElement</key><true/>
+$LSUIELEMENT_ENTRY
   <key>NSMicrophoneUsageDescription</key><string>LocalVoiceInput uses the microphone to transcribe your speech locally.</string>
   <key>NSAppleEventsUsageDescription</key><string>LocalVoiceInput may simulate paste actions into the frontmost app.</string>
   <key>NSInputMonitoringUsageDescription</key><string>LocalVoiceInput uses global keyboard shortcuts for push-to-talk and cancellation.</string>
@@ -75,6 +80,11 @@ if command -v codesign >/dev/null 2>&1; then
 fi
 
 echo "Built: $APP_DIR"
+if [[ "$MENU_BAR_ONLY" == "1" ]]; then
+  echo "Launch shape: menu-bar-only agent (LSUIElement=true)."
+else
+  echo "Launch shape: Dock-visible app with menu-bar controls."
+fi
 echo "Open it with: open '$APP_DIR'"
 if command -v codesign >/dev/null 2>&1; then
   codesign -dr - "$APP_DIR" 2>&1 || true

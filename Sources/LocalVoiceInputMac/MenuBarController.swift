@@ -3,7 +3,7 @@ import Foundation
 import AppKit
 
 final class MenuBarController {
-    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    private let statusItem = NSStatusBar.system.statusItem(withLength: 54)
     private let appTitleItem = NSMenuItem(title: "LocalVoiceInput", action: nil, keyEquivalent: "")
     private let statusMenuItem = NSMenuItem(title: "状态：就绪", action: nil, keyEquivalent: "")
 
@@ -60,10 +60,45 @@ final class MenuBarController {
     private func configureButton(for status: String) {
         guard let button = statusItem.button else { return }
         let presentation = MenuBarStatusPresentation.make(for: status)
-        button.image = nil
-        button.title = presentation.statusItemTitle
+        button.title = ""
+        button.image = makeStatusIcon(title: presentation.statusItemTitle)
+        button.imagePosition = .imageOnly
         button.toolTip = presentation.tooltip
+        button.setAccessibilityLabel(presentation.statusItemTitle)
         statusMenuItem.title = presentation.menuStatusTitle
+    }
+
+    private func makeStatusIcon(title: String) -> NSImage {
+        let size = NSSize(width: 46, height: 18)
+        let image = NSImage(size: size)
+        image.lockFocus()
+
+        let fillColor: NSColor
+        switch title {
+        case "REC":
+            fillColor = NSColor.systemRed
+        case "LVI!":
+            fillColor = NSColor.systemOrange
+        default:
+            fillColor = NSColor.systemBlue
+        }
+
+        fillColor.setFill()
+        NSBezierPath(roundedRect: NSRect(origin: .zero, size: size), xRadius: 5, yRadius: 5).fill()
+
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedSystemFont(ofSize: 11, weight: .bold),
+            .foregroundColor: NSColor.white,
+            .paragraphStyle: paragraph
+        ]
+        let textRect = NSRect(x: 0, y: 2, width: size.width, height: 14)
+        (title as NSString).draw(in: textRect, withAttributes: attributes)
+
+        image.unlockFocus()
+        image.isTemplate = false
+        return image
     }
 }
 #endif

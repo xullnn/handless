@@ -2,7 +2,7 @@
 
 LocalVoiceInput is a local-first macOS voice input MVP for universal dictation across apps.
 
-The current product form is a menu-bar app, not an InputMethodKit input method. Users hold Right Option for push-to-talk dictation, use Right Command + `.` for long-draft mode, and press Esc to cancel the active session. A new input intent replaces any unfinished prior input session. Partial text is shown only in a non-focus-stealing floating panel. Final text is routed to the current cursor or clipboard after the user stops recording.
+The current product form is a macOS AppKit app with a normal Dock-visible entry for closed-alpha launch/quit plus auxiliary menu-bar controls. It is not an InputMethodKit input method. Users hold Right Option for push-to-talk dictation, use Right Command + `.` for long-draft mode, and press Esc to cancel the active session. A new input intent replaces any unfinished prior input session. Partial text is shown only in a non-focus-stealing floating panel. Final text is routed to the current cursor or clipboard after the user stops recording.
 
 Primary target hardware is a MacBook Pro M4 with 48 GB memory. The project prioritizes local operation, privacy, safety, not losing dictated text, avoiding unintended paste, and avoiding clipboard pollution.
 

@@ -2,14 +2,16 @@
 
 ## Problem
 
-The closed-alpha app is technically usable, but VM smoke testing exposed a distribution problem: a menu-bar-only utility can be hard for non-technical testers to identify, quit, reopen, and diagnose. The current visible status item is too close to macOS microphone/privacy indicators and does not give testers a clear app-owned control point.
+The closed-alpha app is technically usable, but VM and host smoke testing exposed a distribution problem: a menu-bar-only utility can be hard for non-technical testers to identify, quit, reopen, and diagnose. The visible status item can be confused with, hidden by, or visually dominated by macOS microphone/privacy indicators, so closed-alpha builds need a more reliable app-owned control point.
 
 ## Scope
 
 ### IN
 
 - Make the running app visibly identifiable as LocalVoiceInput from the macOS menu bar.
-- Keep the app as an `LSUIElement` menu-bar utility.
+- Make the closed-alpha app visible as a normal Dock app by default so testers can find and quit it even when the menu-bar item is unclear.
+- Keep a menu-bar control as an auxiliary lifecycle/diagnostics entry.
+- Keep an explicit menu-bar-only launch/build override for developer use.
 - Provide a clear `Quit LocalVoiceInput` menu action.
 - Provide tester-facing menu entries for permissions, logs, and copying a short diagnostics summary.
 - Add an app icon to the built `.app` so Finder, Applications, Spotlight, and Gatekeeper prompts have a recognizable identity.
@@ -18,7 +20,6 @@ The closed-alpha app is technically usable, but VM smoke testing exposed a distr
 
 ### OUT
 
-- Dock app conversion.
 - InputMethodKit conversion.
 - Notarization, Developer ID, TestFlight, App Store, or `.pkg` installer work.
 - Start-at-login preference.
@@ -38,11 +39,13 @@ The closed-alpha app is technically usable, but VM smoke testing exposed a distr
 - R8: Closed-alpha docs must tell testers that the yellow/orange macOS microphone privacy dot is not the LocalVoiceInput control; the app control is the LocalVoiceInput menu-bar item.
 - R9: The build and package scripts must continue to sign the app after resources are copied.
 - R10: Automated tests must cover any new pure presentation or diagnostics logic that can be tested without driving macOS UI.
+- R11: The default built app must be Dock-visible, with an escape hatch for menu-bar-only developer builds.
+- R12: The app must provide a normal Command-Q quit path when launched as a Dock-visible app.
 
 ## Constraints
 
 - macOS TCC permissions remain user-controlled and cannot be silently granted.
-- The app must not take foreground focus merely to show lifecycle controls.
+- Dictation UI must remain non-focus-stealing during recording; the app may have normal foreground/Dock identity for launch and quit.
 - Diagnostics must avoid leaking audio contents or transcript history by default.
 - The app icon and menu text can be alpha-quality but must be clear enough for friend/colleague testing.
 

@@ -10,11 +10,12 @@ Stable responsibilities:
 - `HotkeyController` uses a global event tap and requires Accessibility plus Input Monitoring permissions. Right Option controls short push-to-talk, while Right Command + `.` controls long draft start/stop.
 - `FocusDetector` uses Accessibility APIs to identify editable targets, secure fields, and focus identity.
 - `FloatingPanelController` shows rounded, non-key, non-activating realtime UI and includes controls to copy, restore clipboard, cancel, and quit the app. New recording sessions clear stale final text and show a non-word listening indicator. Completed output holds briefly, fades out over time, and pauses dismissal while the pointer is over the panel.
-- `MenuBarController` provides an app-owned `LVI` menu-bar control. It shows `LVI` when ready, `REC` while recording, and `LVI!` when attention is needed, and exposes permissions, logs, diagnostics, history, mock-session, stop/copy, and explicit quit actions.
+- `main.swift` launches the closed-alpha app as a normal Dock-visible app by default so testers can find and quit it. `--menu-bar-only` preserves the older accessory-style developer launch path.
+- `MenuBarController` provides an auxiliary app-owned `LVI` menu-bar control. It shows `LVI` when ready, `REC` while recording, and `LVI!` when attention is needed, and exposes permissions, logs, diagnostics, history, mock-session, stop/copy, and explicit quit actions when the item is visible.
 - `PermissionManager` prompts for microphone, Accessibility, and Input Monitoring permissions.
 - `AppController` has internal dependency seams for coordinator integration tests, allowing fake hotkey, audio, ASR, focus, paste, panel, and history collaborators without changing production wiring.
 
-The app is intentionally an LSUIElement menu-bar utility rather than a normal foreground app or InputMethodKit input method.
+The app is intentionally not an InputMethodKit input method. The closed-alpha build is Dock-visible by default; pure menu-bar-agent behavior is a developer override, not the tester default.
 
 Go Deeper:
 

@@ -15,7 +15,7 @@ modules:
     purpose: Platform-independent session, transcript, focus, output routing, correction, and history logic.
   macos_app:
     summary: modules/macos_app/summary.md
-    purpose: AppKit menu-bar app, global hotkeys, floating panel, permissions, focus detection, paste execution, and history persistence.
+    purpose: AppKit Dock-visible app with menu-bar controls, global hotkeys, floating panel, permissions, focus detection, paste execution, and history persistence.
   asr_audio:
     summary: modules/asr_audio/summary.md
     eval_assets: modules/asr_audio/eval_assets.md

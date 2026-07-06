@@ -7,7 +7,7 @@
 - D3: Phase 1 does not require Apple Developer Program membership, Developer ID certificates, notarization, stapling, or App Store Connect.
 - D4: Phase 1 accepts expected Gatekeeper first-launch friction; tester documentation must explain the Privacy & Security "Open Anyway" flow.
 - D5: Phase 1 should not use a `.pkg` installer. A package installer can return in a future Developer ID/Installer certificate path.
-- D6: The current app remains a menu-bar `LSUIElement` utility, not an InputMethodKit input method.
+- D6: The original packaging baseline kept the app as a menu-bar `LSUIElement` utility, not an InputMethodKit input method. This launch-shape decision is superseded for closed-alpha tester builds by `2026-07-06-closed-alpha-lifecycle-ergonomics`, which makes the app Dock-visible by default and keeps menu-bar-only mode as a developer override.
 - D7: The first closed alpha keeps Qwen3-ASR MLX 0.6B 8-bit behind the segmented localhost HTTP service as the actual-use ASR route.
 - D8: Bundle the production Qwen3 0.6B 8-bit model for closed alpha; do not require testers to download or manually place the model.
 - D9: Do not bundle `.external/models` wholesale or generated logs/artifacts.

@@ -2,11 +2,12 @@
 
 ## Confirmed decisions
 
-- D1: Keep the app as an `LSUIElement` menu-bar utility for this pass.
+- D1: Closed-alpha builds should be Dock-visible by default because host smoke showed a pure menu-bar utility is not reliable enough as the only launch/quit surface for non-technical testers.
 - D2: Use a short, visible app-owned status item label instead of relying on the generic microphone symbol.
 - D3: Treat start-at-login, onboarding, and settings UI as follow-up features rather than blocking the first ergonomics hardening pass.
 - D4: Add logs and diagnostics entry points directly to the menu because closed-alpha testers should not need Terminal for basic support collection.
 - D5: Diagnostics must be safe by default and must not include transcript history or recorded audio.
+- D6: Preserve a menu-bar-only escape hatch for developer use via `LOCALVOICEINPUT_MENU_BAR_ONLY=1` at build time and `--menu-bar-only` at launch time.
 
 ## Open questions / unresolved choices
 

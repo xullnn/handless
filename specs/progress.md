@@ -5251,3 +5251,71 @@ Latency and base regression guard:
 
 - Keep the current DMG as the latest VM-smoked closed-alpha candidate.
 - Add a future tester-onboarding improvement for first-run launch guidance and optional start-at-login.
+
+## 2026-07-06 - 2026-07-06-closed-alpha-lifecycle-ergonomics Dock-visible alpha update
+
+### Summary
+
+- Host smoke showed the pure menu-bar utility assumption was not reliable enough: clicking the orange macOS microphone icon opens the system microphone/privacy panel, not the LocalVoiceInput lifecycle menu, and the app-owned status item can be visually unclear on a crowded host menu bar.
+- Updated the closed-alpha launch shape so the default built app is Dock-visible and can be quit with Command-Q or the Dock Quit action.
+- Kept the app-owned `LVI`/`REC`/`LVI!` menu-bar control as an auxiliary diagnostics/lifecycle entry when it is visible.
+- Preserved a developer escape hatch: `LOCALVOICEINPUT_MENU_BAR_ONLY=1` writes `LSUIElement=true` during build, and `--menu-bar-only` launches the app with accessory-style activation policy.
+- Rebuilt the unnotarized closed-alpha DMG after the launch-shape change.
+
+### Files changed
+
+- `Sources/LocalVoiceInputMac/main.swift`
+- `Sources/LocalVoiceInputMac/MenuBarController.swift`
+- `scripts/build_macos_app.sh`
+- `docs/macos-alpha-distribution.md`
+- `specs/2026-07-06-closed-alpha-lifecycle-ergonomics/{requirements.md,plan.md,validation.md,decisions.md}`
+- `project_memory_bank/{registry.yml,core/project_brief.md,core/current_focus.md,modules/macos_app/summary.md,modules/packaging_ops/summary.md}`
+
+### Validation
+
+- Command: `bash scripts/test.sh`
+  Result: pass
+  Notes: 116 XCTest tests, 0 failures.
+- Command: `swift build`
+  Result: pass
+  Notes: debug build completed successfully after the launch-shape change.
+- Command: `bash -n scripts/build_macos_app.sh scripts/package_macos_alpha.sh scripts/write_alpha_config.sh`
+  Result: pass
+  Notes: shell syntax checks passed.
+- Command: `bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: rebuilt `dist/LocalVoiceInput.app`; output reported `Launch shape: Dock-visible app with menu-bar controls.`
+- Command: `if /usr/libexec/PlistBuddy -c 'Print :LSUIElement' dist/LocalVoiceInput.app/Contents/Info.plist ...`
+  Result: pass
+  Notes: default built app does not contain `LSUIElement`; `CFBundleIconFile=AppIcon`; `Resources/AppIcon.icns` exists.
+- Command: `LOCALVOICEINPUT_MENU_BAR_ONLY=1 bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: explicit developer build writes `LSUIElement=true`; the app was rebuilt again afterward back to the Dock-visible default.
+- Command: host Dock/Command-Q smoke
+  Result: pass
+  Notes: launched `dist/LocalVoiceInput.app` with the daily Qwen3 arguments; `LocalVoiceInput` became the frontmost app; Command-Q exited the process; the app was then relaunched with the daily arguments.
+- Command: `bash scripts/package_macos_alpha.sh --closed-alpha`
+  Result: pass
+  Notes: rebuilt `dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`; size about `1.1G`.
+- Command: `bash scripts/package_macos_alpha.sh --verify-staged-runtime`
+  Result: pass
+  Notes: staged runtime `/metadata` returned `ok=true`, service `qwen3-mlx-segmented-cache-service`, model id `qwen3-asr-0.6b-mlx-8bit`, fake backend `false`, model load about `9219 ms`.
+- Command: `hdiutil verify dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`
+  Result: pass
+  Notes: disk image checksum is valid.
+- Command: `codesign --verify --deep --strict --verbose=2 dist/LocalVoiceInput.app`
+  Result: pass
+  Notes: app is valid on disk and satisfies its designated requirement.
+- Command: `bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: after relaunch, App PID `48179` is running from `dist/LocalVoiceInput.app` with local HTTP ASR, NumericITN, audio ducking, and Qwen3 segmented service `127.0.0.1:18096`; overall status is `ok`.
+
+### Blockers / open questions
+
+- No blocker remains for the Dock-visible closed-alpha baseline.
+- The menu-bar item remains useful as an auxiliary control, but it should no longer be the only documented launch/quit surface for non-technical testers.
+
+### Next recommended action
+
+- Run one more VM install smoke with the rebuilt Dock-visible DMG before sending it to friends.
+- Keep start-at-login, first-run onboarding, settings/runtime visibility, and Developer ID notarization as separate follow-up features.

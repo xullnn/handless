@@ -6,6 +6,8 @@ LocalVoiceInput is useful as a local daily-use macOS menu-bar dictation app, but
 
 The next product milestone is a closed alpha package that a small number of trusted friends or colleagues can install and use without preparing Python, MLX, model files, or shell commands. This is not yet the formal Developer ID/notarized distribution path. The expected macOS Gatekeeper behavior for this phase is that the first launch may be blocked until the tester manually chooses "Open Anyway" / "Still Open" in Privacy & Security.
 
+Launch-shape note: this original packaging feature kept the then-current `LSUIElement` menu-bar utility shape. That decision is superseded for closed-alpha tester builds by `specs/2026-07-06-closed-alpha-lifecycle-ergonomics`, which makes the default app Dock-visible while preserving a menu-bar-only developer override.
+
 ## Scope
 
 ### IN
@@ -20,7 +22,7 @@ The next product milestone is a closed alpha package that a small number of trus
 - Exclude the full `.external/models` cache and generated ASR logs/artifacts.
 - Make the app manage the bundled Qwen3 service for alpha use: health check, start when needed, use a user-writable spool/cache/log path, and surface clear failure diagnostics.
 - Make alpha defaults match the current daily-use behavior without command-line overrides: local HTTP ASR on `127.0.0.1:18096`, NumericITN enabled, and audio ducking enabled at volume `0.08`.
-- Keep the current app form as an `LSUIElement` menu-bar utility, not an InputMethodKit input method.
+- Keep the then-current app form as an `LSUIElement` menu-bar utility, not an InputMethodKit input method. Superseded for closed-alpha tester builds by `2026-07-06-closed-alpha-lifecycle-ergonomics`.
 - Sign the app and nested executable code with the best available local stable identity when possible; ad-hoc signing remains a fallback for development/closed-alpha only.
 - Produce checksum/manifest/license-notice artifacts with the DMG.
 - Document the expected first-launch Gatekeeper override and the macOS permissions testers must grant: Microphone, Accessibility, and Input Monitoring.

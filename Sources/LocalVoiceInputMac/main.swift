@@ -18,10 +18,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+private func shouldLaunchAsMenuBarOnly(commandLine: [String]) -> Bool {
+    commandLine.contains("--menu-bar-only")
+}
+
+private func installApplicationMenu() {
+    let mainMenu = NSMenu()
+    let appMenuItem = NSMenuItem()
+    let appMenu = NSMenu(title: "LocalVoiceInput")
+
+    let quitItem = NSMenuItem(title: "退出 LocalVoiceInput", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+    quitItem.target = NSApplication.shared
+    appMenu.addItem(quitItem)
+
+    appMenuItem.submenu = appMenu
+    mainMenu.addItem(appMenuItem)
+    NSApplication.shared.mainMenu = mainMenu
+}
+
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate
-app.setActivationPolicy(.accessory)
+if shouldLaunchAsMenuBarOnly(commandLine: CommandLine.arguments) {
+    app.setActivationPolicy(.accessory)
+} else {
+    app.setActivationPolicy(.regular)
+    installApplicationMenu()
+}
 app.run()
 
 #else
