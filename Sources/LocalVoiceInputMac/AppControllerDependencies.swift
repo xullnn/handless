@@ -76,6 +76,12 @@ protocol ASRClientMaking {
     func makeClient(config: AppConfig, forceMock: Bool) -> ASRClientProtocol
 }
 
+protocol LocalASRServiceManaging: AnyObject {
+    func prepare(config: AppConfig)
+    func ensureReady(config: AppConfig) -> Result<Void, Error>
+    func stopManagedService()
+}
+
 struct DefaultASRClientFactory: ASRClientMaking {
     func makeClient(config: AppConfig, forceMock: Bool) -> ASRClientProtocol {
         if config.mockASR || forceMock {
@@ -89,6 +95,12 @@ struct DefaultASRClientFactory: ASRClientMaking {
             return LocalHTTPASRClient(serviceURLString: config.asrHTTPURL)
         }
     }
+}
+
+final class NoopLocalASRServiceManager: LocalASRServiceManaging {
+    func prepare(config: AppConfig) {}
+    func ensureReady(config: AppConfig) -> Result<Void, Error> { .success(()) }
+    func stopManagedService() {}
 }
 
 extension MenuBarController: MenuBarControlling {}

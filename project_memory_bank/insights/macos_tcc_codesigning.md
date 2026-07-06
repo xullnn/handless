@@ -12,3 +12,7 @@ Use a stable signing identity for regular testing:
 - Use `scripts/show_codesign_status.sh` to inspect the active identity and designated requirement.
 
 The desired designated requirement is certificate-based rather than pure `cdhash`-based. That lets macOS recognize rebuilds as the same app identity when the bundle id and signing identity remain stable.
+
+For trusted closed-alpha distribution, an unnotarized DMG is usable only with explicit user action: macOS may block first launch, the tester must use Privacy & Security "Open Anyway" / "Still Open", and then grant Microphone, Accessibility, and Input Monitoring. Input Monitoring may require quitting and reopening the app before the global event tap works.
+
+When testing inside a macOS VM on the same host, quit the host `LocalVoiceInput` app before testing VM hotkeys. Both apps can otherwise listen for Right Option, and the host event tap may consume the shortcut before VirtualBuddy passes it to the guest.

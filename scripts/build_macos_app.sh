@@ -39,6 +39,14 @@ PLIST
 
 if command -v codesign >/dev/null 2>&1; then
   SIGN_IDENTITY="${LOCALVOICEINPUT_CODESIGN_IDENTITY:-}"
+  REQUIRE_SIGN_IDENTITY="${LOCALVOICEINPUT_REQUIRE_CODESIGN_IDENTITY:-0}"
+  CODESIGN_ARGS=(--force --deep)
+  if [[ "${LOCALVOICEINPUT_CODESIGN_RUNTIME:-0}" == "1" ]]; then
+    CODESIGN_ARGS+=(--options runtime)
+  fi
+  if [[ "${LOCALVOICEINPUT_CODESIGN_TIMESTAMP:-0}" == "1" ]]; then
+    CODESIGN_ARGS+=(--timestamp)
+  fi
   if [[ -z "$SIGN_IDENTITY" ]] && command -v security >/dev/null 2>&1; then
     IDENTITIES_TEXT="$(security find-identity -p codesigning -v | sed -n 's/.*"\(.*\)".*/\1/p')"
     IDENTITY_COUNT="$(printf '%s\n' "$IDENTITIES_TEXT" | sed '/^$/d' | wc -l | tr -d ' ')"
@@ -49,7 +57,10 @@ if command -v codesign >/dev/null 2>&1; then
 
   if [[ -n "$SIGN_IDENTITY" ]]; then
     echo "Signing with identity: $SIGN_IDENTITY"
-    codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_DIR"
+    codesign "${CODESIGN_ARGS[@]}" --sign "$SIGN_IDENTITY" "$APP_DIR"
+  elif [[ "$REQUIRE_SIGN_IDENTITY" == "1" ]]; then
+    echo "No code-signing identity available, and LOCALVOICEINPUT_REQUIRE_CODESIGN_IDENTITY=1." >&2
+    exit 2
   else
     echo "Signing ad-hoc. Set LOCALVOICEINPUT_CODESIGN_IDENTITY to keep TCC permissions stable across rebuilds."
     codesign --force --deep --sign - "$APP_DIR" >/dev/null 2>&1 || true

@@ -25,7 +25,7 @@ modules:
     purpose: Safety rules for focus routing, paste verification, clipboard preservation, and downgrade behavior.
   packaging_ops:
     summary: modules/packaging_ops/summary.md
-    purpose: macOS app bundling, stable code signing, local configuration, and development scripts.
+    purpose: macOS app bundling, closed-alpha distribution packaging, stable code signing, local configuration, and development scripts.
 
 integrations:
   output_safety_flow: integration/output_safety_flow.md

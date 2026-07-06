@@ -1,0 +1,146 @@
+# LocalVoiceInput macOS Closed Alpha Distribution
+
+This document tracks the first friend/colleague alpha path. It is not the Mac App Store path and it is not the formal Developer ID/notarized path.
+
+## Current Phase
+
+Phase 1 target:
+
+- unnotarized closed-alpha DMG;
+- drag-installable `LocalVoiceInput.app`;
+- bundled Qwen3-ASR MLX 0.6B 8-bit model;
+- bundled Python/MLX runtime and `mlx-audio` source;
+- app-managed local Qwen3 segmented service;
+- no terminal setup for testers;
+- expected first-launch Gatekeeper friction handled through macOS Privacy & Security "Open Anyway" by trusted testers.
+
+Future Phase 2:
+
+- Developer ID Application / Installer certificates;
+- hardened runtime;
+- notarization and stapling;
+- possibly `.pkg` installer;
+- broader external distribution.
+
+## Build And Package Checks
+
+Use preflight first:
+
+```bash
+bash scripts/package_macos_alpha.sh --preflight
+```
+
+Inspect the closed-alpha sequence:
+
+```bash
+bash scripts/package_macos_alpha.sh --dry-run
+```
+
+Stage the allowlisted runtime/model/service assets:
+
+```bash
+bash scripts/package_macos_alpha.sh --stage-runtime
+```
+
+Verify the staged runtime can start outside the repo:
+
+```bash
+bash scripts/package_macos_alpha.sh --verify-staged-runtime
+```
+
+Build the unnotarized closed-alpha DMG:
+
+```bash
+bash scripts/package_macos_alpha.sh --closed-alpha
+```
+
+The generated artifact name includes `closed-alpha-unnotarized` intentionally. Do not describe this build as Apple-notarized or public-ready.
+
+## Bundled Alpha Runtime
+
+The closed-alpha package should include only:
+
+- `dist/LocalVoiceInput.app`;
+- `.external/models/mlx-community__Qwen3-ASR-0.6B-8bit`;
+- `.venv-mimo`;
+- `.external/repos/mlx-audio`;
+- allowlisted service files from `eval/asr_streaming/`;
+- `configs/alpha.local-qwen3.json`;
+- manifest, checksums, README, and notices.
+
+It must not include:
+
+- full `.external/models`;
+- Qwen3 1.7B;
+- MiMo reference models;
+- FunASR baseline caches unless separately scoped;
+- `asr_logs`;
+- generated eval results.
+
+## Tester First Run
+
+Expected first launch:
+
+1. Drag `LocalVoiceInput.app` to Applications.
+2. Open it once. macOS may block it because it is not notarized.
+3. Open System Settings > Privacy & Security and choose Open Anyway / Still Open.
+4. Grant Microphone, Accessibility, and Input Monitoring when prompted.
+5. Use Right Option for short dictation or Right Command + `.` for long dictation.
+
+The app should start or reuse the local Qwen3 service on `127.0.0.1:18096` without asking the tester to run shell commands.
+
+## Alpha Defaults
+
+The bundled alpha config selects:
+
+- `asrBackend=local-http`
+- `asrHTTPURL=http://127.0.0.1:18096`
+- `numericITNEnabled=true`
+- `audioDucking.enabled=true`
+- `audioDucking.targetVolume=0.08`
+
+User config under `~/Library/Application Support/LocalVoiceInput/config.json` still takes precedence when present. Fresh testers should use the bundled alpha config.
+
+## Tester Permissions
+
+The tester must grant these macOS permissions manually:
+
+- Microphone
+- Accessibility
+- Input Monitoring
+
+Scripts and the app can guide the user, but they cannot silently grant these TCC permissions.
+
+## Local-Only Boundary
+
+The alpha path is local-first:
+
+- no cloud ASR fallback by default;
+- no audio upload by default;
+- no text upload by default;
+- no automatic model download in this feature.
+
+## Diagnostics
+
+Development diagnostics remain:
+
+```bash
+bash scripts/status_localvoiceinput.sh
+```
+
+Tester-facing diagnostics should be gathered from:
+
+- `~/Library/Logs/LocalVoiceInput/qwen3-service.log`
+- `~/Library/Application Support/LocalVoiceInput/`
+- screenshots of macOS permission/Gatekeeper prompts when launch fails.
+
+## Not In This Phase
+
+- App Store submission
+- TestFlight external beta
+- Developer ID notarization
+- Stapled DMG
+- `.pkg` installer
+- Payments or licensing
+- Automatic model download
+- Bundling the full `.external/models` cache

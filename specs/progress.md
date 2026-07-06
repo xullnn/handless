@@ -4719,3 +4719,415 @@ Latency and base regression guard:
 ### Next recommended action
 
 - Run the manual playback smoke checks from `validation.md`, starting with short input and long input while local music/video is playing.
+
+## 2026-07-05 - 2026-07-05-output-audio-ducking validation closeout
+
+### Summary
+
+- User completed real macOS playback smoke after the packaged App was running with `--audio-ducking --audio-ducking-volume 0.08`.
+- Confirmed local playback volume lowers during recording and restores afterward.
+- Marked the feature validated because the required automated checks were already recorded as passing and the remaining required manual smoke condition is now satisfied.
+
+### Files changed
+
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+
+### Validation
+
+- Command: user manual playback smoke for audio ducking
+  Result: pass
+  Notes: user reported the playback-audio lower/restore behavior tested without problems.
+- Command: previously recorded `bash scripts/test.sh`
+  Result: pass
+  Notes: `107` tests, `0` failures, including config coverage and AppController duck/restore lifecycle coverage.
+- Command: previously recorded `swift build`
+  Result: pass
+  Notes: debug build completed successfully.
+- Command: previously recorded `bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: packaged App rebuilt and signed with `Apple Development: 290016537@qq.com (HVFY7KCG8C)`.
+- Command: previously recorded `bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: status reported the App running with `--audio-ducking --audio-ducking-volume 0.08` and healthy Qwen3 segmented ASR service on `127.0.0.1:18096`.
+
+### Blockers / open questions
+
+- No blocker remains for the audio ducking feature.
+- Future product tuning can still decide whether personal/default distribution settings should use `targetVolume=0.05`, `0.08`, or full mute.
+
+### Next recommended action
+
+- Treat output audio ducking as validated SDD work. Promote durable session-level behavior to PMB only if a later PMB sync determines it should become stable module knowledge.
+
+## 2026-07-05 - 2026-07-05-macos-alpha-distribution initial implementation
+
+### Summary
+
+- Created the SDD contract for the first friend/colleague macOS alpha distribution path.
+- Extended `scripts/build_macos_app.sh` so distribution callers can require an explicit signing identity and request hardened runtime plus timestamp signing while preserving the existing local Apple Development build behavior.
+- Added an alpha config template and writer for the current actual-use path: local HTTP Qwen3 service, NumericITN enabled, and audio ducking enabled at `0.08`.
+- Added `scripts/package_macos_alpha.sh` with `--preflight`, `--dry-run`, and fail-closed real packaging behavior.
+- The packaging script checks Developer ID identity availability, notary profile configuration, Xcode notarization tools, artifact/model/runtime sizes, and blocks real DMG creation when external distribution prerequisites are missing.
+- Added `docs/macos-alpha-distribution.md` as the operator/tester-facing alpha distribution entrypoint.
+
+### Files changed
+
+- `scripts/build_macos_app.sh`
+- `scripts/package_macos_alpha.sh`
+- `scripts/write_alpha_config.sh`
+- `configs/alpha.local-qwen3.json`
+- `docs/macos-alpha-distribution.md`
+- `specs/2026-07-05-macos-alpha-distribution/*`
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+
+### Validation
+
+- Command: `bash scripts/test.sh`
+  Result: pass
+  Notes: `107` tests, `0` failures.
+- Command: `swift build`
+  Result: pass
+  Notes: debug build completed successfully.
+- Command: `bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: release app build completed and retained the existing Apple Development local signing path.
+- Command: `bash scripts/package_macos_alpha.sh --preflight`
+  Result: pass
+  Notes: reported `notarytool` and `stapler` available, Qwen3 0.6B model about `964M`, all model cache about `10G`, Python runtime about `583M`, and readiness `no` because Developer ID identity and notary profile are missing.
+- Command: `bash scripts/package_macos_alpha.sh --dry-run`
+  Result: pass
+  Notes: printed the intended build, DMG, notarization, staple, and Gatekeeper verification sequence without creating artifacts.
+- Command: `bash scripts/package_macos_alpha.sh`
+  Result: pass
+  Notes: failed closed with `Missing Developer ID Application identity`; confirmed `dist/LocalVoiceInput-0.1.0-alpha.dmg` was not created.
+- Command: `CONFIG_DIR=<temp> bash scripts/write_alpha_config.sh && python3 -m json.tool <temp>/config/config.json >/dev/null`
+  Result: pass
+  Notes: alpha config writer works without mutating the user's real Application Support config.
+- Command: `python3 -m json.tool configs/alpha.local-qwen3.json >/dev/null && python3 -m json.tool specs/feature_matrix.json >/dev/null && python3 -m json.tool specs/2026-07-05-macos-alpha-distribution/feature.json >/dev/null`
+  Result: pass
+  Notes: JSON files are valid.
+- Command: `bash -n scripts/build_macos_app.sh scripts/package_macos_alpha.sh scripts/write_alpha_config.sh`
+  Result: pass
+  Notes: shell syntax checks passed.
+- Command: `git diff --check`
+  Result: pass
+  Notes: no whitespace errors were detected.
+- Command: `bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: overall `ok`; current running app and Qwen3 segmented service remain healthy.
+
+### Blockers / open questions
+
+- Full `passes=true` validation is blocked by missing `Developer ID Application` identity.
+- Full notarization/staple validation is blocked by missing `LOCALVOICEINPUT_NOTARYTOOL_PROFILE`.
+- Open distribution decisions remain: final bundle id, first alpha model transfer method, and whether service supervision should stay manual for the first external tester round or be handled by a follow-up before invitations.
+
+### Next recommended action
+
+- Install or create a Developer ID Application certificate and configure `xcrun notarytool store-credentials`, then run the full `bash scripts/package_macos_alpha.sh` gate.
+- After real notarization passes, run a clean-account alpha smoke before marking this feature `validated`.
+
+## 2026-07-06 - 2026-07-05-macos-alpha-distribution closed-alpha implementation
+
+### Summary
+
+- Re-scoped the macOS alpha distribution feature from Developer ID/notarized distribution to a Phase 1 unnotarized closed-alpha DMG for trusted testers.
+- Updated the SDD contract so Developer ID signing, notarization, stapling, `.pkg`, App Store, and TestFlight are future paths rather than Phase 1 blockers.
+- Added a bundled Qwen3 service manager to the macOS app. When the selected backend is `local-http`, the app now checks for a compatible local service and can start the bundled Qwen3 segmented service from `LocalVoiceInput.app/Contents/Resources/AlphaRuntime`.
+- Added alpha config fallback from bundled `alpha.local-qwen3.json` so a fresh tester can double-click the app without command-line overrides.
+- Reworked `scripts/package_macos_alpha.sh` for closed-alpha modes: `--preflight`, `--dry-run`, `--stage-runtime`, `--verify-staged-runtime`, and `--closed-alpha`.
+- Generated an unnotarized closed-alpha DMG at `dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`.
+- Verified the staged Qwen3 runtime starts outside the repo using only staged Python, Qwen3 0.6B model, `mlx-audio`, and allowlisted service files.
+
+### Files changed
+
+- `Sources/LocalVoiceInputMac/AppConfig.swift`
+- `Sources/LocalVoiceInputMac/AppController.swift`
+- `Sources/LocalVoiceInputMac/AppControllerDependencies.swift`
+- `Sources/LocalVoiceInputMac/BundledQwenASRServiceManager.swift`
+- `Tests/LocalVoiceInputMacTests/AppControllerSessionTests.swift`
+- `scripts/package_macos_alpha.sh`
+- `docs/macos-alpha-distribution.md`
+- `configs/alpha.local-qwen3.json`
+- `specs/2026-07-05-macos-alpha-distribution/*`
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+
+### Validation
+
+- Command: `bash scripts/test.sh`
+  Result: pass
+  Notes: `109` tests, `0` failures. Added coverage for `local-http` service readiness before ASR/audio start and failure behavior when the local service cannot be prepared.
+- Command: `swift build`
+  Result: pass
+  Notes: debug build completed successfully after adding `BundledQwenASRServiceManager`.
+- Command: `bash -n scripts/build_macos_app.sh scripts/package_macos_alpha.sh scripts/write_alpha_config.sh`
+  Result: pass
+  Notes: shell syntax checks passed.
+- Command: `python3 -m json.tool configs/alpha.local-qwen3.json >/dev/null && python3 -m json.tool specs/feature_matrix.json >/dev/null && python3 -m json.tool specs/2026-07-05-macos-alpha-distribution/feature.json >/dev/null`
+  Result: pass
+  Notes: JSON config, feature matrix, and feature metadata are valid.
+- Command: `bash scripts/package_macos_alpha.sh --preflight`
+  Result: pass
+  Notes: reported closed-alpha inputs and confirmed Developer ID/notarization are not required for Phase 1. Current sizes: app `1.5G`, Qwen3 0.6B `964M`, Python runtime `583M`, `mlx-audio` `15M`, full model cache not bundled `10G`, `asr_logs` not bundled `1.2G`.
+- Command: `bash scripts/package_macos_alpha.sh --dry-run`
+  Result: pass
+  Notes: printed the closed-alpha flow: stage assets, verify staged runtime, build release app, embed `AlphaRuntime`, re-sign, and create unnotarized DMG.
+- Command: `bash scripts/package_macos_alpha.sh --stage-runtime`
+  Result: pass
+  Notes: staged allowlisted runtime/model/service assets under `dist/closed-alpha-runtime-staging`.
+- Command: `bash scripts/package_macos_alpha.sh --verify-staged-runtime`
+  Result: pass
+  Notes: staged Qwen3 service started on `127.0.0.1:18196`; `/metadata` returned `ok=true`, service `qwen3-mlx-segmented-cache-service`, model id `qwen3-asr-0.6b-mlx-8bit`, fake backend `false`, model load about `7806 ms`.
+- Command: `bash scripts/package_macos_alpha.sh --closed-alpha`
+  Result: pass
+  Notes: built `dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`, size `1.1G`. App was signed with `Apple Development: 290016537@qq.com (HVFY7KCG8C)`.
+- Command: `hdiutil verify dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`
+  Result: pass
+  Notes: disk image checksum is valid.
+- Command: `codesign --verify --deep --strict --verbose=2 dist/LocalVoiceInput.app`
+  Result: pass
+  Notes: app is valid on disk and satisfies its designated requirement.
+- Command: `cd dist/LocalVoiceInput.app/Contents/Resources/AlphaRuntime && shasum -a 256 -c SHA256SUMS.txt`
+  Result: pass
+  Notes: all manifest-tracked files verified; `SHA256SUMS.txt` currently contains `840` entries.
+- Command: `spctl --assess --type open --verbose=4 dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`
+  Result: informational expected rejection
+  Notes: `rejected`, `source=Insufficient Context`. This is expected for the Phase 1 unnotarized closed-alpha artifact and is not a failure under the updated validation contract.
+- Command: `bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: current development runtime remains `overall: ok`; running app process still uses command-line overrides and the existing repo-local Qwen3 service on `127.0.0.1:18096`.
+- Command: `git diff --check`
+  Result: pass
+  Notes: no whitespace errors were detected.
+
+### Blockers / open questions
+
+- The feature is `implemented` but not `validated` because clean-account/friend-machine manual smoke has not yet been run.
+- Required remaining smoke: install/copy from the DMG, manually handle Gatekeeper "Open Anyway" if prompted, grant Microphone/Accessibility/Input Monitoring, confirm the app-managed Qwen3 service starts without Terminal, then test short input, long input, Esc cancellation, and audio ducking.
+- Open follow-up: broader distribution still needs Developer ID/notarization and possibly `.pkg` once closed-alpha stability is proven.
+
+### Next recommended action
+
+- Run the closed-alpha DMG on a clean or clean-ish local macOS user account first, then send to 1-3 trusted Apple Silicon testers. Record manual smoke results before moving this feature to `validated` / `passes=true`.
+
+## 2026-07-06 - 2026-07-05-macos-alpha-distribution VM smoke attempt
+
+### Summary
+
+- Installed VirtualBuddy from the upstream DMG and verified the installed app with `codesign` and `spctl`.
+- Created a clean macOS Sequoia 15.6.1 VM for alpha validation with 64GB disk, 7 CPUs, 24GB RAM, NAT networking, sound input/output enabled, guest app sharing enabled, and the repo `dist/` folder shared into the guest.
+- Confirmed the generated closed-alpha DMG can be mounted in the VM and that `dist/LocalVoiceInput.app` verifies as a valid signed app bundle.
+- Repaired an automation-induced Finder drag/copy issue by offline-copying the valid source app into the VM `/Applications/LocalVoiceInput.app` and preserving a quarantine xattr to simulate first launch from a downloaded/unnotarized source.
+- Built a temporary host-side Virtualization.framework runner because VirtualBuddy's GUI window became unreliable under automation; the runner successfully booted the same `.vbvm` disk with `com.apple.security.virtualization` entitlement.
+- Attempted three user-session strategies: user LaunchAgent, auto-login plus keyboard input, and a root LaunchDaemon that waits for a logged-in console user and then runs the user self-check.
+- The root LaunchDaemon produced deterministic evidence that the VM never reached a logged-in Aqua user session unattended: `/dev/console` remained `root` for 180 checks over about 15 minutes, then exited with status `2`.
+- No LocalVoiceInput app smoke result was produced in the VM because the guest did not reach an unattended logged-in user session where Gatekeeper/TCC/AppKit workflows can execute.
+
+### Files changed
+
+- `specs/2026-07-05-macos-alpha-distribution/artifacts/vm-alpha-daemon-2026-07-06.log`
+- `specs/2026-07-05-macos-alpha-distribution/artifacts/vm-runner-2026-07-06.log`
+- `specs/2026-07-05-macos-alpha-distribution/decisions.md`
+- `specs/progress.md`
+
+### Validation
+
+- Command: downloaded and installed `VirtualBuddy_v2.1-325.dmg`
+  Result: pass
+  Notes: copied to `/Applications/VirtualBuddy.app`; SHA256 of the downloaded DMG was `6ed17e8d7245931fd405c419321ace7ef9333fe2e3d59b3a7f78e34fcbe628b6`.
+- Command: `codesign --verify --deep --strict --verbose=2 /Applications/VirtualBuddy.app`
+  Result: pass
+  Notes: VirtualBuddy verified successfully.
+- Command: `spctl --assess --type execute --verbose=4 /Applications/VirtualBuddy.app`
+  Result: pass
+  Notes: accepted with source `Notarized Developer ID`.
+- Command: VirtualBuddy GUI VM creation
+  Result: pass
+  Notes: created `LocalVoiceInput Alpha Sequoia 15.6.1` from macOS 15.6.1 build `24G90`; VM bundle path is `/Users/xulelong/Library/Application Support/VirtualBuddy/LocalVoiceInput Alpha Sequoia 15.6.1.vbvm`.
+- Command: VM shared-folder install attempt from `dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`
+  Result: partial
+  Notes: DMG mounted in the guest and shared `dist` was visible. Finder drag automation proved unreliable and produced or moved an incomplete app copy, so final app placement was repaired offline from the valid host `dist/LocalVoiceInput.app`.
+- Command: `codesign --verify --deep --strict --verbose=2 /Volumes/Data/Applications/LocalVoiceInput.app`
+  Result: pass
+  Notes: offline-installed VM app verified as valid on disk and satisfying its designated requirement.
+- Command: `xattr -l /Volumes/Data/Applications/LocalVoiceInput.app`
+  Result: pass
+  Notes: quarantine xattr retained as `0083;...;LocalVoiceInputAlpha;` to preserve unnotarized first-launch behavior for later manual Gatekeeper testing.
+- Command: temporary host `LocalVoiceInputVMRunner.app`
+  Result: pass
+  Notes: ad-hoc signed with `com.apple.security.virtualization`; runner successfully booted the VM disk and logged `VM started`.
+- Command: VM user LaunchAgent self-check
+  Result: fail
+  Notes: no `localvoiceinput-vm-alpha-check.log`, LaunchAgent stdout/stderr, or `~/Library/Logs/LocalVoiceInput` was produced after VM boots.
+- Command: VM auto-login plus host keyboard/click attempts
+  Result: fail
+  Notes: no user self-check or app/service logs were produced. Subsequent root-daemon evidence showed the guest did not reach a logged-in console user.
+- Command: VM root LaunchDaemon `dev.localvoiceinput.vm-alpha-daemon`
+  Result: fail
+  Notes: daemon log recorded `wait_login iteration=1..180 console_user=root`, then `final_console_user=root` and `user session not available`; launchd recorded exit status `2` after about `918751ms`.
+
+### Blockers / open questions
+
+- Clean VM App smoke is blocked on establishing a reliable logged-in Aqua user session in the VM. The VM boots, but unattended auto-login did not succeed and host-sent keyboard input did not complete login.
+- This is a validation-harness blocker, not yet evidence that the closed-alpha app package itself fails: the App bundle on the VM disk verifies correctly, the staged runtime validation already passed, and the App smoke never reached the point where Gatekeeper/TCC/AppKit could run.
+- Required acceptance criteria A7 and A12-A15 remain unverified in a clean VM: app-managed service start/reuse, short input, long input, Esc cancel, and audio ducking.
+
+### Next recommended action
+
+- Treat the feature as still `implemented`, `passes=false`.
+- Resume with a manual-assisted VM login or a dedicated VM automation/control feature before attempting to mark this feature `validated`.
+- After a logged-in VM session is available, run the desktop `run-lvi-alpha-check.command` or equivalent manual smoke to capture Gatekeeper/TCC/App launch/service evidence.
+
+## 2026-07-06 - 2026-07-05-macos-alpha-distribution manual-assisted VM smoke partial pass
+
+### Summary
+
+- Manual-assisted clean VM validation progressed past the previous login blocker.
+- The tester completed the expected unnotarized Gatekeeper override, granted Accessibility and Input Monitoring permissions, relaunched the app when macOS required it, and temporarily exited the host `LocalVoiceInput` app to avoid Right Option hotkey conflict with the VM.
+- VM short push-to-talk input produced a copied result: `测试：测试在虚拟机中是否可以运行。`
+- VM long input produced a copied result: `现在测试在虚拟机中是否可以使用长输入。看来长输入也是正常的。现在开始直接测试长输入切换短输入。`
+- Switching from long input to short input produced a copied result: `我这是从长输入切换到的短输入，看来是正常的。`
+- Starting another new short input after switching also produced a copied result: `入，我现在突然又切换了一个新的短输入，那么看来是正常的。`
+- The user also confirmed that copied VM results can be pasted back on the host Mac, which is useful but depends on VirtualBuddy clipboard sharing and is not a LocalVoiceInput product guarantee.
+
+### Files changed
+
+- `specs/2026-07-05-macos-alpha-distribution/artifacts/vm-smoke-short-input-2026-07-06.png`
+- `specs/2026-07-05-macos-alpha-distribution/artifacts/vm-smoke-long-input-2026-07-06.png`
+- `specs/2026-07-05-macos-alpha-distribution/artifacts/vm-smoke-long-to-short-switch-2026-07-06.png`
+- `specs/2026-07-05-macos-alpha-distribution/artifacts/vm-smoke-replacement-input-2026-07-06.png`
+- `specs/progress.md`
+- `specs/2026-07-05-macos-alpha-distribution/decisions.md`
+- `specs/2026-07-05-macos-alpha-distribution/feature.json`
+
+### Validation
+
+- Command: manual VM Gatekeeper and TCC flow
+  Result: pass
+  Notes: macOS blocked the unnotarized app as expected; the tester used Privacy & Security override, enabled Accessibility, enabled Input Monitoring, and relaunched the app.
+- Command: host app conflict isolation
+  Result: pass
+  Notes: host `LocalVoiceInput.app` process was quit before VM hotkey testing so the host global event tap would not consume Right Option.
+- Command: manual VM short input
+  Result: pass
+  Notes: screenshot artifact `vm-smoke-short-input-2026-07-06.png` shows `status=copied` and the expected short-input text.
+- Command: manual VM long input
+  Result: pass
+  Notes: screenshot artifact `vm-smoke-long-input-2026-07-06.png` shows `status=copied` and long-input text.
+- Command: manual VM long-to-short switching
+  Result: pass
+  Notes: screenshot artifact `vm-smoke-long-to-short-switch-2026-07-06.png` shows `status=copied` after switching from long input to short input.
+- Command: manual VM replacement short input
+  Result: pass
+  Notes: screenshot artifact `vm-smoke-replacement-input-2026-07-06.png` shows `status=copied` after starting another new short input.
+
+### Blockers / open questions
+
+- The feature remains `implemented`, `passes=false` because required VM smoke checks are still not fully complete.
+- Remaining required checks before `validated`: Esc cancellation must not copy or paste, and audio ducking must lower playback during recording and restore afterward inside the VM or be explicitly accepted using earlier host smoke evidence.
+- The menu-bar-only app shape exposed a tester UX gap: starting, finding, and quitting the app is not obvious enough for non-technical closed-alpha users.
+
+### Next recommended action
+
+- Finish the remaining VM manual smoke checks: Esc cancellation and audio ducking.
+- Add or scope a follow-up for closed-alpha lifecycle ergonomics: easy launch from Applications/Spotlight, clearer menu-bar quit/reopen guidance, and optional login-item/start-at-login support.
+
+## 2026-07-06 - 2026-07-05-macos-alpha-distribution validation closeout
+
+### Summary
+
+- Manual-assisted clean VM smoke completed the remaining required checks for Phase 1 closed-alpha validation.
+- The user confirmed audio ducking works for both short input and long input while an external/local audio source is playing in the VM.
+- The user confirmed external audio output is restored after normal completion and after cancellation.
+- The user confirmed Esc cancellation during input works as expected.
+- Combined with the prior automated checks, DMG build, staged runtime validation, Gatekeeper/TCC flow, short input, long input, and input-switching evidence, the feature now satisfies the Phase 1 validation contract.
+
+### Files changed
+
+- `specs/progress.md`
+- `specs/feature_matrix.json`
+
+### Validation
+
+- Command: manual VM short-input audio ducking smoke
+  Result: pass
+  Notes: user confirmed external audio is lowered during short input and restored after completion/cancellation.
+- Command: manual VM long-input audio ducking smoke
+  Result: pass
+  Notes: user confirmed external audio is lowered during long input and restored after completion/cancellation.
+- Command: manual VM Esc cancellation smoke
+  Result: pass
+  Notes: user confirmed Esc cancellation during input behaves normally; no copy/paste side effect was reported.
+- Command: combined Phase 1 validation evidence review
+  Result: pass
+  Notes: required automated/package/runtime/manual evidence is recorded in earlier `2026-07-06` entries. Gatekeeper rejection remains expected and informational for the unnotarized closed-alpha route.
+
+### Blockers / open questions
+
+- No blockers remain for Phase 1 closed-alpha validation.
+- Follow-ups remain for broader distribution: Developer ID/notarization, model delivery/update flow, App Store/TestFlight readiness, and closed-alpha launch/lifecycle ergonomics.
+
+### Next recommended action
+
+- Promote durable validated packaging/service-supervision lessons into PMB.
+- Commit the validated closed-alpha distribution work after a final diff review.
+
+## 2026-07-06 - 2026-07-05-macos-alpha-distribution pre-commit hardening
+
+### Summary
+
+- Final diff review found one service-compatibility hardening gap: the app-managed Qwen3 service reuse path checked the segmented service name but not the exact alpha model id or fake-backend flag.
+- Hardened `BundledQwenASRServiceManager` so the app only reuses an existing loopback service when `/metadata` reports the expected Qwen3 segmented service, model id `qwen3-asr-0.6b-mlx-8bit`, and non-fake backend.
+- Added unit coverage for bundled-service metadata compatibility.
+- Rebuilt the closed-alpha app and DMG so generated artifacts match the final source state.
+
+### Files changed
+
+- `Sources/LocalVoiceInputMac/BundledQwenASRServiceManager.swift`
+- `Tests/LocalVoiceInputMacTests/BundledQwenASRServiceManagerTests.swift`
+- `specs/progress.md`
+
+### Validation
+
+- Command: `bash scripts/test.sh`
+  Result: pass
+  Notes: 112 tests, 0 failures.
+- Command: `swift build`
+  Result: pass
+  Notes: debug build completed successfully after bundled-service metadata compatibility hardening.
+- Command: `python3 -m json.tool configs/alpha.local-qwen3.json >/dev/null && python3 -m json.tool specs/feature_matrix.json >/dev/null && python3 -m json.tool specs/2026-07-05-macos-alpha-distribution/feature.json >/dev/null`
+  Result: pass
+  Notes: alpha config and SDD JSON files remain valid.
+- Command: `bash -n scripts/build_macos_app.sh scripts/package_macos_alpha.sh scripts/write_alpha_config.sh`
+  Result: pass
+  Notes: shell syntax checks passed.
+- Command: `git diff --check`
+  Result: pass
+  Notes: no whitespace errors were detected before package rebuild.
+- Command: `bash scripts/package_macos_alpha.sh --closed-alpha`
+  Result: pass
+  Notes: rebuilt `dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`; size about `1.1G`. Rebuilt `dist/LocalVoiceInput.app`; size about `1.5G`.
+- Command: `bash scripts/package_macos_alpha.sh --verify-staged-runtime`
+  Result: pass
+  Notes: staged runtime `/metadata` returned `ok=true`, service `qwen3-mlx-segmented-cache-service`, model id `qwen3-asr-0.6b-mlx-8bit`, fake backend `false`, model load about `6652 ms`.
+- Command: `hdiutil verify dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`
+  Result: pass
+  Notes: disk image checksum is valid.
+- Command: `codesign --verify --deep --strict --verbose=2 dist/LocalVoiceInput.app`
+  Result: pass
+  Notes: app is valid on disk and satisfies its designated requirement.
+- Command: `cd dist/LocalVoiceInput.app/Contents/Resources/AlphaRuntime && shasum -a 256 -c SHA256SUMS.txt`
+  Result: pass
+  Notes: all manifest-tracked files verified; `840` checksum lines.
+
+### Blockers / open questions
+
+- No blocker for Phase 1 closed-alpha distribution remains.
+- Public/wider distribution still needs separate Developer ID/notarization, model update delivery, and lifecycle ergonomics work.
+
+### Next recommended action
+
+- Stage and commit the validated closed-alpha distribution package implementation and documentation.

@@ -15,6 +15,7 @@ final class AppController {
         let pasteRouter: PasteRouting
         let history: HistoryRecording
         let asrClientFactory: ASRClientMaking
+        let localASRService: LocalASRServiceManaging
         let focusMonitoringEnabled: Bool
 
         static func production(config: AppConfig) -> Dependencies {
@@ -31,6 +32,7 @@ final class AppController {
                 pasteRouter: PasteEngine(clipboard: clipboard, keyboard: keyboard, policy: config.outputPolicy),
                 history: HistoryStore(policy: HistoryPolicy(maxItems: config.historyMaxItems)),
                 asrClientFactory: DefaultASRClientFactory(),
+                localASRService: BundledQwenASRServiceManager(),
                 focusMonitoringEnabled: true
             )
         }
@@ -48,6 +50,7 @@ final class AppController {
     private let pasteRouter: PasteRouting
     private let history: HistoryRecording
     private let asrClientFactory: ASRClientMaking
+    private let localASRService: LocalASRServiceManaging
     private let focusMonitoringEnabled: Bool
 
     private var activeASR: ASRClientProtocol?
@@ -80,6 +83,7 @@ final class AppController {
         self.pasteRouter = dependencies.pasteRouter
         self.history = dependencies.history
         self.asrClientFactory = dependencies.asrClientFactory
+        self.localASRService = dependencies.localASRService
         self.focusMonitoringEnabled = dependencies.focusMonitoringEnabled
         setupCallbacks()
     }
@@ -96,12 +100,14 @@ final class AppController {
         self.pasteRouter = dependencies.pasteRouter
         self.history = dependencies.history
         self.asrClientFactory = dependencies.asrClientFactory
+        self.localASRService = dependencies.localASRService
         self.focusMonitoringEnabled = dependencies.focusMonitoringEnabled
         setupCallbacks()
     }
 
     deinit {
         audioDucker.restoreDucking(sessionId: nil)
+        localASRService.stopManagedService()
     }
 
     func start() {
@@ -114,6 +120,7 @@ final class AppController {
             PermissionManager.requestInputMonitoringIfNeeded()
         }
         audio.prewarm()
+        localASRService.prepare(config: config)
         hotkeys.start()
         menu.setStatus("🎙")
     }
@@ -122,6 +129,7 @@ final class AppController {
         hotkeys.stop()
         audioDucker.restoreDucking(sessionId: nil)
         cancelSession()
+        localASRService.stopManagedService()
     }
 
     private func setupCallbacks() {
@@ -148,6 +156,7 @@ final class AppController {
         panel.onFinish = { [weak self] in self?.finishSession() }
         panel.onQuit = { [weak self] in
             self?.audioDucker.restoreDucking(sessionId: nil)
+            self?.localASRService.stopManagedService()
             NSApplication.shared.terminate(nil)
         }
 
@@ -171,6 +180,16 @@ final class AppController {
             if self.activeSessionId != nil {
                 guard replacingExisting else { return }
                 self.abandonActiveSessionForReplacement()
+            }
+            if !forceMock, !self.config.mockASR, self.config.asrBackend == .localHTTP {
+                switch self.localASRService.ensureReady(config: self.config) {
+                case .success:
+                    break
+                case .failure(let error):
+                    self.panel.updateError(error.localizedDescription)
+                    self.menu.setStatus("⚠️")
+                    return
+                }
             }
             self.stateMachine = VoiceSessionStateMachine()
             self.stateMachine.send(.hotkeyDown)

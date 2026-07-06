@@ -110,6 +110,34 @@ final class AppControllerSessionTests: XCTestCase {
         XCTAssertEqual(harness.panel.doneEvents.map(\.status), [.cancelled])
     }
 
+    func testLocalHTTPBackendEnsuresServiceBeforeStartingASR() {
+        let harness = makeHarness(asrBackend: .localHTTP)
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+
+        XCTAssertEqual(harness.localASRService.prepareCallCount, 0)
+        XCTAssertEqual(harness.localASRService.ensureCallCount, 1)
+        XCTAssertEqual(harness.asrFactory.clients.count, 1)
+        XCTAssertEqual(harness.audio.startedTokens.count, 1)
+    }
+
+    func testLocalHTTPBackendDoesNotStartRecordingWhenServiceFails() {
+        let error = NSError(
+            domain: "test.local-service",
+            code: 1,
+            userInfo: [NSLocalizedDescriptionKey: "Synthetic local service failure"]
+        )
+        let harness = makeHarness(asrBackend: .localHTTP, localASRServiceResult: .failure(error))
+        harness.hotkeys.triggerPushToTalkStart()
+        drainMainQueue()
+
+        XCTAssertEqual(harness.localASRService.ensureCallCount, 1)
+        XCTAssertTrue(harness.panel.errors.contains("Synthetic local service failure"))
+        XCTAssertEqual(harness.asrFactory.clients.count, 0)
+        XCTAssertTrue(harness.audio.startedTokens.isEmpty)
+        XCTAssertTrue(harness.hotkeys.startedTypes.isEmpty)
+    }
+
     func testFocusChangeDowngradesCursorPasteToClipboardDraft() {
         let harness = makeHarness()
         harness.hotkeys.triggerPushToTalkStart()
@@ -303,8 +331,18 @@ final class AppControllerSessionTests: XCTestCase {
         XCTAssertEqual(harness.hotkeys.stopCallCount, 1)
     }
 
-    private func makeHarness(autoCompletePaste: Bool = true, audioDuckingEnabled: Bool = false) -> AppControllerHarness {
-        AppControllerHarness(autoCompletePaste: autoCompletePaste, audioDuckingEnabled: audioDuckingEnabled)
+    private func makeHarness(
+        autoCompletePaste: Bool = true,
+        audioDuckingEnabled: Bool = false,
+        asrBackend: ASRBackend = .funASRWebSocket,
+        localASRServiceResult: Result<Void, Error> = .success(())
+    ) -> AppControllerHarness {
+        AppControllerHarness(
+            autoCompletePaste: autoCompletePaste,
+            audioDuckingEnabled: audioDuckingEnabled,
+            asrBackend: asrBackend,
+            localASRServiceResult: localASRServiceResult
+        )
     }
 
     private func drainMainQueue(times: Int = 1, file: StaticString = #filePath, line: UInt = #line) {
@@ -335,13 +373,20 @@ private final class AppControllerHarness {
     let paste: FakePasteRouter
     let history = FakeHistoryRecorder()
     let asrFactory = FakeASRClientFactory()
+    let localASRService: FakeLocalASRServiceManager
     let controller: AppController
 
-    init(autoCompletePaste: Bool, audioDuckingEnabled: Bool) {
+    init(
+        autoCompletePaste: Bool,
+        audioDuckingEnabled: Bool,
+        asrBackend: ASRBackend,
+        localASRServiceResult: Result<Void, Error>
+    ) {
         paste = FakePasteRouter(autoComplete: autoCompletePaste)
+        localASRService = FakeLocalASRServiceManager(result: localASRServiceResult)
         var config = AppConfig.default
         config.mockASR = false
-        config.asrBackend = .funASRWebSocket
+        config.asrBackend = asrBackend
         config.audioDucking.enabled = audioDuckingEnabled
         let dependencies = AppController.Dependencies(
             menu: menu,
@@ -354,9 +399,34 @@ private final class AppControllerHarness {
             pasteRouter: paste,
             history: history,
             asrClientFactory: asrFactory,
+            localASRService: localASRService,
             focusMonitoringEnabled: false
         )
         controller = AppController(config: config, dependencies: dependencies)
+    }
+}
+
+private final class FakeLocalASRServiceManager: LocalASRServiceManaging {
+    private let result: Result<Void, Error>
+    private(set) var prepareCallCount = 0
+    private(set) var ensureCallCount = 0
+    private(set) var stopCallCount = 0
+
+    init(result: Result<Void, Error>) {
+        self.result = result
+    }
+
+    func prepare(config: AppConfig) {
+        prepareCallCount += 1
+    }
+
+    func ensureReady(config: AppConfig) -> Result<Void, Error> {
+        ensureCallCount += 1
+        return result
+    }
+
+    func stopManagedService() {
+        stopCallCount += 1
     }
 }
 

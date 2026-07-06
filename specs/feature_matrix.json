@@ -493,13 +493,28 @@
     {
       "id": "2026-07-05-output-audio-ducking",
       "title": "Output audio ducking during recording",
-      "status": "implemented",
+      "status": "validated",
       "spec_path": "specs/2026-07-05-output-audio-ducking",
       "depends_on": [
         "2026-07-05-session-coordinator-integration-tests"
       ],
-      "passes": false,
+      "passes": true,
       "updated_at": "2026-07-05"
+    },
+    {
+      "id": "2026-07-05-macos-alpha-distribution",
+      "title": "macOS closed alpha distribution package",
+      "status": "validated",
+      "spec_path": "specs/2026-07-05-macos-alpha-distribution",
+      "depends_on": [
+        "2026-06-23-qwen3-mlx-swift-http-adapter",
+        "2026-06-26-qwen3-mlx-segmented-cache-service",
+        "2026-06-28-asr-resource-cache-governance",
+        "2026-07-02-contextual-numeric-itn-expansion",
+        "2026-07-05-output-audio-ducking"
+      ],
+      "passes": true,
+      "updated_at": "2026-07-06"
     }
   ]
 }

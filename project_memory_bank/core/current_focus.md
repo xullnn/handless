@@ -1,12 +1,13 @@
 # Current Focus
 
-Current phase: daily-use hardening of the local-first macOS dictation MVP and the optional Qwen3-ASR MLX loopback HTTP backend.
+Current phase: daily-use hardening of the local-first macOS dictation MVP, plus first closed-alpha macOS distribution for trusted Apple Silicon testers.
 
 Stable status:
 
 - Build and automated Swift tests pass on the local Mac with full Xcode selected.
 - The packaged app is signed with a stable Apple Development identity so macOS TCC permissions can survive rebuilds when bundle id and signing identity stay stable.
 - The app is being used through the packaged `dist/LocalVoiceInput.app` path with an explicit local HTTP ASR URL when Qwen3 is needed. FunASR WebSocket remains the default config path; Qwen3-ASR MLX is opt-in.
+- A Phase 1 closed-alpha DMG path exists for trusted tester distribution. It is unnotarized, bundles Qwen3-ASR MLX 0.6B plus the Python/MLX runtime assets needed for the segmented service, and uses specs/progress.md as the source of truth for validation evidence.
 - Mock ASR mode remains the fast shell validation path for hotkeys, focus routing, floating panel, clipboard, paste verification, and cancel behavior.
 - Qwen3-ASR MLX 0.6B behind the segmented-cache local HTTP wrapper is the current first-choice ASR candidate for actual-use experiments. It is still a local wrapper around file-level model calls, not a native streaming session API.
 - The older Qwen3 cumulative-recompute route is retired from active code/config. It remains historical evidence only because daily use showed worse long-dictation responsiveness and unreliable numeric-format prompting.
@@ -20,13 +21,15 @@ Stable status:
 Immediate next focus:
 
 - Continue small-step hardening around daily-use issues rather than broad rewrites.
-- Define production service supervision for the segmented local ASR path: startup, health checks, restart/fallback, memory/CPU ceilings, and user-facing failure handling.
+- Improve closed-alpha tester ergonomics: make start, quit, reopen, diagnostics, and optional login-at-startup behavior obvious for non-technical users.
+- Continue hardening service supervision beyond the validated closed-alpha baseline: restart/fallback behavior, resource ceilings, and clearer user-facing failures.
 - Keep mouse/other-device trigger abstraction and model profile management as SDD-planned future features until the core runtime path is more stable.
 
 Current operational caution:
 
 - Qwen3 actual-use launch requires both the App and local HTTP service to be healthy; use `scripts/status_localvoiceinput.sh` for read-only inspection.
 - When numeric ITN is enabled by command-line override, status inspection must check the running App process flags as well as the config file because the default config can still show `numericITNEnabled=false`.
+- Closed-alpha builds can use bundled alpha config and app-managed Qwen3 service startup; broader public distribution still requires Developer ID signing/notarization and possibly installer work.
 - A running older Qwen3 service process may still exist until restarted, but new Qwen3 work should use `qwen3_mlx_segmented_cache_service.py` and the segmented smoke/regression scripts.
 - File-level model output and token streaming over an already materialized audio buffer do not prove realtime floating-panel behavior. App integration must be validated with timed PCM chunks and manual macOS smoke.
 - Whole-session cumulative recompute gets slower as speech grows longer and is no longer an active runtime path; long dictation uses segment budgets and local audio cache for reliability.

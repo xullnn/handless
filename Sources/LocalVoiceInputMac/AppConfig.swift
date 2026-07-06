@@ -106,6 +106,10 @@ struct AppConfig: Codable {
         let url = ConfigPaths.configURL
         if let data = try? Data(contentsOf: url), let decoded = try? JSONDecoder().decode(AppConfig.self, from: data) {
             config = decoded
+        } else if let bundledURL = Bundle.main.url(forResource: "alpha.local-qwen3", withExtension: "json"),
+                  let data = try? Data(contentsOf: bundledURL),
+                  let decoded = try? JSONDecoder().decode(AppConfig.self, from: data) {
+            config = decoded
         }
         config.applyCommandLine(commandLine)
         return config
@@ -224,8 +228,22 @@ enum ConfigPaths {
         appSupportDirectory.appendingPathComponent("history.json")
     }
 
+    static var cacheDirectory: URL {
+        let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches")
+        return base.appendingPathComponent("LocalVoiceInput", isDirectory: true)
+    }
+
+    static var logsDirectory: URL {
+        let base = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library")
+        return base.appendingPathComponent("Logs/LocalVoiceInput", isDirectory: true)
+    }
+
     static func ensureDirectories() {
         try? FileManager.default.createDirectory(at: appSupportDirectory, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: logsDirectory, withIntermediateDirectories: true)
     }
 }
 #endif

@@ -5,6 +5,9 @@ Packaging and local operations are script-driven.
 Stable responsibilities:
 
 - `scripts/build_macos_app.sh` builds `LocalVoiceInputMac`, creates `dist/LocalVoiceInput.app`, writes `Info.plist`, and signs the app.
+- `scripts/package_macos_alpha.sh` builds the Phase 1 unnotarized closed-alpha DMG for trusted Apple Silicon testers. It stages allowlisted runtime assets, verifies the staged Qwen3 segmented service outside the repo, embeds `AlphaRuntime` into the app, re-signs the bundle, and creates the DMG under `dist/`.
+- `configs/alpha.local-qwen3.json` is the closed-alpha config path for double-click use: local HTTP ASR on `127.0.0.1:18096`, NumericITN enabled, and output audio ducking enabled.
+- `scripts/write_alpha_config.sh` writes the alpha config into the user config location when an alpha tester or local smoke needs that explicit runtime state.
 - The build script uses `LOCALVOICEINPUT_CODESIGN_IDENTITY` when set. If it is not set and exactly one valid code-signing identity exists, the script uses that identity automatically. Otherwise it falls back to ad-hoc signing.
 - `scripts/show_codesign_status.sh` reports available code-signing identities and the app's code-signing details/designated requirement.
 - `scripts/write_default_config.sh` writes the default config under `~/Library/Application Support/LocalVoiceInput/config.json`.
@@ -20,6 +23,8 @@ Stable responsibilities:
 Operational preference:
 
 - Use a stable Apple Development or local code-signing identity for regular testing. Ad-hoc signatures change `cdhash` on rebuild and can force repeated macOS TCC permission prompts.
+- Phase 1 closed-alpha distribution intentionally accepts Gatekeeper first-launch friction and relies on the tester using Privacy & Security "Open Anyway". It must not be described as notarized or public-ready.
+- The closed-alpha package bundles only the active production Qwen3 0.6B runtime path, not the full `.external/models` cache or generated ASR logs.
 
 Go Deeper:
 

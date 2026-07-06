@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-07-05-macos-alpha-distribution",
+  "title": "macOS closed alpha distribution package",
+  "kind": "feature",
+  "parent_id": null,
+  "created_from": "user request to move LocalVoiceInput from a local daily-use dev tool to an installable macOS App for colleagues and friends",
+  "created_at": "2026-07-05",
+  "updated_at": "2026-07-06",
+  "follow_ups": [
+    {
+      "id": "FUP-001",
+      "title": "Developer ID notarized distribution path",
+      "kind": "architecture",
+      "reason": "The first closed alpha intentionally avoids Apple Developer Program and notarization. Wider external distribution should add Developer ID Application/Installer signing, hardened runtime, notarization, stapling, Gatekeeper acceptance, and possibly a pkg installer.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    },
+    {
+      "id": "FUP-002",
+      "title": "Model update and asset delivery flow",
+      "kind": "architecture",
+      "reason": "The closed alpha bundles the Qwen3 0.6B production model. Broader distribution needs a deliberate UX for updates, hosting, checksum, resume, cleanup, and possibly Apple-hosted or separately hosted assets.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    },
+    {
+      "id": "FUP-003",
+      "title": "App Store and TestFlight readiness",
+      "kind": "investigation",
+      "reason": "Mac App Store and TestFlight distribution introduce sandbox, review, App Store Connect, and possibly Apple-hosted asset pack constraints that are separate from closed alpha distribution.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    },
+    {
+      "id": "FUP-004",
+      "title": "Closed-alpha launch and lifecycle ergonomics",
+      "kind": "product",
+      "reason": "VM manual smoke exposed that a menu-bar-only LSUIElement app is not obvious enough for non-technical testers to start, find, quit, or reopen. Closed alpha should provide clearer launch/quit guidance and may need Spotlight/Application launch guidance, a diagnostics entry, and optional login-item/start-at-login support.",
+      "source": "manual_vm_smoke",
+      "status": "candidate",
+      "suggested_next_step": "create_or_update_separate_spec",
+      "target_feature_id": null
+    }
+  ]
+}
