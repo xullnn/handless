@@ -142,6 +142,15 @@ final class AppController {
             PermissionManager.promptAccessibilityIfNeeded()
             PermissionManager.requestInputMonitoringIfNeeded()
         }
+        menu.onOpenLogs = {
+            ConfigPaths.ensureDirectories()
+            NSWorkspace.shared.open(ConfigPaths.logsDirectory)
+        }
+        menu.onCopyDiagnostics = { [weak self] in
+            guard let self else { return }
+            ConfigPaths.ensureDirectories()
+            self.clipboard.writeString(AppDiagnosticsSummary.make(config: self.config))
+        }
 
         panel.onCancel = { [weak self] in self?.cancelSession() }
         panel.onCopy = { [weak self] in

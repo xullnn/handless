@@ -1,0 +1,19 @@
+# Decisions — Closed-Alpha Launch And Lifecycle Ergonomics
+
+## Confirmed decisions
+
+- D1: Keep the app as an `LSUIElement` menu-bar utility for this pass.
+- D2: Use a short, visible app-owned status item label instead of relying on the generic microphone symbol.
+- D3: Treat start-at-login, onboarding, and settings UI as follow-up features rather than blocking the first ergonomics hardening pass.
+- D4: Add logs and diagnostics entry points directly to the menu because closed-alpha testers should not need Terminal for basic support collection.
+- D5: Diagnostics must be safe by default and must not include transcript history or recorded audio.
+
+## Open questions / unresolved choices
+
+- Q1: Whether the final product brand should remain `LocalVoiceInput` or switch to a shorter user-facing name before notarized wider distribution.
+- Q2: Whether a future normal foreground helper window is worth adding for onboarding/settings while keeping the dictation surface menu-bar-first.
+
+## PMB promotion candidates
+
+- Promote clearer lifecycle menu behavior to `project_memory_bank/modules/macos_app/summary.md` after validation.
+- Promote app icon bundling to `project_memory_bank/modules/packaging_ops/summary.md` after validation.

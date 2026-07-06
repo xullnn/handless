@@ -1,5 +1,84 @@
 # SDD Progress
 
+## 2026-07-06 — 2026-07-06-closed-alpha-lifecycle-ergonomics
+
+### Summary
+
+- Implemented the closed-alpha launch and lifecycle ergonomics pass after VM smoke exposed that a menu-bar-only app needs clearer identification, quit, logs, and diagnostics entry points for non-technical testers.
+- The menu-bar item now uses an app-owned text marker: `LVI` when ready, `REC` when recording, and `LVI!` when attention is needed.
+- The `LVI` menu now includes explicit permissions, logs, diagnostics, and `退出 LocalVoiceInput` actions.
+- The built `.app` now includes `Resources/AppIcon.icns` and `CFBundleIconFile=AppIcon` so Finder, Applications, Spotlight, and Gatekeeper prompts have a recognizable app identity.
+- Closed-alpha docs now explain launch/reopen/quit, the `LVI` menu, diagnostics, and the difference between the app item and the macOS yellow/orange microphone privacy dot.
+
+### Files changed
+
+- `Sources/LocalVoiceInputMac/AppController.swift`
+- `Sources/LocalVoiceInputMac/AppControllerDependencies.swift`
+- `Sources/LocalVoiceInputMac/AppDiagnosticsSummary.swift`
+- `Sources/LocalVoiceInputMac/MenuBarController.swift`
+- `Sources/LocalVoiceInputMac/MenuBarStatusPresentation.swift`
+- `Tests/LocalVoiceInputMacTests/AppControllerSessionTests.swift`
+- `Tests/LocalVoiceInputMacTests/AppDiagnosticsSummaryTests.swift`
+- `Tests/LocalVoiceInputMacTests/MenuBarStatusPresentationTests.swift`
+- `Resources/AppIcon.icns`
+- `scripts/generate_app_icon.py`
+- `scripts/build_macos_app.sh`
+- `docs/macos-alpha-distribution.md`
+- `specs/2026-07-06-closed-alpha-lifecycle-ergonomics/*`
+- `specs/feature_matrix.json`
+- `specs/progress.md`
+
+### Validation
+
+- Command: `python3 -m json.tool specs/2026-07-06-closed-alpha-lifecycle-ergonomics/feature.json >/dev/null && python3 -m json.tool specs/feature_matrix.json >/dev/null`
+  Result: pass
+  Notes: Feature metadata and feature matrix are valid JSON.
+- Command: `bash scripts/test.sh`
+  Result: pass
+  Notes: 116 XCTest tests passed with 0 failures, including new menu-bar presentation and diagnostics-summary tests.
+- Command: `swift build`
+  Result: pass
+  Notes: Debug build completed successfully.
+- Command: `python3 -m py_compile scripts/generate_app_icon.py`
+  Result: pass
+  Notes: App icon generation helper is syntactically valid.
+- Command: `bash scripts/build_macos_app.sh`
+  Result: pass
+  Notes: Release app bundle rebuilt and signed with `Apple Development: 290016537@qq.com (HVFY7KCG8C)`.
+- Command: `/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' dist/LocalVoiceInput.app/Contents/Info.plist && test -f dist/LocalVoiceInput.app/Contents/Resources/AppIcon.icns`
+  Result: pass
+  Notes: `CFBundleIconFile` is `AppIcon`, and `Resources/AppIcon.icns` exists in the built app.
+- Command: `codesign --verify --deep --strict --verbose=2 dist/LocalVoiceInput.app`
+  Result: pass
+  Notes: The rebuilt app is valid on disk and satisfies its designated requirement.
+- Command: `bash scripts/package_macos_alpha.sh --closed-alpha`
+  Result: pass
+  Notes: Rebuilt `/Users/xulelong/2025/projects/LocalVoiceInput/dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`, approximately 1.1G.
+- Command: `bash scripts/package_macos_alpha.sh --verify-staged-runtime`
+  Result: pass
+  Notes: Staged runtime started on `http://127.0.0.1:18196`; metadata reported `service=qwen3-mlx-segmented-cache-service`, `model_id=qwen3-asr-0.6b-mlx-8bit`, `fake_backend=false`.
+- Command: `hdiutil verify dist/LocalVoiceInput-0.1.0-alpha-closed-alpha-unnotarized.dmg`
+  Result: pass
+  Notes: DMG checksum verification is valid.
+- Command: `open -n dist/LocalVoiceInput.app --args --local-http-asr --asr-http-url http://127.0.0.1:18096 --numeric-itn --audio-ducking --audio-ducking-volume 0.08 && bash scripts/status_localvoiceinput.sh`
+  Result: pass
+  Notes: Rebuilt app launched from `dist/LocalVoiceInput.app`; status script reported `overall: ok` with Qwen3 segmented service healthy on `127.0.0.1:18096`.
+- Manual smoke: `System Events` menu inspection of the running app
+  Result: pass
+  Notes: The app-owned menu-bar item is named `LVI`; menu items include `检查/申请权限`, `打开日志文件夹`, `复制诊断摘要`, and `退出 LocalVoiceInput`.
+- Manual smoke: menu diagnostics, logs, and quit actions
+  Result: pass
+  Notes: `复制诊断摘要` copied safe runtime metadata without transcript/audio content; `打开日志文件夹` resolved `~/Library/Logs/LocalVoiceInput`; `退出 LocalVoiceInput` exited the app process. The app was relaunched afterward with the current daily-use Qwen3/NumericITN/audio-ducking flags and status returned `overall: ok`.
+
+### Blockers / open questions
+
+- None for this feature.
+
+### Next recommended action
+
+- Use the updated closed-alpha DMG for the next VM/friend smoke pass.
+- Consider a separate feature for start-at-login and first-run onboarding after this lifecycle baseline is accepted.
+
 ## 2026-07-05 — 2026-07-05-input-session-replacement-hotkeys
 
 ### Summary

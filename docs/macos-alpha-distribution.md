@@ -82,10 +82,33 @@ It must not include:
 Expected first launch:
 
 1. Drag `LocalVoiceInput.app` to Applications.
-2. Open it once. macOS may block it because it is not notarized.
-3. Open System Settings > Privacy & Security and choose Open Anyway / Still Open.
-4. Grant Microphone, Accessibility, and Input Monitoring when prompted.
-5. Use Right Option for short dictation or Right Command + `.` for long dictation.
+2. Open it from Applications or Spotlight by searching `LocalVoiceInput`.
+3. macOS may block it because it is not notarized.
+4. Open System Settings > Privacy & Security and choose Open Anyway / Still Open.
+5. Grant Microphone, Accessibility, and Input Monitoring when prompted.
+6. After launch, find the `LVI` item in the macOS menu bar. This is the LocalVoiceInput control.
+7. Use Right Option for short dictation or Right Command + `.` for long dictation.
+
+The yellow/orange microphone privacy dot shown by macOS is only a system privacy indicator. It is not the LocalVoiceInput menu or quit button.
+
+## Launch, Find, And Quit
+
+- Launch: open `LocalVoiceInput.app` from Applications or use Spotlight search for `LocalVoiceInput`.
+- Find the running app: look for the `LVI` menu-bar item. During recording it changes to `REC`; if attention is needed it changes to `LVI!`.
+- Quit: click the `LVI` menu-bar item and choose `退出 LocalVoiceInput`.
+- Reopen: launch it again from Applications or Spotlight.
+
+The app remains a menu-bar utility, so it does not appear as a normal Dock window after launch.
+
+## Menu Diagnostics
+
+The `LVI` menu includes tester-facing support actions:
+
+- `检查/申请权限`: opens or requests the macOS permission prompts where possible.
+- `打开日志文件夹`: opens `~/Library/Logs/LocalVoiceInput`.
+- `复制诊断摘要`: copies safe runtime metadata, including app path, config path, backend, ASR URL, NumericITN, and audio ducking settings.
+
+The diagnostics summary does not include recorded audio, transcript history, or dictated content.
 
 The app should start or reuse the local Qwen3 service on `127.0.0.1:18096` without asking the tester to run shell commands.
 
@@ -122,7 +145,7 @@ The alpha path is local-first:
 
 ## Diagnostics
 
-Development diagnostics remain:
+Development diagnostics also remain:
 
 ```bash
 bash scripts/status_localvoiceinput.sh
@@ -130,6 +153,7 @@ bash scripts/status_localvoiceinput.sh
 
 Tester-facing diagnostics should be gathered from:
 
+- the `LVI` menu's `复制诊断摘要` output;
 - `~/Library/Logs/LocalVoiceInput/qwen3-service.log`
 - `~/Library/Application Support/LocalVoiceInput/`
 - screenshots of macOS permission/Gatekeeper prompts when launch fails.

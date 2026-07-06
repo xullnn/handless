@@ -8,6 +8,8 @@ protocol MenuBarControlling: AnyObject {
     var onCopyLast: (() -> Void)? { get set }
     var onClearHistory: (() -> Void)? { get set }
     var onPromptPermissions: (() -> Void)? { get set }
+    var onOpenLogs: (() -> Void)? { get set }
+    var onCopyDiagnostics: (() -> Void)? { get set }
 
     func setStatus(_ text: String)
 }

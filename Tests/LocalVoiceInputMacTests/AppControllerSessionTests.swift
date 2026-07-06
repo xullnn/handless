@@ -436,6 +436,8 @@ private final class FakeMenuBarController: MenuBarControlling {
     var onCopyLast: (() -> Void)?
     var onClearHistory: (() -> Void)?
     var onPromptPermissions: (() -> Void)?
+    var onOpenLogs: (() -> Void)?
+    var onCopyDiagnostics: (() -> Void)?
     private(set) var statuses: [String] = []
 
     func setStatus(_ text: String) {

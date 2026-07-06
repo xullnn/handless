@@ -9,11 +9,17 @@ APP_DIR="$DIST_DIR/$APP_NAME.app"
 CONTENTS="$APP_DIR/Contents"
 MACOS="$CONTENTS/MacOS"
 RESOURCES="$CONTENTS/Resources"
+APP_ICON_SRC="$PWD/Resources/AppIcon.icns"
 
 swift build -c release --product "$PRODUCT"
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS" "$RESOURCES"
 cp ".build/release/$PRODUCT" "$MACOS/$APP_NAME"
+if [[ ! -f "$APP_ICON_SRC" ]]; then
+  echo "Missing app icon: $APP_ICON_SRC. Run scripts/generate_app_icon.py." >&2
+  exit 2
+fi
+cp "$APP_ICON_SRC" "$RESOURCES/AppIcon.icns"
 
 cat > "$CONTENTS/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -23,6 +29,7 @@ cat > "$CONTENTS/Info.plist" <<PLIST
   <key>CFBundleDevelopmentRegion</key><string>en</string>
   <key>CFBundleExecutable</key><string>$APP_NAME</string>
   <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
   <key>CFBundleName</key><string>$APP_NAME</string>
   <key>CFBundlePackageType</key><string>APPL</string>

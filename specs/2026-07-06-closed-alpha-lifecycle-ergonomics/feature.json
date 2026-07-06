@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "id": "2026-07-06-closed-alpha-lifecycle-ergonomics",
+  "title": "Closed-alpha launch and lifecycle ergonomics",
+  "kind": "feature",
+  "parent_id": "2026-07-05-macos-alpha-distribution",
+  "created_from": "FUP-004 from specs/2026-07-05-macos-alpha-distribution/feature.json",
+  "created_at": "2026-07-06",
+  "updated_at": "2026-07-06",
+  "follow_ups": [
+    {
+      "id": "FUP-001",
+      "title": "Start at login preference",
+      "kind": "feature",
+      "reason": "Closed-alpha testers may expect the utility to start automatically, but login-item registration and preference UI should be implemented as a separate user-controlled feature.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    },
+    {
+      "id": "FUP-002",
+      "title": "First-run onboarding window",
+      "kind": "feature",
+      "reason": "A guided onboarding flow could explain Gatekeeper, permissions, hotkeys, and local model startup, but it expands the UI surface beyond this menu-bar hardening pass.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    },
+    {
+      "id": "FUP-003",
+      "title": "Settings window for hotkeys and runtime state",
+      "kind": "feature",
+      "reason": "Non-technical testers will eventually need a visible place to inspect and change hotkeys and runtime preferences. This requires a broader settings model and is out of scope for the current closed-alpha lifecycle pass.",
+      "source": "contract",
+      "status": "candidate",
+      "suggested_next_step": "create_separate_spec",
+      "target_feature_id": null
+    }
+  ]
+}

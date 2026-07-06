@@ -515,6 +515,17 @@
       ],
       "passes": true,
       "updated_at": "2026-07-06"
+    },
+    {
+      "id": "2026-07-06-closed-alpha-lifecycle-ergonomics",
+      "title": "Closed-alpha launch and lifecycle ergonomics",
+      "status": "validated",
+      "spec_path": "specs/2026-07-06-closed-alpha-lifecycle-ergonomics",
+      "depends_on": [
+        "2026-07-05-macos-alpha-distribution"
+      ],
+      "passes": true,
+      "updated_at": "2026-07-06"
     }
   ]
 }
