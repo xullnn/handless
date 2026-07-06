@@ -5210,3 +5210,44 @@ Latency and base regression guard:
 ### Next recommended action
 
 - Stage and commit the validated closed-alpha distribution package implementation and documentation.
+
+## 2026-07-06 - 2026-07-06-closed-alpha-lifecycle-ergonomics VM install smoke
+
+### Summary
+
+- Re-tested the latest closed-alpha DMG inside the VirtualBuddy macOS Sequoia VM after the app-owned `LVI` menu-bar lifecycle changes.
+- Copied the DMG from the VirtualBuddy shared folder into the VM local Downloads folder before mounting, because direct attach from the shared folder previously hit resource-busy behavior.
+- Mounted the local DMG successfully; the mounted volume name was `/Volumes/LocalVoiceInput Closed Alpha`.
+- Replaced the VM's `/Applications/LocalVoiceInput.app` with the app from the mounted DMG.
+- Confirmed the installed app shows the new app icon in Finder/Application search and launches to the app-owned `LVI` menu-bar item.
+- Opened the `LVI` menu and confirmed the visible lifecycle actions are present, including permissions, logs, diagnostics, and quit.
+- Triggered quit through the menu by selecting the `q` key-equivalent-highlighted `退出 LocalVoiceInput` item and pressing Return; the `LVI` menu-bar item disappeared.
+- Relaunched from Finder/Application search and confirmed the `LVI` item returned.
+
+### Validation
+
+- Command: VM Finder/Terminal DMG install smoke
+  Result: pass
+  Notes: DMG copied to VM local Downloads, mounted from the local copy, and installed to `/Applications/LocalVoiceInput.app`.
+- Command: VM bundle metadata smoke
+  Result: pass
+  Notes: terminal output showed `CFBundleIconFile=AppIcon`, the app icon resource was present, and `codesign --verify --deep --strict --verbose=2 /Applications/LocalVoiceInput.app` completed with `codesign_status=0`.
+- Command: VM menu-bar lifecycle smoke
+  Result: pass
+  Notes: `LVI` was visible in the VM menu bar; menu actions were visible; quit removed the `LVI` item; Finder/Application-search relaunch restored it.
+- Artifact: `specs/2026-07-06-closed-alpha-lifecycle-ergonomics/artifacts/vm-dmg-install-lvi-menu-2026-07-06.png`
+  Result: captured
+  Notes: shows the VM-installed app icon/search result and expanded `LVI` menu.
+- Artifact: `specs/2026-07-06-closed-alpha-lifecycle-ergonomics/artifacts/vm-dmg-install-lvi-relaunch-2026-07-06.png`
+  Result: captured
+  Notes: shows the VM state after Finder/Application-search relaunch.
+
+### Blockers / open questions
+
+- No blocker for the current closed-alpha lifecycle ergonomics feature.
+- Observed nuance: after quitting through the menu, `open /Applications/LocalVoiceInput.app` and `open -n /Applications/LocalVoiceInput.app` from the VM Terminal returned without restoring the menu-bar item, while Finder/Application-search relaunch worked. Treat this as a follow-up investigation for command-line launch behavior, not as a blocker for the intended non-technical tester path.
+
+### Next recommended action
+
+- Keep the current DMG as the latest VM-smoked closed-alpha candidate.
+- Add a future tester-onboarding improvement for first-run launch guidance and optional start-at-login.
