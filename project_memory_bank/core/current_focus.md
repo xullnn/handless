@@ -32,7 +32,7 @@ Current operational caution:
 
 - Qwen3 actual-use launch requires both the App and local HTTP service to be healthy; use `scripts/status_localvoiceinput.sh` for read-only inspection.
 - When numeric ITN is enabled by command-line override, status inspection must check the running App process flags as well as the config file because the default config can still show `numericITNEnabled=false`.
-- Closed-alpha builds can use bundled alpha config and app-managed Qwen3 service startup; broader public distribution still requires Developer ID signing/notarization and possibly installer work.
+- Closed-alpha builds can use bundled alpha config and app-managed Qwen3 service startup; existing user config still takes precedence over the bundled alpha config, so old dev/test machines may need `scripts/write_alpha_config.sh` before double-click Qwen use. Broader public distribution still requires Developer ID signing/notarization and possibly installer work.
 - A running older Qwen3 service process may still exist until restarted, but new Qwen3 work should use `qwen3_mlx_segmented_cache_service.py` and the segmented smoke/regression scripts.
 - File-level model output and token streaming over an already materialized audio buffer do not prove realtime floating-panel behavior. App integration must be validated with timed PCM chunks and manual macOS smoke.
 - Whole-session cumulative recompute gets slower as speech grows longer and is no longer an active runtime path; long dictation uses segment budgets and local audio cache for reliability.

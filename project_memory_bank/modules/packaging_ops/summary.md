@@ -25,6 +25,7 @@ Operational preference:
 - Use a stable Apple Development or local code-signing identity for regular testing. Ad-hoc signatures change `cdhash` on rebuild and can force repeated macOS TCC permission prompts.
 - Phase 1 closed-alpha distribution intentionally accepts Gatekeeper first-launch friction and relies on the tester using Privacy & Security "Open Anyway". It must not be described as notarized or public-ready.
 - The closed-alpha package bundles only the active production Qwen3 0.6B runtime path, not the full `.external/models` cache or generated ASR logs.
+- Existing user config takes precedence over the app-bundled alpha config. If an old dev/test install double-clicks into the FunASR default path or reports ASR connection failure, inspect with `scripts/status_localvoiceinput.sh` and write the alpha config with `scripts/write_alpha_config.sh`.
 
 Go Deeper:
 

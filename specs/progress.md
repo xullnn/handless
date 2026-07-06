@@ -5399,3 +5399,22 @@ Latency and base regression guard:
 
 - Run one more VM install smoke with the rebuilt Dock-visible DMG before sending it to friends.
 - Keep start-at-login, first-run onboarding, settings/runtime visibility, and Developer ID notarization as separate follow-up features.
+
+## 2026-07-06 - 2026-07-06-audio-stop-boundary-and-service-shutdown host microphone idle smoke
+
+### Summary
+
+- User manually tested the rebuilt host app after the alpha/Qwen config was restored.
+- Confirmed the macOS microphone indicator only turns on while an active recording is in progress.
+- Confirmed the macOS microphone indicator turns off after recognition finishes, indicating the app is not keeping the microphone capture path active while idle.
+
+### Validation
+
+- Command: host manual microphone privacy indicator smoke
+  Result: pass
+  Notes: observed behavior matches the closed-alpha policy: no idle microphone pre-roll; microphone capture is session-bound and releases after recognition completes.
+
+### Blockers / open questions
+
+- No blocker for the microphone idle behavior.
+- Separate follow-up remains for clearer first-run/runtime status visibility so testers can distinguish LocalVoiceInput state from macOS system privacy indicators.
